@@ -6,13 +6,44 @@ This repository contains both the AI backend (LangGraph + Python agents) and the
 🎮 `unity-client/` – Unity project for interaction and game interface  
 🛠️ `scripts/` – Tools and utilities (e.g., exporters, benchmarks)
 
-## Requirements
 
-- Python 3.11+
-- Unity 2022.x or later
+## 🛠️ Setup Instructions
 
-## Instructions
+### 🔁 Backend (Python 3.10+ recommended)
 
-1. `cd backend && pip install -r requirements.txt`
-2. Open `unity-client` in Unity
-3. Run `main.py` in `backend/` to test agent behavior
+1. Make sure you have **Python 3.10 or higher** installed:
+```bash
+   python --version
+```
+If not, download it from https://www.python.org/downloads/
+
+2. Create and activate a virtual environment:
+```bash
+    cd backend
+    python -m venv .venv
+    .venv\Scripts\activate      # On Windows
+```
+
+3. Install backend dependencies:
+```bash
+    pip install -r requirements.txt
+```
+
+4. Run the backend entrypoint:
+```bash
+    python main.py
+```
+### 🎮 Unity Frontend
+
+1. Open the folder unity-client/ in Unity Hub or Unity Editor.
+
+2. Build and run the scene as usual.
+
+## ✅ Quick Start
+```bash
+    cd backend
+    python -m venv .venv
+    .venv\Scripts\activate
+    pip install -r requirements.txt
+    python main.py
+```
