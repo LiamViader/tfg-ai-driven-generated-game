@@ -1,0 +1,123 @@
+backend/
+│
+├── config/                          # Configuraciones globales, gestión de API keys, etc.
+│   ├── __init__.py
+│   ├── settings.py                  # Configuración principal (e.g., con Pydantic-Settings)
+│   └── llm_providers.py             # Configuración específica de proveedores LLM (endpoints, modelos por defecto)
+│
+├── core_game/                       # Lógica y modelos de datos transversales al juego completo
+│   ├── __init__.py
+│   ├── schemas/                     # Modelos Pydantic compartidos globalmente
+│   │   ├── __init__.py
+│   │   ├── game_event.py            # Modelo para eventos del juego (e.g., jugador_encontro_objeto, mision_actualizada)
+│   │   ├── player_state.py          # Modelo para el estado global del jugador si es necesario centralizarlo
+│   │   └── world_state_snapshot.py  # Modelo para instantáneas del estado del mundo
+│   └── game_clock.py                # Si el juego tiene un reloj o sistema de tiempo global
+│   └── (otros módulos de lógica de juego central)
+│
+├── subsystems/                      # Directorio principal para los diferentes módulos de IA
+│   │
+│   ├── __init__.py
+│   │
+│   ├── map_generator/               # === SUBSISTEMA DE GENERACIÓN DE MAPAS ===
+│   │   ├── __init__.py
+│   │   ├── agents/                  # Agentes LLM específicos para mapas
+│   │   │   ├── __init__.py
+│   │   │   ├── map_reasoning_agent.py
+│   │   │   └── map_validation_agent.py
+│   │   ├── schemas/                 # Modelos Pydantic para mapas
+│   │   │   ├── __init__.py
+│   │   │   ├── map_elements.py      # ScenarioModel, ExitInfo, Direccion
+│   │   │   └── app_state.py         # MapGraphState (para LangGraph)
+│   │   ├── operations/              # Lógica de bajo nivel para manipular datos de mapas
+│   │   │   ├── __init__.py
+│   │   │   ├── scenario_ops.py
+│   │   │   └── connection_ops.py
+│   │   ├── graph/                   # Lógica de LangGraph para mapas
+│   │   │   ├── __init__.py
+│   │   │   ├── nodes.py
+│   │   │   └── orchestrator.py
+│   │   └── service.py               # Interfaz del subsistema de mapas (similar al map_service.py que mencionamos)
+│   │
+│   ├── narrative_engine/            # === SUBSISTEMA DE NARRATIVA ===
+│   │   ├── __init__.py
+│   │   ├── agents/                  # Agentes para generar trama, diálogos, eventos narrativos
+│   │   │   ├── __init__.py
+│   │   │   ├── plot_agent.py
+│   │   │   └── dialogue_agent.py
+│   │   ├── schemas/                 # Modelos Pydantic para la narrativa (Quest, PlotPoint, CharacterArc, DialogueNode)
+│   │   │   ├── __init__.py
+│   │   │   ├── narrative_elements.py
+│   │   │   └── app_state.py         # NarrativeGraphState (si usas LangGraph aquí también)
+│   │   ├── operations/              # Lógica para avanzar la trama, gestionar estado de misiones, etc.
+│   │   │   ├── __init__.py
+│   │   │   └── plot_ops.py
+│   │   ├── graph/                   # LangGraph para el flujo narrativo (opcional, podría ser otra lógica)
+│   │   │   ├── __init__.py
+│   │   │   ├── nodes.py
+│   │   │   └── orchestrator.py
+│   │   ├── assets/                  # Documentos de lore, perfiles de personajes base, etc.
+│   │   │   └── lore_document.md
+│   │   └── service.py
+│   │
+│   ├── mechanics_ai/                # === SUBSISTEMA DE IA PARA MECÁNICAS ===
+│   │   ├── __init__.py
+│   │   ├── agents/                  # Agentes para comportamiento de NPCs, adaptación de dificultad, generación de puzzles
+│   │   │   ├── __init__.py
+│   │   │   └── npc_behavior_agent.py
+│   │   ├── schemas/                 # Modelos para reglas de mecánicas, perfiles de NPC, etc.
+│   │   │   └── ...
+│   │   ├── operations/
+│   │   │   └── ...
+│   │   └── service.py
+│   │
+│   ├── image_generator_interface/   # === INTERFAZ CON EL SUBSISTEMA DE GENERACIÓN DE IMÁGENES ===
+│   │   ├── __init__.py
+│   │   ├── agents/                  # Agente para traducir descripciones narrativas/de mapa en prompts para modelos de imagen
+│   │   │   └── ...
+│   │   ├── schemas/                 # Modelos para peticiones y respuestas de generación de imágenes
+│   │   │   └── ...
+│   │   ├── clients/                 # Clientes para APIs de generación de imágenes (DALL-E, Stable Diffusion, etc.)
+│   │   │   └── stable_diffusion_client.py
+│   │   └── service.py
+│   │
+│   └── (otros_subsistemas_ia)/      # Como generación de audio, música, etc.
+│       └── ...
+│
+├── services_api/                    # Capa de API (e.g., FastAPI) si el backend expone endpoints HTTP
+│   ├── __init__.py
+│   ├── v1/
+│   │   ├── __init__.py
+│   │   ├── endpoints/
+│   │   │   ├── __init__.py
+│   │   │   ├── map_endpoints.py
+│   │   │   └── narrative_endpoints.py
+│   │   └── utils.py                 # Dependencias de API, autenticación, etc.
+│   └── main_api.py                  # Archivo principal para montar la aplicación FastAPI
+│
+├── utils/                           # Utilidades compartidas por todo el backend
+│   ├── __init__.py
+│   ├── logging_config.py            # Configuración de logging
+│   ├── llm_interaction.py           # Wrappers genéricos para interactuar con LLMs (manejo de reintentos, parseo base)
+│   └── string_processing.py         # Funciones de utilidad para texto
+│
+├── main_orchestrator.py             # Punto de entrada principal del backend o un orquestador de alto nivel si los subsistemas no se exponen vía API sino que interactúan internamente.
+│
+├── tests/                           # Directorio de pruebas
+│   ├── __init__.py
+│   ├── subsystems/                  # Tests por subsistema
+│   │   ├── map_generator/
+│   │   │   ├── test_schemas.py
+│   │   │   ├── test_operations.py
+│   │   │   └── test_graph_flows.py
+│   │   └── narrative_engine/
+│   │       └── ...
+│   ├── core_game/
+│   │   └── test_core_schemas.py
+│   └── test_integration.py          # Tests de integración entre subsistemas
+│
+├── README.md                        # Documentación principal del backend
+├── requirements.txt                 # Dependencias de Python
+├── .env.example                     # Ejemplo de variables de entorno
+├── Dockerfile                       # Si usas Docker
+└── docker-compose.yml               # Si usas Docker Compose
