@@ -5,7 +5,10 @@ from ..schemas.graph_state import MapGraphState
 from ..schemas.map_elements import ScenarioModel
 
 
-STANDARD_RULES_AND_CONSTRAINTS = []
+BASE_RULES_AND_CONSTRAINTS = [
+    "Every scenario must be connected to at least one other scenario.",
+    "All scenarios must belong to a single connected graph. There should be no disconnected clusters of scenarios."
+]
 
 
 class GraphInitialInput(BaseModel):
@@ -24,7 +27,7 @@ def receive_objective_node(initial_input: GraphInitialInput) -> MapGraphState:
 
     state = MapGraphState(
         global_narrative_context=initial_input.global_narrative_context,
-        map_rules_and_constraints=initial_input.extra_map_rules_and_constraints + STANDARD_RULES_AND_CONSTRAINTS,
+        map_rules_and_constraints=initial_input.extra_map_rules_and_constraints + BASE_RULES_AND_CONSTRAINTS,
         current_objective=initial_input.current_objective,
         scenarios=initial_input.initial_scenarios,
         history_log=["Objective received: " + initial_input.current_objective],
@@ -34,10 +37,8 @@ def receive_objective_node(initial_input: GraphInitialInput) -> MapGraphState:
         plan_outcome_is_valid=False,
         # ...otros campos de MapGraphState con sus valores iniciales
     )
-
-    if initial_input.get("max_refinement_attempts") is not None:
-        state.max_refinement_attempts = initial_input["max_refinement_attempts"]
         
     print(f"Initial state created for objective: {state.current_objective}")
 
     return state
+

@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
 
 from ..schemas.graph_state import MapGraphState
-from .nodes import receive_objective_node
+from .nodes import receive_objective_node, GraphInitialInput
 # Más adelante importarás los otros nodos aquí (plan_map_changes_node, etc.)
 
 # --- Define aquí temporalmente los otros nodos como placeholders para que el grafo compile ---
@@ -52,15 +52,10 @@ if __name__ == "__main__":
     map_graph = get_map_generation_graph()
 
     # Ejemplo de cómo invocarías el grafo (esto iría en tu service.py o main_orchestrator.py)
-    initial_input_data = {
-        "current_objective": "Generar un pequeño pueblo de inicio con una plaza y una tienda.",
-        "global_narrative_context": "Es un mundo de fantasía medieval pacífico, al borde de un bosque antiguo.",
-        "game_rules_and_constraints": [
-            "Los pueblos deben tener al menos una fuente de agua.",
-            "Las tiendas suelen estar en la plaza principal o cerca."
-        ],
-        # "initial_scenarios": {} # Opcional, si empiezas con algo
-    }
+    initial_input_data = GraphInitialInput(
+        current_objective="Generar un pequeño pueblo de inicio con una plaza y una tienda.",
+        global_narrative_context="Es un mundo de fantasía medieval pacífico, al borde de un bosque antiguo.",
+    )
 
     # Para invocar el grafo (en un entorno asíncrono normalmente usarías ainvoke)
     # El resultado final contendrá el MapGraphState después de que el grafo termine.
