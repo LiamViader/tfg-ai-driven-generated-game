@@ -4,6 +4,7 @@ SCENARIO_FIELDS = {
     "narrative_context": "Narrative background of the scenario, including its history, role in the story, mood, important events that occur here, relevance within the world’s lore, etc.",
     "summary_description": "Short, high-level summary of the scenario, capturing its essence in one or two sentences.",
     "indoor_or_outdoor": "Indicates whether the scenario takes place in an indoor or outdoor environment.",
+    "type": "The primary category or biome of the scenario (e.g., 'village', 'dark_forest', 'cave')."
 }
 
 EXIT_FIELDS = {

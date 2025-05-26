@@ -25,9 +25,9 @@ class ScenarioModel(BaseModel):
     narrative_context: str = Field(..., description=SCENARIO_FIELDS["narrative_context"])
     summary_description: str = Field(..., description=SCENARIO_FIELDS["summary_description"])
     indoor_or_outdoor: Literal["indoor", "outdoor"] = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
+    type: str = Field(..., description=SCENARIO_FIELDS["type"])
     narrative_elements: List[str] = Field(default_factory=list, description="Characters, items, clues, or narrative events present.")
     exits: Dict[Direction, Optional[ExitInfo]] = Field(
         default_factory=lambda: {direction: None for direction in Direction.__args__},
         description="Connections from this scenario to others, by direction."
     )
-    origin_relative_position: Optional[Tuple[int, int]] = Field(None, description="Relative (x, y) position with respect to the origin scenario.")

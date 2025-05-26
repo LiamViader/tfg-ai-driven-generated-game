@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional, Literal, Set
+from typing import Dict, List, Any, Optional, Literal, Set, Tuple
 from pydantic import BaseModel, Field as PydanticField
 from langchain_core.tools import tool
 from copy import deepcopy
@@ -21,6 +21,7 @@ class CreateScenarioArgs(BaseModel):
     visual_description: str = PydanticField(..., description=SCENARIO_FIELDS["visual_description"])
     narrative_context: str = PydanticField(..., description=SCENARIO_FIELDS["narrative_context"])
     indoor_or_outdoor: Literal["indoor", "outdoor"] = PydanticField(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
+    type: str = PydanticField(..., description=SCENARIO_FIELDS["type"])
 
 class ModifyScenarioArgs(BaseModel):
     scenario_id: str = PydanticField(..., description="ID of the scenario to modify.")
@@ -29,6 +30,7 @@ class ModifyScenarioArgs(BaseModel):
     new_visual_description: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["visual_description"])
     new_narrative_context: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["narrative_context"])
     new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = PydanticField(None, description=SCENARIO_FIELDS["indoor_or_outdoor"])
+    new_type: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["type"])
 
 class DeleteScenarioArgs(BaseModel):
     scenario_id: str = PydanticField(..., description="ID of the scenario to delete.")
@@ -57,9 +59,15 @@ class ModifyBidirectionalConnectionArgs(BaseModel): # Schema Refinado
 
 #Querys
 
+class GetScenarioDetailsArgs(BaseModel):
+    scenario_id: str = PydanticField(..., description="ID of the scenario for which to retrieve details.")
+
+class GetNeighborsAtDistanceArgs(BaseModel):
+    start_scenario_id: str = PydanticField(..., description="ID of the scenario from which to start the search.")
+    max_distance: int = PydanticField(..., description="Maximum distance (number of hops) to explore. Recommended 2-3.", ge=1, le=4)
 
 
-# (Define más Schemas para otras herramientas como DeleteScenarioArgs, DeleteConnectionArgs, etc.)
+# Finalize
 
 class FinalizeSimulationArgs(BaseModel): # Esta se mantiene igual
     justification: str = PydanticField(..., description="Justificación de por qué el mapa simulado cumple el objetivo final.")
@@ -144,7 +152,8 @@ class SimulatedMapExecutionTools:
         narrative_context: str, 
         visual_description: str, 
         summary_description: str, 
-        indoor_or_outdoor: Literal["indoor", "outdoor"]
+        indoor_or_outdoor: Literal["indoor", "outdoor"],
+        type: str
     ) -> str:
         
         """Creates a new scenario in the simulated map."""
@@ -154,7 +163,8 @@ class SimulatedMapExecutionTools:
             summary_description=summary_description,
             visual_description=visual_description,
             narrative_context=narrative_context,
-            indoor_or_outdoor=indoor_or_outdoor
+            indoor_or_outdoor=indoor_or_outdoor,
+            type=type
         )
 
         try:
@@ -165,12 +175,13 @@ class SimulatedMapExecutionTools:
                 "visual_description": visual_description,
                 "narrative_context": narrative_context,
                 "indoor_or_outdoor": indoor_or_outdoor,
+                "type": type,
                 "exits": {}
             }
             new_scenario = ScenarioModel(**new_scenario_data)  # Pydantic validation
             self.simulated_scenarios[effective_id] = new_scenario
             self.island_clusters.append({effective_id})
-            return self._log_and_summarize("create_scenario", args_model, True, f"Scenario '{name}' (ID: {effective_id}) created successfully.")
+            return self._log_and_summarize("create_scenario_in_simulation", args_model, True, f"Scenario '{name}' (ID: {effective_id}) created successfully. Map now has {len(self.simulated_scenarios)} scenarios.")
         except Exception as e:
             return self._log_and_summarize("create_scenario", args_model, False, f"Error while creating scenario: {e}")
 
@@ -182,7 +193,8 @@ class SimulatedMapExecutionTools:
         new_summary_description: Optional[str] = None,
         new_visual_description: Optional[str] = None,
         new_narrative_context: Optional[str] = None,
-        new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = None
+        new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = None,
+        new_type: Optional[str] = None
     ) -> str:
         """Modifies the specified scenario. Only the provided fields will be updated."""
         args_model = ModifyScenarioArgs(
@@ -191,27 +203,25 @@ class SimulatedMapExecutionTools:
             new_summary_description=new_summary_description,
             new_visual_description=new_visual_description,
             new_narrative_context=new_narrative_context,
-            new_indoor_or_outdoor=new_indoor_or_outdoor
+            new_indoor_or_outdoor=new_indoor_or_outdoor,
+            new_type=new_type
         )
 
         if scenario_id not in self.simulated_scenarios:
             return self._log_and_summarize("modify_scenario", args_model, False, f"Scenario with ID '{scenario_id}' does not exist.")
 
-        scenario = self.simulated_scenarios[scenario_id]
 
         # Apply changes only if the fields are not None
-        if new_name is not None:
-            scenario.name = new_name
-        if new_summary_description is not None:
-            scenario.summary_description = new_summary_description
-        if new_visual_description is not None:
-            scenario.visual_description = new_visual_description
-        if new_narrative_context is not None:
-            scenario.narrative_context = new_narrative_context
-        if new_indoor_or_outdoor is not None:
-            scenario.indoor_or_outdoor = new_indoor_or_outdoor
+        scenario = self.simulated_scenarios[scenario_id]
+        updated_fields = []
+        if new_name is not None: scenario.name = new_name; updated_fields.append("name")
+        if new_summary_description is not None: scenario.summary_description = new_summary_description; updated_fields.append("summary_description")
+        if new_visual_description is not None: scenario.visual_description = new_visual_description; updated_fields.append("visual_description")
+        if new_narrative_context is not None: scenario.narrative_context = new_narrative_context; updated_fields.append("narrative_context")
+        if new_indoor_or_outdoor is not None: scenario.indoor_or_outdoor = new_indoor_or_outdoor; updated_fields.append("indoor_or_outdoor")
+        if new_type is not None: scenario.type = new_type; updated_fields.append("type")
 
-        return self._log_and_summarize("modify_scenario", args_model, True, f"Scenario '{scenario_id}' successfully modified.")
+        return self._log_and_summarize("modify_scenario_in_simulation", args_model, True, f"Scenario '{scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}.")
     
     @tool(args_schema=DeleteScenarioArgs)
     def delete_scenario(
@@ -390,17 +400,87 @@ class SimulatedMapExecutionTools:
 
         return self._log_and_summarize("modify_bidirectional_connection", args_model, True, message)
 
+    @tool(args_schema=GetScenarioDetailsArgs)
+    def get_scenario_details(self, scenario_id: str) -> str:
+        """(QUERY tool) Retrieves and returns all details for a specific scenario in the simulated map."""
+        args_model = GetScenarioDetailsArgs(scenario_id=scenario_id)
+        if scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("get_scenario_details", args_model, False, f"Error: Scenario ID '{scenario_id}' not found.")
+        
+        scenario = self.simulated_scenarios[scenario_id]
+        details_str = f"Details for Scenario ID: {scenario.id}:\n"
+        details_str += f"  Name: {scenario.name}\n"
+        details_str += f"  Type: {scenario.type}\n"
+        details_str += f"  Indoor or outdoor: {scenario.indoor_or_outdoor}\n"
+        details_str += f"  Summary Description: {scenario.summary_description}\n"
+        details_str += f"  Visual Description: {scenario.visual_description}\n"
+        details_str += f"  Narrative Context: {scenario.narrative_context}\n"
+        details_str +=  "  Exits:\n"
+        if any(exit_info for exit_info in scenario.exits.values()):
+            for direction, exit_info in scenario.exits.items():
+                if exit_info:
+                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
+                else:
+                    details_str += f"    - {direction}: (None)\n"
+        else:
+            details_str += "    (No exits defined)\n"
+        return self._log_and_summarize("get_scenario_details", args_model, True, details_str)
 
-    # --- Aquí añadirías más herramientas específicas: ---
-    # @tool(args_schema=ModifyScenarioArgs)
-    # def modify_scenario_in_simulation(self, scenario_id: str, ...) -> str: ...
-    #
-    # @tool(args_schema=DeleteScenarioArgs)
-    # def delete_scenario_in_simulation(self, scenario_id: str) -> str: ...
-    #   (Esta sería compleja, necesitaría limpiar conexiones en otros escenarios)
-    #
-    # @tool(args_schema=DeleteConnectionArgs)
-    # def delete_bidirectional_connection_in_simulation(self, scenario_id: str, direction: Direction) -> str: ...
+    @tool(args_schema=GetNeighborsAtDistanceArgs)
+    def get_neighbors_at_distance(self, start_scenario_id: str, max_distance: int) -> str:
+        """(QUERY tool) Retrieves scenarios within N hops from a starting scenario, including connection details. Use this to understand spatial composition of a zone"""
+        args_model = GetNeighborsAtDistanceArgs(start_scenario_id=start_scenario_id, max_distance=max_distance)
+        if start_scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("get_neighbors_at_distance", args_model, False, f"Error: Start scenario ID '{start_scenario_id}' not found.")
+
+        output_lines = [f"Neighbors of '{self.simulated_scenarios[start_scenario_id].name}' (ID: {start_scenario_id}) up to distance {max_distance}:"]
+        # BFS: (scenario_id, current_distance, path_description_list)
+        queue: List[Tuple[str, int, List[str]]] = [(start_scenario_id, 0, [])]
+        # Visited format: {scenario_id: distance_found_at} to find shortest paths
+        visited_at_dist: Dict[str, int] = {start_scenario_id: 0}
+        
+        results_by_distance: Dict[int, List[str]] = {dist: [] for dist in range(1, max_distance + 1)}
+
+        head = 0
+        while head < len(queue):
+            current_id, distance, _ = queue[head] # Path description not used in this version for simplicity of output
+            head += 1
+
+            if distance >= max_distance: continue
+
+            current_scenario = self.simulated_scenarios.get(current_id)
+            if not current_scenario or not current_scenario.exits: continue
+
+            for direction, exit_info in current_scenario.exits.items():
+                if exit_info and exit_info.target_scenario_id in self.simulated_scenarios:
+                    neighbor_id = exit_info.target_scenario_id
+                    # Process if not visited, or found via a shorter/equal path to add all connections at this distance
+                    if neighbor_id not in visited_at_dist or visited_at_dist[neighbor_id] >= distance + 1 :
+                        if neighbor_id not in visited_at_dist : # Add to queue only if truly new or shorter path (for BFS structure)
+                             visited_at_dist[neighbor_id] = distance + 1
+                             if distance + 1 < max_distance : # Only add to queue if we need to explore further from it
+                                queue.append((neighbor_id, distance + 1, []))
+                        
+                        if visited_at_dist[neighbor_id] == distance + 1: # ensure we only list it once per distance level from different paths
+                            neighbor_scenario = self.simulated_scenarios[neighbor_id]
+                            connection_desc = f"from '{current_scenario.name}' (ID: {current_id}) via '{direction}' (type: {exit_info.connection_type})"
+                            entry_str = f"- '{neighbor_scenario.name}' (ID: {neighbor_id}, Type: {neighbor_scenario.type}) reached {connection_desc}."
+                            if entry_str not in results_by_distance[distance + 1]: # Avoid duplicate entries if multiple paths lead at same shortest distance
+                                results_by_distance[distance + 1].append(entry_str)
+        
+        has_results = False
+        for dist_level in range(1, max_distance + 1):
+            if results_by_distance[dist_level]:
+                has_results = True
+                output_lines.append(f"Distance {dist_level}:")
+                output_lines.extend(sorted(results_by_distance[dist_level]))
+        
+        if not has_results:
+            output_lines.append("(No new neighbors found within the specified distance via explored paths).")
+
+        return self._log_and_summarize("get_neighbors_at_distance", args_model, True, "\n".join(output_lines))
+
+
 
     @tool(args_schema=FinalizeSimulationArgs)
     def finalize_simulation_and_provide_map(self, justification: str) -> Dict[str, Any]:
