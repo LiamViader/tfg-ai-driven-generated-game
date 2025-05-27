@@ -23,6 +23,7 @@ You have access to the following tools: `{tool_names}`. Each comes with a detail
 2. **ACT:** Choose the appropriate tool and call it using the correct arguments as defined in its schema.
     - If you need more information about the current state of the map to make an informed decision, USE QUERY TOOLS.
     - If you have sufficient information, select the appropriate MODIFICATION tool and apply it.
+    - Before modifying or deleting a scenario or a bidirectional connection, if you're unsure about its details or connections, first use a query to get its details.
 3. **OBSERVE:** You will receive a result from the tool. This result will indicate whether the operation succeeded and, crucially, provide an updated summary of the simulated map state. Use this information in your next reasoning step.
     - If you called a query tool, the observation will contain the requested information.
     - If you called a modification tool, the observation will describe the outcome and summarize the impact. **If you need more detail after a modification, use query tools.**

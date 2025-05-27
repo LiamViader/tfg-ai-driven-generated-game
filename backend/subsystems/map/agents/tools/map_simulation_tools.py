@@ -22,6 +22,7 @@ class CreateScenarioArgs(BaseModel):
     narrative_context: str = PydanticField(..., description=SCENARIO_FIELDS["narrative_context"])
     indoor_or_outdoor: Literal["indoor", "outdoor"] = PydanticField(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
     type: str = PydanticField(..., description=SCENARIO_FIELDS["type"])
+    zone: str = PydanticField(..., description=SCENARIO_FIELDS["zone"])
 
 class ModifyScenarioArgs(BaseModel):
     scenario_id: str = PydanticField(..., description="ID of the scenario to modify.")
@@ -31,6 +32,7 @@ class ModifyScenarioArgs(BaseModel):
     new_narrative_context: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["narrative_context"])
     new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = PydanticField(None, description=SCENARIO_FIELDS["indoor_or_outdoor"])
     new_type: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["type"])
+    new_zone: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["zone"])
 
 class DeleteScenarioArgs(BaseModel):
     scenario_id: str = PydanticField(..., description="ID of the scenario to delete.")
@@ -66,6 +68,27 @@ class GetNeighborsAtDistanceArgs(BaseModel):
     start_scenario_id: str = PydanticField(..., description="ID of the scenario from which to start the search.")
     max_distance: int = PydanticField(..., description="Maximum distance (number of hops) to explore. Recommended 2-3.", ge=1, le=4)
 
+class ListScenariosClusterSummaryArgs(BaseModel):
+    list_all_scenarios_in_each_cluster: bool = PydanticField(
+        default=False,  # Default gives a summary
+        description="If True, lists all scenarios (ID and name) in each cluster. If False (default), shows a limited preview per cluster."
+    )
+    max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = PydanticField(
+        default=5,
+        description="Max number of scenarios to show per cluster when not listing all. Ignored if 'list_all_scenarios_in_each_cluster' is True."
+    )
+
+class FindScenariosArgs(BaseModel):
+    attribute_to_filter: Literal["type", "zone", "name_contains", "indoor_or_outdoor"] = PydanticField(..., description="Attribute to filter by.")
+    value_to_match: str = PydanticField(..., description="Value the attribute should match or contain.")
+    max_results: Optional[int] = PydanticField(5, description="Maximum number of matching scenarios to return.")
+
+class GetBidirectionalConnectionDetailsArgs(BaseModel):
+    from_scenario_id: str = PydanticField(..., description="ID of the scenario from which the exit originates.")
+    direction: Direction = PydanticField(..., description="Direction of the exit whose details are requested.")
+
+class GetAvailableExitsArgs(BaseModel):
+    scenario_id: str = PydanticField(..., description="ID of the scenario to check for available exit directions.")
 
 # Finalize
 
@@ -122,15 +145,39 @@ class SimulatedMapExecutionTools:
 
         return clusters
 
-    def _format_cluster_summary(self) -> str:
-        summary = f"The map has {len(self.island_clusters)} clusters:\n"
-        for i, cluster in enumerate(self.island_clusters, 1):
-            scenario_list = []
-            for scenario_id in sorted(cluster):
-                scenario = self.simulated_scenarios.get(scenario_id)
-                if scenario:
-                    scenario_list.append(f'"id": {scenario_id}, "name": {scenario.name}')
-            summary += f"- Cluster {i}: {', '.join(scenario_list)}\n"
+    def _format_cluster_summary(self, list_all_scenarios: bool, max_listed_per_cluster: Optional[int] = 5) -> str:
+        """
+        Generates a formatted string summarizing connectivity clusters.
+        Lists all scenarios (ID and name) per cluster if list_all_scenarios is True.
+        Otherwise, lists up to 'max_listed_per_cluster' scenarios per cluster.
+        """
+        if not self.island_clusters:
+            return "The simulated map currently has 0 scenarios."
+        
+        summary = f"The simulated map has {len(self.simulated_scenarios)} scenarios and {len(self.island_clusters)} cluster(s) of scenarios:\n"
+        for i, cluster_set in enumerate(self.island_clusters, 1):
+            cluster_list_sorted = sorted(list(cluster_set)) 
+            
+            scenario_strings = []
+            num_to_display = len(cluster_list_sorted) if list_all_scenarios else (max_listed_per_cluster or len(cluster_list_sorted))
+
+            for k, scenario_id in enumerate(cluster_list_sorted):
+                if k < num_to_display:
+                    scenario = self.simulated_scenarios.get(scenario_id)
+                    if scenario:
+                        scenario_strings.append(f'"{scenario.name}" (ID: {scenario.id})')
+                else:
+                    break
+            
+            summary_line = f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios): "
+            if scenario_strings:
+                summary_line += ", ".join(scenario_strings)
+                if not list_all_scenarios and len(cluster_list_sorted) > num_to_display:
+                    summary_line += f", ...and {len(cluster_list_sorted) - num_to_display} more."
+            else:
+                summary_line += "(No scenarios found for this cluster - this might indicate an issue)."
+
+            summary += summary_line + "\n"
         return summary.strip()
 
     def _log_and_summarize(self, tool_name: str, args: BaseModel, success: bool, message: str) -> str:
@@ -153,7 +200,8 @@ class SimulatedMapExecutionTools:
         visual_description: str, 
         summary_description: str, 
         indoor_or_outdoor: Literal["indoor", "outdoor"],
-        type: str
+        type: str,
+        zone: str
     ) -> str:
         
         """Creates a new scenario in the simulated map."""
@@ -164,7 +212,8 @@ class SimulatedMapExecutionTools:
             visual_description=visual_description,
             narrative_context=narrative_context,
             indoor_or_outdoor=indoor_or_outdoor,
-            type=type
+            type=type,
+            zone=zone
         )
 
         try:
@@ -176,6 +225,7 @@ class SimulatedMapExecutionTools:
                 "narrative_context": narrative_context,
                 "indoor_or_outdoor": indoor_or_outdoor,
                 "type": type,
+                "zone": zone,
                 "exits": {}
             }
             new_scenario = ScenarioModel(**new_scenario_data)  # Pydantic validation
@@ -194,7 +244,8 @@ class SimulatedMapExecutionTools:
         new_visual_description: Optional[str] = None,
         new_narrative_context: Optional[str] = None,
         new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = None,
-        new_type: Optional[str] = None
+        new_type: Optional[str] = None,
+        new_zone: Optional[str] = None,
     ) -> str:
         """Modifies the specified scenario. Only the provided fields will be updated."""
         args_model = ModifyScenarioArgs(
@@ -204,7 +255,8 @@ class SimulatedMapExecutionTools:
             new_visual_description=new_visual_description,
             new_narrative_context=new_narrative_context,
             new_indoor_or_outdoor=new_indoor_or_outdoor,
-            new_type=new_type
+            new_type=new_type,
+            new_zone=new_zone
         )
 
         if scenario_id not in self.simulated_scenarios:
@@ -220,6 +272,7 @@ class SimulatedMapExecutionTools:
         if new_narrative_context is not None: scenario.narrative_context = new_narrative_context; updated_fields.append("narrative_context")
         if new_indoor_or_outdoor is not None: scenario.indoor_or_outdoor = new_indoor_or_outdoor; updated_fields.append("indoor_or_outdoor")
         if new_type is not None: scenario.type = new_type; updated_fields.append("type")
+        if new_zone is not None: scenario.zone = new_zone; updated_fields.append("zone")
 
         return self._log_and_summarize("modify_scenario_in_simulation", args_model, True, f"Scenario '{scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}.")
     
@@ -411,6 +464,7 @@ class SimulatedMapExecutionTools:
         details_str = f"Details for Scenario ID: {scenario.id}:\n"
         details_str += f"  Name: {scenario.name}\n"
         details_str += f"  Type: {scenario.type}\n"
+        details_str += f"  Zone: {scenario.zone}\n"
         details_str += f"  Indoor or outdoor: {scenario.indoor_or_outdoor}\n"
         details_str += f"  Summary Description: {scenario.summary_description}\n"
         details_str += f"  Visual Description: {scenario.visual_description}\n"
@@ -419,7 +473,7 @@ class SimulatedMapExecutionTools:
         if any(exit_info for exit_info in scenario.exits.values()):
             for direction, exit_info in scenario.exits.items():
                 if exit_info:
-                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
+                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Exit type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
                 else:
                     details_str += f"    - {direction}: (None)\n"
         else:
@@ -463,8 +517,8 @@ class SimulatedMapExecutionTools:
                         
                         if visited_at_dist[neighbor_id] == distance + 1: # ensure we only list it once per distance level from different paths
                             neighbor_scenario = self.simulated_scenarios[neighbor_id]
-                            connection_desc = f"from '{current_scenario.name}' (ID: {current_id}) via '{direction}' (type: {exit_info.connection_type})"
-                            entry_str = f"- '{neighbor_scenario.name}' (ID: {neighbor_id}, Type: {neighbor_scenario.type}) reached {connection_desc}."
+                            connection_desc = f"from '{current_scenario.name}' (ID: {current_id}) via '{direction}' (exit type: {exit_info.connection_type})"
+                            entry_str = f"- '{neighbor_scenario.name}' (ID: {neighbor_id}, Type: {neighbor_scenario.type}, Zone: {neighbor_scenario.zone}) reached {connection_desc}."
                             if entry_str not in results_by_distance[distance + 1]: # Avoid duplicate entries if multiple paths lead at same shortest distance
                                 results_by_distance[distance + 1].append(entry_str)
         
@@ -480,12 +534,111 @@ class SimulatedMapExecutionTools:
 
         return self._log_and_summarize("get_neighbors_at_distance", args_model, True, "\n".join(output_lines))
 
+    @tool(args_schema=ListScenariosClusterSummaryArgs)
+    def list_scenarios_summary_per_cluster(self, list_all_scenarios_in_each_cluster: bool = False, max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = 5) -> str:
+        """
+        (QUERY tool) Summarizes scenario connectivity clusters in the map. A cluster is a group of interconnected scenarios. Lists scenario IDs and names per cluster, either all or a limited sample. Use this tool to list scenarios.
+        """
+        args_model = ListScenariosClusterSummaryArgs(
+            list_all_scenarios_in_each_cluster=list_all_scenarios_in_each_cluster,
+            max_scenarios_to_list_per_cluster_if_not_all=max_scenarios_to_list_per_cluster_if_not_all
+        )
 
+        if not self.simulated_scenarios:
+            return self._log_and_summarize("list_scenarios_summary_per_cluster", args_model, True, "The simulated map is currently empty. No clusters to display.")
+        
+        summary_text = self._format_cluster_summary(
+            list_all_scenarios=list_all_scenarios_in_each_cluster,
+            max_listed_per_cluster=max_scenarios_to_list_per_cluster_if_not_all
+        )
+        
+        return self._log_and_summarize("list_scenarios_summary_per_cluster", args_model, True, f"Current map connectivity cluster summary:\n{summary_text}")
+
+    @tool(args_schema=FindScenariosArgs)
+    def find_scenarios_by_attribute(
+        self, attribute_to_filter: Literal["type", "name_contains", "zone", "indoor_or_outdoor"], 
+        value_to_match: str, 
+        max_results: Optional[int] = 5
+    ) -> str:
+        """(QUERY tool) Finds scenarios matching a given attribute and value. Case-insensitive for 'name_contains'."""
+        args_model = FindScenariosArgs(attribute_to_filter=attribute_to_filter, value_to_match=value_to_match, max_results=max_results)
+        matches = []
+        value_to_match_lower = value_to_match.lower()
+
+        for scenario in self.simulated_scenarios.values():
+            if len(matches) >= (max_results or 5): break
+
+            if attribute_to_filter == "type" and getattr(scenario, 'type', '').lower() == value_to_match_lower:
+                matches.append(f'- ID: {scenario.id}, Name: "{scenario.name}", Type: {scenario.type}')
+            elif attribute_to_filter == "indoor_or_outdoor" and getattr(scenario, 'indoor_or_outdoor', '').lower() == value_to_match_lower:
+                matches.append(f'- ID: {scenario.id}, Name: "{scenario.name}", {scenario.indoor_or_outdoor}')
+            elif attribute_to_filter == "name_contains" and value_to_match_lower in scenario.name.lower():
+                matches.append(f'- ID: {scenario.id}, Name: "{scenario.name}"')
+            elif attribute_to_filter == "zone" and getattr(scenario, 'zone', '').lower() == value_to_match_lower:
+                matches.append(f'- ID: {scenario.id}, Name: "{scenario.name}", Zone: "{scenario.zone}"')
+        
+        if not matches:
+            return self._log_and_summarize("find_scenarios_by_attribute", args_model, True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'.")
+        
+        return self._log_and_summarize("find_scenarios_by_attribute", args_model, True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches))
+
+    @tool(args_schema=GetBidirectionalConnectionDetailsArgs)
+    def get_connection_details(self, from_scenario_id: str, direction: Direction) -> str:
+        """
+        (QUERY tool) Retrieves details for a specific exit from a given scenario. This includes connection type, travel description, and traversal conditions.
+        """
+        args_model = GetBidirectionalConnectionDetailsArgs(from_scenario_id=from_scenario_id, direction=direction)
+
+        if from_scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("get_connection_details", args_model, False, f"Error: Scenario ID '{from_scenario_id}' not found.")
+
+        scenario = self.simulated_scenarios[from_scenario_id]
+        exit_info = scenario.exits.get(direction)
+
+        if not exit_info:
+            return self._log_and_summarize("get_connection_details", args_model, True, f"Scenario '{from_scenario_id}' has no exit defined in the direction '{direction.value}'.")
+
+        details_str = (
+            f"Details for exit from '{from_scenario_id}' towards '{direction}':\n"
+            f"  - Leads to Scenario ID: {exit_info.target_scenario_id}\n"
+            f"  - Connection Type: {exit_info.connection_type}\n"
+            f"  - Travel Description: {exit_info.travel_description or 'N/A'}\n"
+            f"  - Traversal Conditions: {', '.join(exit_info.traversal_conditions) if exit_info.traversal_conditions else 'None'}"
+        )
+        return self._log_and_summarize("get_connection_details", args_model, True, details_str)
+
+    @tool(args_schema=GetAvailableExitsArgs)
+    def get_available_exit_directions(self, scenario_id: str) -> str:
+        """
+        (QUERY tool) Lists all cardinal directions from a given scenario that do NOT currently have an exit defined. Useful for finding where new connections can be added from this scenario.
+        """
+        args_model = GetAvailableExitsArgs(scenario_id=scenario_id)
+        if scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("get_available_exit_directions", args_model, False, f"Error: Scenario ID '{scenario_id}' not found.")
+
+        scenario = self.simulated_scenarios[scenario_id]
+        available_directions = [
+            direction for direction in Direction.__args__ # type: ignore
+            if scenario.exits.get(direction) is None
+        ]
+
+        if not available_directions:
+            message = f"Scenario '{scenario.name}' (ID: {scenario_id}) has no available (empty) exit directions; all directions are occupied or it has no exit slots."
+        else:
+            message = f"Available (empty) exit directions for scenario '{scenario.name}' (ID: {scenario_id}): {', '.join(available_directions)}."
+
+        return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 
     @tool(args_schema=FinalizeSimulationArgs)
     def finalize_simulation_and_provide_map(self, justification: str) -> Dict[str, Any]:
-        """Llama a esta herramienta ÚNICAMENTE cuando el mapa simulado cumple el objetivo."""
-        # ... (igual que antes)
+        """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
+        self._compute_island_clusters()
+        # Log this specific call type
+        args_model = FinalizeSimulationArgs(justification=justification)
+        self.applied_operations_log.append({
+            "tool_called": "finalize_simulation_and_provide_map", "args": args_model.model_dump(),
+            "success": True, "message": "Simulation finalized."
+        })
         return {
             "final_simulated_map_scenarios": {sid: scenario.model_dump() for sid, scenario in self.simulated_scenarios.items()},
             "final_justification": justification,
@@ -500,5 +653,11 @@ class SimulatedMapExecutionTools:
             self.create_bidirectional_connection,
             self.modify_bidirectional_connection,
             self.delete_bidirectional_connection,
+            self.get_scenario_details,
+            self.get_neighbors_at_distance,
+            self.list_scenarios_summary_per_cluster,
+            self.find_scenarios_by_attribute,
+            self.get_connection_details,
+            self.get_available_exit_directions,
             self.finalize_simulation_and_provide_map
         ]
