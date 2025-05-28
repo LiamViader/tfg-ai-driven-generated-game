@@ -1,14 +1,14 @@
-from typing import Dict, List, Optional, Literal, Any, Tuple
+from typing import Dict, List, Optional, Literal, Any, Tuple, Set
 from pydantic import BaseModel, Field
 from .descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 
 
 class ExitInfo(BaseModel):
-    target_scenario_id: str
+    target_scenario_id: str = Field(..., description="Unique identifier of the target scenario the exit points to.")
     connection_type: str = Field(..., description=EXIT_FIELDS["connection_type"])
-    travel_description: Optional[str] = Field(None, description=EXIT_FIELDS["travel_description"])
+    travel_description: Optional[str] = Field(default=None, description=EXIT_FIELDS["travel_description"])
     traversal_conditions: List[str] = Field(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
-    is_blocked: bool = Field(False, description=EXIT_FIELDS["is_blocked"])
+    is_blocked: bool = Field(default=False, description=EXIT_FIELDS["is_blocked"])
 
 Direction = Literal["north", "south", "east", "west"]
 OppositeDirections: Dict[Direction, Direction] = {
@@ -32,3 +32,4 @@ class ScenarioModel(BaseModel):
         default_factory=lambda: {direction: None for direction in Direction.__args__},
         description="Connections from this scenario to others, by direction."
     )
+

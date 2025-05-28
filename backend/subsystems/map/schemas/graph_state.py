@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 # El '.' significa "desde el directori actual (schemas)"
 from .map_elements import ScenarioModel, Direction, OppositeDirections
+from simulated_map import SimulatedMapModel
 
 class MapGraphState(BaseModel):
     # Context and objectives
@@ -15,6 +16,7 @@ class MapGraphState(BaseModel):
     scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="All scenarios in the map, keyed by their unique ID.")
 
     # --- Memoria de Trabajo del Agente Razonador ---
+    working_simulated_map: SimulatedMapModel = Field(default_factory=SimulatedMapModel, description="Represents the current working state of the simulated map being built or modified during the session. Serves as the agent's active memory of the map.")
     proposed_plan: Optional[List[Dict]] = Field(None, description="The sequence of map operations proposed by the reasoning agent.") # Each dict is a MapOperation
     plan_justification: Optional[str] = Field(None, description="The reasoning agent's justification for the proposed plan.")
     validation_feedback: Optional[str] = Field(None, description="Feedback from the validation agent regarding the last proposed plan.")

@@ -1,8 +1,9 @@
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
+from copy import deepcopy
 
 from ..schemas.graph_state import MapGraphState
-from ..schemas.map_elements import ScenarioModel
+from ..schemas.map_elements import ScenarioModel, SimulatedMapModel
 
 
 BASE_RULES_AND_CONSTRAINTS = [
@@ -24,6 +25,12 @@ def receive_objective_node(initial_input: GraphInitialInput) -> MapGraphState:
     Takes the initial input and constructs de the MapGraphState object.
     """
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
+
+    initial_working_simulated_map = SimulatedMapModel(
+        simulated_scenarios=deepcopy(initial_input.initial_scenarios),
+    )
+
+    
 
     state = MapGraphState(
         global_narrative_context=initial_input.global_narrative_context,
