@@ -13,7 +13,6 @@ from subsystems.map.schemas.simulated_map import *
 
 @tool(args_schema=CreateScenarioArgs)
 def create_scenario(
-    self, 
     name: str, 
     narrative_context: str, 
     visual_description: str, 
@@ -24,7 +23,6 @@ def create_scenario(
     simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 ) -> str:
     """Creates a new scenario in the simulated map."""
-    effective_id = self.generate_sequential_scene_id(list(self.simulated_scenarios.keys()))
     args_model = CreateScenarioArgs(
         name=name,
         summary_description=summary_description,

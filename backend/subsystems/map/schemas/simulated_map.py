@@ -95,12 +95,12 @@ class FinalizeSimulationArgs(BaseModel): # Esta se mantiene igual
 class SimulatedMapModel(BaseModel):
     simulated_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Represents the current state of all scenarios in the simulated map.")
     applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, including 'tool_called', 'args', 'success', 'message'.")
-    _island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
+    island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
     
     #S'executa just després de validar i crear-se l'instancia
     @model_validator(mode="after")
     def compute_clusters_on_init(self) -> 'SimulatedMapModel':
-        self.island_clusters = self._compute_island_clusters()
+        self._compute_island_clusters()
         return self
 
     @staticmethod
@@ -120,11 +120,10 @@ class SimulatedMapModel(BaseModel):
 
         return f"scene_{next_number:03d}"
 
-    def _compute_island_clusters(self) -> List[Set[str]]:
+    def _compute_island_clusters(self):
         "Computes the clusters formed by scenarios in the map"
         visited = set()
         clusters = []
-
         for scenario_id in self.simulated_scenarios:
             if scenario_id not in visited:
                 cluster = set()
@@ -142,8 +141,7 @@ class SimulatedMapModel(BaseModel):
                         ]
                         to_visit.extend([sid for sid in connected_ids if sid not in visited])
                 clusters.append(cluster)
-
-        return clusters
+        self.island_clusters=clusters
 
     def _format_cluster_summary(self, list_all_scenarios: bool, max_listed_per_cluster: Optional[int] = 5) -> str:
         """
@@ -189,7 +187,7 @@ class SimulatedMapModel(BaseModel):
             "message": message
         })
         
-        observation = f"Result of '{tool_name}': {message}. "
+        observation = f"Result of '{tool_name}': {message}"
         return observation
 
     def create_scenario(self, args_model: CreateScenarioArgs) -> str:
@@ -251,7 +249,7 @@ class SimulatedMapModel(BaseModel):
         del self.simulated_scenarios[args_model.scenario_id]
 
         # Recompute island clusters
-        self.island_clusters = self._compute_island_clusters()
+        self._compute_island_clusters()
         
         return self._log_and_summarize("delete_scenario", args_model, True, f"Scenario '{args_model.scenario_id}' deleted successfully.")
 
@@ -296,7 +294,7 @@ class SimulatedMapModel(BaseModel):
         
         #recompute topology
         self._compute_island_clusters()
-        return self._log_and_summarize("create_bidirectional_connection", args_model, True, f"Connection '{args_model.connection_type}' created: '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) <-> '{args_model.to_scenario_id}' ({direction_to_origin}).")
+        return self._log_and_summarize("create_bidirectional_connection", args_model, True, f"Connection type'{args_model.connection_type}' created: '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) <-> '{args_model.to_scenario_id}' ({direction_to_origin}).")
 
 
     def delete_bidirectional_connection(self, args_model: DeleteBidirectionalConnectionArgs) -> str:
@@ -381,7 +379,8 @@ class SimulatedMapModel(BaseModel):
             return self._log_and_summarize("get_scenario_details", args_model, False, f"Error: Scenario ID '{args_model.scenario_id}' not found.")
         
         scenario = self.simulated_scenarios[args_model.scenario_id]
-        details_str = f"Details for Scenario ID: {scenario.id}:\n"
+        details_str = f"Details for Scenario: {scenario.id}:\n"
+        details_str += f"  ID: {scenario.id}\n"
         details_str += f"  Name: {scenario.name}\n"
         details_str += f"  Type: {scenario.type}\n"
         details_str += f"  Zone: {scenario.zone}\n"
@@ -389,11 +388,11 @@ class SimulatedMapModel(BaseModel):
         details_str += f"  Summary Description: {scenario.summary_description}\n"
         details_str += f"  Visual Description: {scenario.visual_description}\n"
         details_str += f"  Narrative Context: {scenario.narrative_context}\n"
-        details_str +=  "  Exits:\n"
+        details_str +=  "  Connections:\n"
         if any(exit_info for exit_info in scenario.exits.values()):
             for direction, exit_info in scenario.exits.items():
                 if exit_info:
-                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Exit type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
+                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Connection type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
                 else:
                     details_str += f"    - {direction}: (None)\n"
         else:
