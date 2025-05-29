@@ -1,7 +1,5 @@
 from typing import Dict, List, Any, Optional, Literal, Set, Tuple
 from pydantic import BaseModel, model_validator, Field as PydanticField
-from langchain_core.tools import tool
-from copy import deepcopy
 from subsystems.map.schemas.descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 import re
 
@@ -38,7 +36,8 @@ class CreateBidirectionalConnectionArgs(BaseModel):
     to_scenario_id: str = PydanticField(..., description="ID of the destination scenario.")
     connection_type: str = PydanticField(..., description=EXIT_FIELDS["connection_type"])
     travel_description: Optional[str] = PydanticField(None, description=EXIT_FIELDS["travel_description"])
-    traversal_conditions: List[str] = PydanticField(default_factory=list, description=EXIT_FIELDS["traversal_conditions"]) 
+    traversal_conditions: List[str] = PydanticField(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
+    
 
 class DeleteBidirectionalConnectionArgs(BaseModel):
     scenario_id_A: str = PydanticField(..., description="ID of the first scenario in the connection.")
@@ -96,7 +95,8 @@ class SimulatedMapModel(BaseModel):
     simulated_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Represents the current state of all scenarios in the simulated map.")
     applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, including 'tool_called', 'args', 'success', 'message'.")
     island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
-    
+    task_finalized_by_agent: bool = PydanticField(default=False,description="A flag indicating whether the task was finalized by the agent")
+
     #S'executa just després de validar i crear-se l'instancia
     @model_validator(mode="after")
     def compute_clusters_on_init(self) -> 'SimulatedMapModel':
@@ -188,7 +188,11 @@ class SimulatedMapModel(BaseModel):
         })
         
         observation = f"Result of '{tool_name}': {message}"
+        print(observation)
         return observation
+
+    def get_summary_list(self)->str:
+        return self._format_cluster_summary(list_all_scenarios=False,max_listed_per_cluster=2)
 
     def create_scenario(self, args_model: CreateScenarioArgs) -> str:
         
@@ -539,10 +543,12 @@ class SimulatedMapModel(BaseModel):
             "tool_called": "finalize_simulation_and_provide_map", "args": args_model.model_dump(),
             "success": True, "message": "Simulation finalized."
         })
+        print("FINALIZEEEEED")
+        self.task_finalized_by_agent = True
         return {
             "final_simulated_map_scenarios": {sid: scenario.model_dump() for sid, scenario in self.simulated_scenarios.items()},
             "final_justification": args_model.justification,
-            "applied_operations_log": self.applied_operations_log
+            "applied_operations_log": self.applied_operations_log,
         }
 
 
