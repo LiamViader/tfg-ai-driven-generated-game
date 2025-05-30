@@ -223,7 +223,7 @@ def get_available_exit_directions(scenario_id: str, simulated_map_state: Annotat
     return simulated_map_state.get_available_exit_directions(args_model=args_model)
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
-def finalize_simulation(justification: str, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> Dict[str, Any]:
+def finalize_simulation(justification: str, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
     """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
     args_model = FinalizeSimulationArgs(justification=justification)
     return simulated_map_state.finalize_simulation_and_provide_map(args_model=args_model)

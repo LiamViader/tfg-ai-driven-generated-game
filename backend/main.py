@@ -8,11 +8,13 @@ from utils.visualize_graph import visualize_map_graph
 if __name__ == '__main__':
     state = MapGraphState(
         global_narrative_context="lord of the rings",
-        map_rules_and_constraints=["Every scenario must be connected to at least 1 other scenario.","Some scenarios must be connected to more than 2 other scenarios", "Spatial arrangement should make sense on a narrative and logical aspect, arrangement should be provokefull", "When traveling long or medium distances between 2 scenarios, they should be connected by an intermidiate scenario that works as a path (road, path, valley, etc)"],
-        current_objective="Create an interesting map of 7-9 scenarios for the narrative context. There shoould only be 1 cluster when finalized. make sure that any interior scenarios can be accessed through their corresponding exterior scenario, you can make a fully interior zone if needed. Some scenarios must have more than 2 connections. Some connection should have a condition to travel through, lore accurate",
+        map_rules_and_constraints=["Every scenario must be connected to at least 1 other scenario.","Some scenarios must be connected to more than 2 other scenarios", "Spatial arrangement should make sense on a narrative and logical aspect, arrangement should be provokefull", "When traveling long or medium narrative distances between 2 scenarios, they should be connected by an intermidiate scenario that works as a path (road, path, valley, etc)"],
+        current_objective="Create an interesting map of 7-9 scenarios for the narrative context. There shoould only be 1 cluster when finalized. ",
+        other_guidelines="Make sure that any interior scenarios can be accessed through their corresponding exterior scenario, you can make a fully interior zone if needed. Some connection should have a condition to travel through, lore accurate",
         requesting_agent_id= None,
         previous_feedback="",
         max_executor_iterations=20,
+        max_validation_iterations=5
     )
     print("--- INVOKE ---")
     map_generation_app=get_map_graph_app()

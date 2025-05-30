@@ -15,7 +15,8 @@ class MapGraphState(BaseModel):
     # Context and objectives
     global_narrative_context: str = Field(..., description="Narrative background and context of the world—its lore, themes, key story elements, etc—that must be considered while solving the objective.")
     map_rules_and_constraints: List[str] = Field(..., description="Explicit world-building rules or design constraints that must be respected when constructing or validating the map. These can include logical requirements (e.g., 'an exterior scenario connected to an interior one must feature a visible transition like a door or gate') or aesthetic guidelines that ensure internal consistency and visual coherence across the world.")
-    current_objective: str = Field(..., description="The high-level textual goal for the current map generation/modification task.")
+    current_objective: str = Field(..., description="The high-level textual goal for the current map generation/modification task. Would be used for the validation agent too.")
+    other_guidelines: str = Field(..., description="Other guidelines for the map generation that should be met. Less strict than current objective. Will not be used by validation agent")
     requesting_agent_id: Optional[str] = Field(None, description="ID of the game agent requesting a change (if applicable).")
     initial_map_summary: str = Field(default="", description="Initial summary of the map when starting the workflow")
 
@@ -35,6 +36,7 @@ class MapGraphState(BaseModel):
     # --- Logs and flux control ---
     history_log: List[str] = Field(default_factory=list, description="A log of objectives, plans, validations, and outcomes for debugging and tracing.")
     previous_feedback: str = Field(..., description="Feedback from last retry")
+    max_retries: int = Field(default=1, description="Max retries of the whole process if validation fails")
 
     @staticmethod
     def get_opposite_direction(direction: Direction) -> Direction:

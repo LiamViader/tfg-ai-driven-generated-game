@@ -39,6 +39,7 @@ def map_reason_node(state: MapGraphState):
         initial_map_summary=state.initial_map_summary,
         previous_feedback=state.previous_feedback,
         objective=state.current_objective,
+        other_guidelines=state.other_guidelines,
         messages=get_valid_messages_window(state.messages,30)
     )
     state.current_executor_iteration+=1

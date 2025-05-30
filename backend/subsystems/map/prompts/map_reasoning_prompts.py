@@ -44,7 +44,7 @@ Remember to think step by step. Your goal is to build a high-quality, logical, a
 """
 
 REACT_PLANNER_HUMAN_PROMPT_TEMPLATE_STRING = """
-Your objective is: {objective}.\n Here is an initial summary of the map: {initial_map_summary}.
+Your NON-NEGOTIABLE objective is: {objective}.\nHere are some less strict guidelines that should also be satisfied: {other_guidelines}.\nHere is an initial summary of the map: {initial_map_summary}.
 """
 
 REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(
@@ -57,13 +57,14 @@ chat_prompt_template = ChatPromptTemplate([
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, previous_feedback: str, objective: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
+def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, previous_feedback: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
     prompt_input_values = {
         "global_narrative_context": narrative_context,
         "map_rules_and_constraints": ", ".join(map_rules_and_constraints),
         "initial_map_summary": initial_map_summary,
         "previous_feedback": previous_feedback,
         "objective": objective,
+        "other_guidelines": other_guidelines,
         "agent_scratchpad": messages
     }
 

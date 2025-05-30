@@ -98,9 +98,14 @@ class SimulatedMapModel(BaseModel):
     simulated_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Represents the current state of all scenarios in the simulated map.")
     applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, including 'tool_called', 'args', 'success', 'message'.")
     island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
-    task_finalized_by_agent: bool = PydanticField(default=False,description="A flag indicating whether the task was finalized by the agent")
-    agent_validation_conclusion_flag: bool = PydanticField(default=False,description="A flag indicating whether the validation agent said the map met all criteria")
     deleted_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Stores the scenarios that were deleted.")
+
+    task_finalized_by_agent: bool = PydanticField(default=False,description="A flag indicating whether the task was finalized by the agent")
+    task_finalized_justification: Optional[str] = PydanticField(default=None,description="A string of the justification provided by the agent who finalized the map")
+
+    agent_validation_conclusion_flag: bool = PydanticField(default=False,description="A flag indicating whether the validation agent said the map met all criteria")
+    agent_validation_assessment_reasoning: str = PydanticField(default="", description="Reasoning from agent of why the validation he gave.")
+    agent_validation_suggested_improvements: str = PydanticField(default="", description="Suggested improvements if the validation agent said map didnt meet criteria.")
 
     #S'executa just després de validar i crear-se l'instancia
     @model_validator(mode="after")
@@ -549,20 +554,20 @@ class SimulatedMapModel(BaseModel):
 
         return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 
-    def finalize_simulation_and_provide_map(self, args_model: FinalizeSimulationArgs) -> Dict[str, Any]:
+    def finalize_simulation_and_provide_map(self, args_model: FinalizeSimulationArgs) -> str:
         """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
         self._compute_island_clusters()
         # Log this specific call type
-        self.applied_operations_log.append({
-            "tool_called": "finalize_simulation_and_provide_map", "args": args_model.model_dump(),
-            "success": True, "message": "Simulation finalized."
-        })
-        print("FINALIZEEEEED")
         self.task_finalized_by_agent = True
-        return {
-            "final_justification": args_model.justification,
-        }
+        self.task_finalized_justification = args_model.justification
+        return self._log_and_summarize("finalize_simulation_and_provide_map", args_model, True, "Simulation finalized.")
 
     def validate_simulated_map(self, args_model:ValidateSimulationMapArgs) -> str:
         self.agent_validation_conclusion_flag = args_model.does_map_meet_criteria
-        return ""
+        self.agent_validation_assessment_reasoning = args_model.assessment_reasoning
+        if args_model.suggested_improvements:
+            self.agent_validation_suggested_improvements = args_model.suggested_improvements
+        if self.agent_validation_conclusion_flag:
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated map meets all criteria. Reason {args_model.assessment_reasoning}" )
+        else:
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated doesn't meet all criteria. Reason {args_model.assessment_reasoning}. Suggestions {self.agent_validation_suggested_improvements}" )
