@@ -8,8 +8,8 @@ def iteration_limit_exceeded_or_agent_finalized(state: MapGraphState) -> str:
     Determines whether to continue to the reasoning node or end the process
     based on the iteration count and task completion (agent called finalize_task).
     """
-    current_iteration = state.current_iteration
-    max_iterations = state.max_iterations
+    current_iteration = state.current_executor_iteration
+    max_iterations = state.max_executor_iterations
     if state.working_simulated_map.task_finalized_by_agent or current_iteration >= max_iterations:
         return "finalize"
     else:

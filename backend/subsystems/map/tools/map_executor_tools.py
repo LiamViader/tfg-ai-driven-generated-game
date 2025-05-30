@@ -50,6 +50,8 @@ class ToolGetAvailableExitsArgs(GetAvailableExitsArgs):
 class ToolFinalizeSimulationArgs(FinalizeSimulationArgs):
     simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
+class ToolValidateSimulatedMapArgs(ValidateSimulationMapArgs):
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 # --- Tools ---
 
@@ -144,8 +146,7 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
     return simulated_map_state.delete_bidirectional_connection(args_model=args_model)
 
 @tool(args_schema=ToolModifyBidirectionalConnectionArgs)
-def modify_bidirectional_connection(
-    self, 
+def modify_bidirectional_connection( 
     from_scenario_id: str, 
     direction_from_origin: Direction,
     new_connection_type: Optional[str] = None,
@@ -227,6 +228,15 @@ def finalize_simulation(justification: str, simulated_map_state: Annotated[Simul
     args_model = FinalizeSimulationArgs(justification=justification)
     return simulated_map_state.finalize_simulation_and_provide_map(args_model=args_model)
 
+@tool(args_schema=ToolValidateSimulatedMapArgs)
+def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str], simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
+    """Validates the simulated_map_state. Call it when you are sure that the map either meets all criteria, or that it does not"""
+    args_model = ValidateSimulationMapArgs(
+        does_map_meet_criteria=does_map_meet_criteria,
+        assessment_reasoning=assessment_reasoning,
+        suggested_improvements=suggested_improvements
+    )
+    return simulated_map_state.validate_simulated_map(args_model=args_model)
 
 
 TOOLS = [
@@ -243,4 +253,12 @@ TOOLS = [
         get_connection_details,
         get_available_exit_directions,
         finalize_simulation
+]
+
+QUERYTOOLS = [
+        get_neighbors_at_distance,
+        list_scenarios_summary_per_cluster,
+        find_scenarios_by_attribute,
+        get_connection_details,
+        get_available_exit_directions,
 ]

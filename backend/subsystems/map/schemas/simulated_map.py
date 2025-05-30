@@ -84,11 +84,14 @@ class GetAvailableExitsArgs(BaseModel):
 
 # Finalize
 
-class FinalizeSimulationArgs(BaseModel): # Esta se mantiene igual
-    justification: str = PydanticField(..., description="Justificación de por qué el mapa simulado cumple el objetivo final.")
+class FinalizeSimulationArgs(BaseModel): 
+    justification: str = PydanticField(..., description="Justification of why the simulated map meets all criteria.")
 
-
-
+# Validate
+class ValidateSimulationMapArgs(BaseModel):
+    does_map_meet_criteria: bool = PydanticField(..., description="Your assessment: set to True if you believe the map successfully meets all current objectives and constraints; False otherwise.")
+    assessment_reasoning: str = PydanticField(..., description="Your concise justification explaining why the map meets (or fails to meet) the objectives and constraints.")
+    suggested_improvements: Optional[str] = PydanticField(default=None, description="If `does_map_meet_criteria` is False, provide specific, actionable suggestions on how the map can be modified or updated to meet the unmet criteria. If True, this field can be omitted.")
 
 
 class SimulatedMapModel(BaseModel):
@@ -96,6 +99,8 @@ class SimulatedMapModel(BaseModel):
     applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, including 'tool_called', 'args', 'success', 'message'.")
     island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
     task_finalized_by_agent: bool = PydanticField(default=False,description="A flag indicating whether the task was finalized by the agent")
+    agent_validation_conclusion_flag: bool = PydanticField(default=False,description="A flag indicating whether the validation agent said the map met all criteria")
+    deleted_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Stores the scenarios that were deleted.")
 
     #S'executa just després de validar i crear-se l'instancia
     @model_validator(mode="after")
@@ -195,7 +200,6 @@ class SimulatedMapModel(BaseModel):
         return self._format_cluster_summary(list_all_scenarios=False,max_listed_per_cluster=2)
 
     def create_scenario(self, args_model: CreateScenarioArgs) -> str:
-        
         """Creates a new scenario in the simulated map."""
         effective_id = self.generate_sequential_scene_id(list(self.simulated_scenarios.keys()))
 
@@ -235,7 +239,7 @@ class SimulatedMapModel(BaseModel):
         if args_model.new_indoor_or_outdoor is not None: scenario.indoor_or_outdoor = args_model.new_indoor_or_outdoor; updated_fields.append("indoor_or_outdoor")
         if args_model.new_type is not None: scenario.type = args_model.new_type; updated_fields.append("type")
         if args_model.new_zone is not None: scenario.zone = args_model.new_zone; updated_fields.append("zone")
-
+        scenario.was_modified_this_run = True
         return self._log_and_summarize("modify_scenario_in_simulation", args_model, True, f"Scenario '{args_model.scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}.")
     
     def delete_scenario(self, args_model: DeleteScenarioArgs) -> str:
@@ -249,6 +253,9 @@ class SimulatedMapModel(BaseModel):
                 if exit_info and exit_info.target_scenario_id == args_model.scenario_id:
                     other_scenario.exits[direction] = None
 
+        #if notadded this run, store that it was deleted
+        if not self.simulated_scenarios[args_model.scenario_id].was_added_this_run:
+            self.deleted_scenarios[args_model.scenario_id]=self.simulated_scenarios[args_model.scenario_id]
         # Remove the scenario itself
         del self.simulated_scenarios[args_model.scenario_id]
 
@@ -270,6 +277,13 @@ class SimulatedMapModel(BaseModel):
         origin_scenario = self.simulated_scenarios[args_model.from_scenario_id]
         destination_scenario = self.simulated_scenarios[args_model.to_scenario_id]
         
+        for existing_direction, existing_exit in origin_scenario.exits.items():
+            if existing_exit and existing_exit.target_scenario_id == args_model.to_scenario_id:
+                return self._log_and_summarize(
+                    "create_bidirectional_connection", args_model, False,
+                    f"Error: Origin '{args_model.from_scenario_id}' has an existing exit via direction '{existing_direction}' to '{args_model.to_scenario_id}'. Cannot create another connection between them."
+                )
+
         direction_to_origin = OppositeDirections[args_model.direction_from_origin]
 
         if origin_scenario.exits.get(args_model.direction_from_origin) is not None:
@@ -546,9 +560,9 @@ class SimulatedMapModel(BaseModel):
         print("FINALIZEEEEED")
         self.task_finalized_by_agent = True
         return {
-            "final_simulated_map_scenarios": {sid: scenario.model_dump() for sid, scenario in self.simulated_scenarios.items()},
             "final_justification": args_model.justification,
-            "applied_operations_log": self.applied_operations_log,
         }
 
-
+    def validate_simulated_map(self, args_model:ValidateSimulationMapArgs) -> str:
+        self.agent_validation_conclusion_flag = args_model.does_map_meet_criteria
+        return ""

@@ -7,16 +7,16 @@ from utils.visualize_graph import visualize_map_graph
 
 if __name__ == '__main__':
     state = MapGraphState(
-        global_narrative_context="Fantasy tale that occurs in a village of magicians",
-        map_rules_and_constraints=["Every scenario must be connected to at least 1 other scenario.","Some scenarios must be connected to more than 1 other scenario", "Spatial arrangement should make sense on a narrative and logical aspect, arrangement should be provokefull", "When traveling long distances between 2 scenarios, they should be connected by an intermidiate scenario that works as a path"],
-        current_objective="Create the map of scenarios 7 scenarios",
+        global_narrative_context="lord of the rings",
+        map_rules_and_constraints=["Every scenario must be connected to at least 1 other scenario.","Some scenarios must be connected to more than 2 other scenarios", "Spatial arrangement should make sense on a narrative and logical aspect, arrangement should be provokefull", "When traveling long or medium distances between 2 scenarios, they should be connected by an intermidiate scenario that works as a path (road, path, valley, etc)"],
+        current_objective="Create an interesting map of 7-9 scenarios for the narrative context. There shoould only be 1 cluster when finalized. make sure that any interior scenarios can be accessed through their corresponding exterior scenario, you can make a fully interior zone if needed. Some scenarios must have more than 2 connections. Some connection should have a condition to travel through, lore accurate",
         requesting_agent_id= None,
         previous_feedback="",
-        max_iterations=20,
+        max_executor_iterations=20,
     )
     print("--- INVOKE ---")
     map_generation_app=get_map_graph_app()
-    final_state = map_generation_app.invoke(state,{"recursion_limit": 100})
+    final_state = map_generation_app.invoke(state,{"recursion_limit": 200})
     final_map_graph_state_instance = MapGraphState(**final_state)
 
     print("\n--- FINAL STATE ---\n\n")

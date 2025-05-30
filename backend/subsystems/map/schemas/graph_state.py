@@ -25,17 +25,21 @@ class MapGraphState(BaseModel):
     # --- Working memo ---
     working_simulated_map: SimulatedMapModel = Field(default_factory=SimulatedMapModel, description="Represents the current working state of the simulated map being built or modified during the session. Serves as the agent's active memory of the map.")
     messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps.")
-    current_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
-    max_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
+    current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
+    max_executor_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
+
+    # --- Validation memo ---
+    max_validation_iterations: int = Field(..., description="Max iterations of the react validation cycle before finishing")
+    current_validation_iteration: int = Field(default=0, description="Current iteration the react validation cycle is on")
 
     # --- Logs and flux control ---
     history_log: List[str] = Field(default_factory=list, description="A log of objectives, plans, validations, and outcomes for debugging and tracing.")
     previous_feedback: str = Field(..., description="Feedback from last retry")
 
     @staticmethod
-    def get_opposite_direction(direction: Direction) -> Direction: # Usas Direction importada
+    def get_opposite_direction(direction: Direction) -> Direction:
         """Helper method to get the opposite of a given direction."""
-        return OppositeDirections[direction] # Usas OppositeDirections importado
+        return OppositeDirections[direction]
 
     def reset_working_memory(self):
         initial_working_simulated_map = SimulatedMapModel(
@@ -43,5 +47,5 @@ class MapGraphState(BaseModel):
         )
         self.working_simulated_map = initial_working_simulated_map
         self.messages = []
-        self.current_iteration = 0
+        self.current_executor_iteration = 0
         self.initial_map_summary = self.working_simulated_map.get_summary_list()

@@ -27,7 +27,8 @@ class ScenarioModel(BaseModel):
     indoor_or_outdoor: Literal["indoor", "outdoor"] = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
     type: str = Field(..., description=SCENARIO_FIELDS["type"])
     zone: str = Field(..., description=SCENARIO_FIELDS["zone"])
-    narrative_elements: List[str] = Field(default_factory=list, description="Characters, items, clues, or narrative events present.")
+    was_added_this_run: bool = Field(default=True,description="Flag indicating if the scenario was added this run of the graph")
+    was_modified_this_run: bool = Field(default=False,description="Flag indicating if the scenario was modified this run of the graph")
     exits: Dict[Direction, Optional[ExitInfo]] = Field(
         default_factory=lambda: {direction: None for direction in Direction.__args__},
         description="Connections from this scenario to others, by direction."
