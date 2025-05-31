@@ -96,9 +96,11 @@ class ValidateSimulationMapArgs(BaseModel):
 
 class SimulatedMapModel(BaseModel):
     simulated_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Represents the current state of all scenarios in the simulated map.")
-    applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, including 'tool_called', 'args', 'success', 'message'.")
     island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
     deleted_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Stores the scenarios that were deleted.")
+    executor_applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'args', 'success', 'message'.")
+    validator_applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'args', 'success', 'message'.")
+    executor_or_validator: Literal["executor", "validator"] = PydanticField(default="executor", description="Whether the map is currently being used by the executor agent or the validator agent.")
 
     task_finalized_by_agent: bool = PydanticField(default=False,description="A flag indicating whether the task was finalized by the agent")
     task_finalized_justification: Optional[str] = PydanticField(default=None,description="A string of the justification provided by the agent who finalized the map")
@@ -190,12 +192,20 @@ class SimulatedMapModel(BaseModel):
 
     def _log_and_summarize(self, tool_name: str, args: BaseModel, success: bool, message: str) -> str:
         """Helper to log the operation and create consistent observation messages."""
-        self.applied_operations_log.append({
-            "tool_called": tool_name,
-            "args": args.model_dump(),
-            "success": success,
-            "message": message
-        })
+        if self.executor_or_validator == "executor":
+            self.executor_applied_operations_log.append({
+                "tool_called": tool_name,
+                "args": args.model_dump(),
+                "success": success,
+                "message": message
+            })
+        else:
+            self.validator_applied_operations_log.append({
+                "tool_called": tool_name,
+                "args": args.model_dump(),
+                "success": success,
+                "message": message
+            })
         
         observation = f"Result of '{tool_name}': {message}"
         print(observation)
