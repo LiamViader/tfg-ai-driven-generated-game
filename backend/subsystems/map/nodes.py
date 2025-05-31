@@ -30,7 +30,7 @@ def map_reason_node(state: MapGraphState):
     """
 
 
-    print("---ENTERING: REASON NODE---")
+    print("---ENTERING: REASON EXECUTION NODE---")
     map_reason_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools(TOOLS, tool_choice="any")
 
     full_prompt = format_map_react_reason_prompt(
@@ -53,11 +53,22 @@ def map_reason_node(state: MapGraphState):
 
 map_executor_node = ToolNode(TOOLS)
 
+def receive_result_for_validation_node(state: MapGraphState):
+    """
+    Intermidiate step between the execution of the simulated map and the validation
+    """
+    state.working_simulated_map.executor_or_validator = "validator"
+    return {
+        "working_simulated_map": state.working_simulated_map
+    }
+
 def map_validation_reason_node(state: MapGraphState):
     """
     Reasoning validation node. The llm requests the tool querys and validates when has enought information or maxvalidation iteration is exceeded
     """
 
 
-    print("---ENTERING: REASON NODE---")
+    print("---ENTERING: REASON VALIDATION NODE---")
+    
     map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools(TOOLS, tool_choice="any")
+    state.working_simulated_map.executor_or_validator = "validator"

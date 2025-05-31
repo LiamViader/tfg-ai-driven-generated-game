@@ -44,7 +44,7 @@ Remember to think step by step. Your goal is to build a high-quality, logical, a
 """
 
 REACT_PLANNER_HUMAN_PROMPT_TEMPLATE_STRING = """
-Your NON-NEGOTIABLE objective is: {objective}.\nHere are some less strict guidelines that should also be satisfied: {other_guidelines}.\nHere is an initial summary of the map: {initial_map_summary}.
+Your objective is: {objective}.\nHere are some less strict guidelines that should also be satisfied: {other_guidelines}.\nHere is an initial summary of the map: {initial_map_summary}.
 """
 
 REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(
