@@ -69,7 +69,7 @@ def receive_result_for_validation_node(state: MapGraphState):
         return final_str
 
     state.working_simulated_map.executor_or_validator = "validator"
-    print(state.working_simulated_map.simulated_scenarios)
+
     return {
         "working_simulated_map":  state.working_simulated_map,
         "current_validation_iteration": 0,

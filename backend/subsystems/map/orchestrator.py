@@ -21,7 +21,8 @@ def iteration_limit_exceeded_or_agent_validated(state: MapGraphState) -> str:
     based on the iteration count and task completion (agent called finalize_task).
     """
     current_iteration = state.current_validation_iteration
-    max_iterations = state.max_validation_iterations
+    tries_to_evaluate_after_max_iterations = 3
+    max_iterations = state.max_validation_iterations + tries_to_evaluate_after_max_iterations
     if state.working_simulated_map.agent_validated or current_iteration >= max_iterations:
         return "finalize"
     else:
