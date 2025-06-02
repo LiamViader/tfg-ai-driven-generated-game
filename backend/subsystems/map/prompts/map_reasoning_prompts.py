@@ -15,7 +15,6 @@ Interpret the user's objective, and using the available tools, apply a logical a
 **Critical Contextual Information:**
 - `global_narrative_context`: {global_narrative_context}
 - `map_rules_and_constraints`: {map_rules_and_constraints}
-- `previous_feedback`: {previous_feedback}
 - When provided by the user for a specific objective, the initial map summary describes the state of the map *before* you begin working on that objective. Use it as a reference, especially for objectives that require changes relative to that initial state (e.g., "add N scenarios").
 
 **Available Tools:**
@@ -62,12 +61,11 @@ chat_prompt_template = ChatPromptTemplate([
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, previous_feedback: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
+def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
     prompt_input_values = {
         "global_narrative_context": narrative_context,
         "map_rules_and_constraints": ", ".join(map_rules_and_constraints),
         "initial_map_summary": initial_map_summary,
-        "previous_feedback": previous_feedback,
         "objective": objective,
         "other_guidelines": other_guidelines,
         "agent_scratchpad": messages

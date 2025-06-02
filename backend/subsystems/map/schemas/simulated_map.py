@@ -481,7 +481,7 @@ class SimulatedMapModel(BaseModel):
                 output_lines.extend(sorted(results_by_distance[dist_level]))
         
         if not has_results:
-            output_lines.append("(No new neighbors found within the specified distance via explored paths).")
+            output_lines.append("(No neighbors found within this specified distance via explored paths).")
 
         return self._log_and_summarize("get_neighbors_at_distance", args_model, True, "\n".join(output_lines))
 
@@ -579,6 +579,8 @@ class SimulatedMapModel(BaseModel):
         self.agent_validation_assessment_reasoning = args_model.assessment_reasoning
         if args_model.suggested_improvements:
             self.agent_validation_suggested_improvements = args_model.suggested_improvements
+        else:
+            self.agent_validation_suggested_improvements = ""
         if self.agent_validation_conclusion_flag:
             return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated map meets all criteria. Reason: {args_model.assessment_reasoning}" )
         else:

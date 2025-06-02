@@ -10,7 +10,7 @@ from subsystems.map.tools.map_tools import EXECUTORTOOLS, VALIDATIONTOOLS, QUERY
 from subsystems.map.prompts.map_reasoning_prompts import format_map_react_reason_prompt
 from subsystems.map.prompts.map_validation_prompts import format_map_react_validation_prompt
 from utils.message_window import get_valid_messages_window
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 
 def receive_objective_node(state: MapGraphState) -> MapGraphState:
     """
@@ -35,7 +35,6 @@ def map_executor_reason_node(state: MapGraphState):
         narrative_context=state.global_narrative_context,
         map_rules_and_constraints=state.map_rules_and_constraints,
         initial_map_summary=state.initial_map_summary,
-        previous_feedback=state.previous_feedback,
         objective=state.current_objective,
         other_guidelines=state.other_guidelines,
         messages=get_valid_messages_window(state.executor_messages,30)
@@ -69,6 +68,7 @@ def receive_result_for_validation_node(state: MapGraphState):
         return final_str
 
     state.working_simulated_map.executor_or_validator = "validator"
+    state.working_simulated_map.agent_validated = False
 
     return {
         "working_simulated_map":  state.working_simulated_map,
@@ -103,3 +103,18 @@ def map_validation_reason_node(state: MapGraphState):
 
 map_validation_tool_node = ToolNode(VALIDATIONTOOLS)
 map_validation_tool_node.messages_key = "validation_messages"
+
+def retry_executor_node(state: MapGraphState):
+    """
+    Serves as an intermidiate step between the validation and a new execution retry. Adds the feedback from the last validation.
+    """
+
+    print("---ENTERING: RETRY NODE---")
+
+    feedback = f"Here's some human feedback on how you have done so far on your task:\n You have still not completed your task\n Reason: {state.working_simulated_map.agent_validation_assessment_reasoning}\n Suggestion/s:{state.working_simulated_map.agent_validation_suggested_improvements} "
+    feedback_message = HumanMessage(feedback)
+    return {
+        "executor_messages": [feedback_message],
+        "current_try": state.current_try+1,
+        "current_executor_iteration": 0
+    }

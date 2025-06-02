@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END, START
 from subsystems.map.schemas.graph_state import MapGraphState
-from subsystems.map.nodes import receive_objective_node, map_executor_reason_node, map_executor_tool_node, map_validation_reason_node, receive_result_for_validation_node, map_validation_tool_node
+from subsystems.map.nodes import *
 from langchain_core.messages import ToolMessage
 
 def iteration_limit_exceeded_or_agent_finalized(state: MapGraphState) -> str:
@@ -11,9 +11,9 @@ def iteration_limit_exceeded_or_agent_finalized(state: MapGraphState) -> str:
     current_iteration = state.current_executor_iteration
     max_iterations = state.max_executor_iterations
     if state.working_simulated_map.task_finalized_by_agent or current_iteration >= max_iterations:
-        return "finalize"
+        return "finalize_executor"
     else:
-        return "continue"
+        return "continue_executor"
 
 def iteration_limit_exceeded_or_agent_validated(state: MapGraphState) -> str:
     """
@@ -21,12 +21,15 @@ def iteration_limit_exceeded_or_agent_validated(state: MapGraphState) -> str:
     based on the iteration count and task completion (agent called finalize_task).
     """
     current_iteration = state.current_validation_iteration
-    tries_to_evaluate_after_max_iterations = 3
+    tries_to_evaluate_after_max_iterations = 4
     max_iterations = state.max_validation_iterations + tries_to_evaluate_after_max_iterations
     if state.working_simulated_map.agent_validated or current_iteration >= max_iterations:
-        return "finalize"
+        if state.current_try <= state.max_retries:
+            return "retry_executor"
+        else:
+            return "finalize"
     else:
-        return "continue"
+        return "continue_validation"
 
 def get_map_graph_app():
     """
@@ -40,6 +43,7 @@ def get_map_graph_app():
     workflow.add_node("validation_receive_result", receive_result_for_validation_node)
     workflow.add_node("validation_reason", map_validation_reason_node)
     workflow.add_node("validation_tool", map_validation_tool_node)
+    workflow.add_node("retry_executor", retry_executor_node)
 
     workflow.add_edge(START, "executor_receive_objective")
     workflow.add_edge("executor_receive_objective", "executor_reason")
@@ -48,8 +52,8 @@ def get_map_graph_app():
         "executor_tool",
         iteration_limit_exceeded_or_agent_finalized,
         {
-            "continue": "executor_reason",
-            "finalize": "validation_receive_result"
+            "continue_executor": "executor_reason",
+            "finalize_executor": "validation_receive_result"
         }
     )
     workflow.add_edge("validation_receive_result", "validation_reason")
@@ -58,10 +62,12 @@ def get_map_graph_app():
         "validation_tool",
         iteration_limit_exceeded_or_agent_validated,
         {
-            "continue": "validation_reason",
-            "finalize": END
+            "continue_validation": "validation_reason",
+            "finalize": END,
+            "retry_executor": "retry_executor"
         }
     )
+    workflow.add_edge("retry_executor", "executor_reason")
 
     # Compile the graph into a runnable app
     app = workflow.compile()

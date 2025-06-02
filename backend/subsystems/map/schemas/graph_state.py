@@ -34,12 +34,12 @@ class MapGraphState(BaseModel):
     current_validation_iteration: int = Field(default=0, description="Current iteration the react validation cycle is on")
     executor_agent_relevant_logs: str = Field(default="",description="Formated string holding the relevant executing agent logs and observation for the validator agent context")
     validation_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Validation agent")
-
+    
 
     # --- Logs and flux control ---
     history_log: List[str] = Field(default_factory=list, description="A log of objectives, plans, validations, and outcomes for debugging and tracing.")
-    previous_feedback: str = Field(..., description="Feedback from last retry")
     max_retries: int = Field(default=1, description="Max retries of the whole process if validation fails")
+    current_try: int = Field(default=1, description="Current try of the whole process")
 
     @staticmethod
     def get_opposite_direction(direction: Direction) -> Direction:

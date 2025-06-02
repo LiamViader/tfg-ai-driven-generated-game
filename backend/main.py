@@ -12,9 +12,9 @@ if __name__ == '__main__':
         current_objective="Create a map of 5-6. There should only be 1 cluster when finalized. Some scenarios must be connected to more than 2 other scenarios",
         other_guidelines="Make sure that any interior scenarios can be accessed through their corresponding exterior scenario, you can make a fully interior zone if needed. Some connection should have a condition to travel through, lore accurate",
         requesting_agent_id= None,
-        previous_feedback="",
-        max_executor_iterations=15,
-        max_validation_iterations=1
+        max_executor_iterations=1,
+        max_validation_iterations=1,
+        max_retries=1
     )
     print("--- INVOKE ---")
     map_generation_app=get_map_graph_app()
