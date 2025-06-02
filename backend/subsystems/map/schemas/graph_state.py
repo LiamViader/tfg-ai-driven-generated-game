@@ -23,15 +23,18 @@ class MapGraphState(BaseModel):
     # Map Data
     scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="All scenarios in the map, keyed by their unique ID.")
 
-    # --- Working memo ---
+    # --- Executor Agent memo ---
     working_simulated_map: SimulatedMapModel = Field(default_factory=SimulatedMapModel, description="Represents the current working state of the simulated map being built or modified during the session. Serves as the agent's active memory of the map.")
-    messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps.")
+    executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Executor agent")
     current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
     max_executor_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
 
-    # --- Validation memo ---
+    # --- Validation Agent memo ---
     max_validation_iterations: int = Field(..., description="Max iterations of the react validation cycle before finishing")
     current_validation_iteration: int = Field(default=0, description="Current iteration the react validation cycle is on")
+    executor_agent_relevant_logs: str = Field(default="",description="Formated string holding the relevant executing agent logs and observation for the validator agent context")
+    validation_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Validation agent")
+
 
     # --- Logs and flux control ---
     history_log: List[str] = Field(default_factory=list, description="A log of objectives, plans, validations, and outcomes for debugging and tracing.")
@@ -48,6 +51,6 @@ class MapGraphState(BaseModel):
             simulated_scenarios=deepcopy(self.scenarios),
         )
         self.working_simulated_map = initial_working_simulated_map
-        self.messages = []
+        self.executor_messages = []
         self.current_executor_iteration = 0
         self.initial_map_summary = self.working_simulated_map.get_summary_list()

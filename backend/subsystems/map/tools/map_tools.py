@@ -226,7 +226,7 @@ def get_available_exit_directions(scenario_id: str, simulated_map_state: Annotat
 def finalize_simulation(justification: str, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
     """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
     args_model = FinalizeSimulationArgs(justification=justification)
-    return simulated_map_state.finalize_simulation_and_provide_map(args_model=args_model)
+    return simulated_map_state.finalize_simulation(args_model=args_model)
 
 @tool(args_schema=ToolValidateSimulatedMapArgs)
 def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str], simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
@@ -239,7 +239,7 @@ def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: s
     return simulated_map_state.validate_simulated_map(args_model=args_model)
 
 
-TOOLS = [
+EXECUTORTOOLS = [
         create_scenario,
         modify_scenario,
         delete_scenario,
@@ -253,6 +253,15 @@ TOOLS = [
         get_connection_details,
         get_available_exit_directions,
         finalize_simulation
+]
+
+VALIDATIONTOOLS = [
+        get_neighbors_at_distance,
+        list_scenarios_summary_per_cluster,
+        find_scenarios_by_attribute,
+        get_connection_details,
+        get_available_exit_directions,
+        validate_simulated_map
 ]
 
 QUERYTOOLS = [

@@ -108,6 +108,7 @@ class SimulatedMapModel(BaseModel):
     agent_validation_conclusion_flag: bool = PydanticField(default=False,description="A flag indicating whether the validation agent said the map met all criteria")
     agent_validation_assessment_reasoning: str = PydanticField(default="", description="Reasoning from agent of why the validation he gave.")
     agent_validation_suggested_improvements: str = PydanticField(default="", description="Suggested improvements if the validation agent said map didnt meet criteria.")
+    agent_validated: bool = PydanticField(default=False,description="A flag indicating whether the validation agent gave a validation yet")
 
     #S'executa just després de validar i crear-se l'instancia
     @model_validator(mode="after")
@@ -207,7 +208,7 @@ class SimulatedMapModel(BaseModel):
                 "message": message
             })
         
-        observation = f"Result of '{tool_name}': {message}"
+        observation = f"Result of '{tool_name}': {message} \nMap has {len(self.simulated_scenarios)} scenarios."
         print(observation)
         return observation
 
@@ -233,7 +234,7 @@ class SimulatedMapModel(BaseModel):
             new_scenario = ScenarioModel(**new_scenario_data)  # Pydantic validation
             self.simulated_scenarios[effective_id] = new_scenario
             self.island_clusters.append({effective_id})
-            return self._log_and_summarize("create_scenario_in_simulation", args_model, True, f"Scenario '{args_model.name}' (ID: {effective_id}) created successfully. Map now has {len(self.simulated_scenarios)} scenarios.")
+            return self._log_and_summarize("create_scenario_in_simulation", args_model, True, f"Scenario '{args_model.name}' (ID: {effective_id}) created successfully.")
         except Exception as e:
             return self._log_and_summarize("create_scenario", args_model, False, f"Error while creating scenario: {e}")
 
@@ -564,15 +565,16 @@ class SimulatedMapModel(BaseModel):
 
         return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 
-    def finalize_simulation_and_provide_map(self, args_model: FinalizeSimulationArgs) -> str:
+    def finalize_simulation(self, args_model: FinalizeSimulationArgs) -> str:
         """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
         self._compute_island_clusters()
         # Log this specific call type
         self.task_finalized_by_agent = True
         self.task_finalized_justification = args_model.justification
-        return self._log_and_summarize("finalize_simulation_and_provide_map", args_model, True, "Simulation finalized.")
+        return self._log_and_summarize("finalize_simulation", args_model, True, "Simulation finalized.")
 
     def validate_simulated_map(self, args_model:ValidateSimulationMapArgs) -> str:
+        self.agent_validated = True
         self.agent_validation_conclusion_flag = args_model.does_map_meet_criteria
         self.agent_validation_assessment_reasoning = args_model.assessment_reasoning
         if args_model.suggested_improvements:
