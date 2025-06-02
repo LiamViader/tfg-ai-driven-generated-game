@@ -487,7 +487,7 @@ class SimulatedMapModel(BaseModel):
 
     def list_scenarios_summary_per_cluster(self, args_model: ListScenariosClusterSummaryArgs) -> str:
         """
-        (QUERY tool) Summarizes scenario connectivity clusters in the map. A cluster is a group of interconnected scenarios. Lists scenario IDs and names per cluster, either all or a limited sample. Use this tool to list scenarios.
+        (QUERY tool) Summarizes scenario connectivity clusters in the map. A cluster is a group of interconnected scenarios. Lists scenario IDs and names per cluster, either all or a limited sample. Use this tool to list scenarios. Use this tool to know which scenarios are in diferent clusters.
         """
 
         if not self.simulated_scenarios:

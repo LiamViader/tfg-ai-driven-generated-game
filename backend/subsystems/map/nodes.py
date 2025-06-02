@@ -10,7 +10,8 @@ from subsystems.map.tools.map_tools import EXECUTORTOOLS, VALIDATIONTOOLS, QUERY
 from subsystems.map.prompts.map_reasoning_prompts import format_map_react_reason_prompt
 from subsystems.map.prompts.map_validation_prompts import format_map_react_validation_prompt
 from utils.message_window import get_valid_messages_window
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 def receive_objective_node(state: MapGraphState) -> MapGraphState:
     """
@@ -73,7 +74,8 @@ def receive_result_for_validation_node(state: MapGraphState):
     return {
         "working_simulated_map":  state.working_simulated_map,
         "current_validation_iteration": 0,
-        "executor_agent_relevant_logs": format_relevant_executing_agent_logs(state.working_simulated_map.executor_applied_operations_log)
+        "executor_agent_relevant_logs": format_relevant_executing_agent_logs(state.working_simulated_map.executor_applied_operations_log),
+        "validation_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)]
     }
 
 def map_validation_reason_node(state: MapGraphState):
@@ -113,8 +115,10 @@ def retry_executor_node(state: MapGraphState):
 
     feedback = f"Here's some human feedback on how you have done so far on your task:\n You have still not completed your task\n Reason: {state.working_simulated_map.agent_validation_assessment_reasoning}\n Suggestion/s:{state.working_simulated_map.agent_validation_suggested_improvements} "
     feedback_message = HumanMessage(feedback)
+    state.working_simulated_map.executor_or_validator = "executor"
     return {
         "executor_messages": [feedback_message],
         "current_try": state.current_try+1,
-        "current_executor_iteration": 0
+        "current_executor_iteration": 0,
+        "working_simulated_map": state.working_simulated_map
     }
