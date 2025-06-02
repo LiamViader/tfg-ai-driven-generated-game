@@ -63,7 +63,7 @@ class GetNeighborsAtDistanceArgs(BaseModel):
 class ListScenariosClusterSummaryArgs(BaseModel):
     list_all_scenarios_in_each_cluster: bool = PydanticField(
         default=False,  # Default gives a summary
-        description="If True, lists all scenarios (ID and name) in each cluster. If False (default), shows a limited preview per cluster."
+        description="If true, lists all scenarios (ID and name) in each cluster. If false (default), shows a limited preview per cluster. Use true only in limited justified ocasions"
     )
     max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = PydanticField(
         default=5,
@@ -580,6 +580,6 @@ class SimulatedMapModel(BaseModel):
         if args_model.suggested_improvements:
             self.agent_validation_suggested_improvements = args_model.suggested_improvements
         if self.agent_validation_conclusion_flag:
-            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated map meets all criteria. Reason {args_model.assessment_reasoning}" )
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated map meets all criteria. Reason: {args_model.assessment_reasoning}" )
         else:
-            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated doesn't meet all criteria. Reason {args_model.assessment_reasoning}. Suggestions {self.agent_validation_suggested_improvements}" )
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated doesn't meet all criteria. Reason: {args_model.assessment_reasoning}. Suggestions: {self.agent_validation_suggested_improvements}" )

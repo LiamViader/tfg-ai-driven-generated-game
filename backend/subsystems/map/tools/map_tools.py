@@ -229,13 +229,14 @@ def finalize_simulation(justification: str, simulated_map_state: Annotated[Simul
     return simulated_map_state.finalize_simulation(args_model=args_model)
 
 @tool(args_schema=ToolValidateSimulatedMapArgs)
-def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str], simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
+def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str] = None, simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")] = None) -> str:
     """Validates the simulated_map_state. Call it when you are sure that the map either meets all criteria, or that it does not"""
     args_model = ValidateSimulationMapArgs(
         does_map_meet_criteria=does_map_meet_criteria,
         assessment_reasoning=assessment_reasoning,
         suggested_improvements=suggested_improvements
     )
+    assert simulated_map_state is not None
     return simulated_map_state.validate_simulated_map(args_model=args_model)
 
 

@@ -61,7 +61,7 @@ def receive_result_for_validation_node(state: MapGraphState):
 
     def format_relevant_executing_agent_logs(operation_logs: List[Dict[str, Any]])->str:
         final_str = ""
-        query_tool_names = [tool_function.__name__ for tool_function in QUERYTOOLS]
+        query_tool_names = [tool_function.name for tool_function in QUERYTOOLS]
         for operation in operation_logs:
             if operation["success"]:
                 if operation["tool_called"] not in query_tool_names:
