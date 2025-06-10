@@ -12,5 +12,6 @@ EXIT_FIELDS = {
     "connection_type": "Type of path. e.g., 'path', 'door', 'secret_passage', 'street', etc",
     "travel_description": "Small description of the connection only if relevant: e.g., 'A dark path descending through gnarled trees.'",
     "traversal_conditions": "Optional conditions required to use this path. Only include if the connection is meant to be restricted in specific, justified situations (e.g., ['requires_rusty_key', 'only_at_night']).",
-    "is_blocked": "Indicates whether this exit is currently blocked and cannot be used."
+    "is_blocked": "Indicates whether this exit is currently blocked and cannot be used.",
+    "exit_appearance_description": "Description of how this exit appears visually from the current scenario."
 }
