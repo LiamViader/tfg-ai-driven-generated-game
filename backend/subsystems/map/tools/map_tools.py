@@ -1,12 +1,12 @@
 from typing import Dict, List, Any, Optional, Literal, Set, Tuple, Annotated
 from pydantic import BaseModel, Field as PydanticField
 from langchain_core.tools import tool
-from subsystems.map.schemas.descriptions import SCENARIO_FIELDS, EXIT_FIELDS
+from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 
-from subsystems.map.schemas.map_elements import Direction, OppositeDirections
+from core_game.map.schemas import Direction, OppositeDirections
 from subsystems.map.schemas.simulated_map import *
 
 

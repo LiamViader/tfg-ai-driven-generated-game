@@ -1,9 +1,9 @@
 from typing import Dict, List, Any, Optional, Literal, Set, Tuple
 from pydantic import BaseModel, model_validator, Field as PydanticField
-from subsystems.map.schemas.descriptions import SCENARIO_FIELDS, EXIT_FIELDS
+from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 import re
 
-from subsystems.map.schemas.map_elements import ScenarioModel, Direction, OppositeDirections, ExitInfo
+from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ExitInfo
 
 
 class CreateScenarioArgs(BaseModel):

@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Literal, Any, Tuple, Set
 from pydantic import BaseModel, Field
-from .descriptions import SCENARIO_FIELDS, EXIT_FIELDS
+from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 
 """
 VALORAR FER AIXÒ PEL CONNECTION TYPE
