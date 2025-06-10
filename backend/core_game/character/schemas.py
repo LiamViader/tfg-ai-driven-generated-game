@@ -58,7 +58,7 @@ class DynamicStateModel(BaseModel):
 
 
 
-class CharacterBase(BaseModel):
+class CharacterBaseModel(BaseModel):
     """The base model that all character types inherit from."""
     id: str = Field(..., description="Unique identifier for the character.")
     identity: IdentityModel
@@ -68,12 +68,12 @@ class CharacterBase(BaseModel):
     present_in_scenario: Optional[str] = Field(default=None, description="ID of the scenario where the character is currently located.")
 
 
-class PlayerCharacter(CharacterBase):
+class PlayerCharacterModel(CharacterBaseModel):
     """A character controlled by a human player."""
     type: Literal["player"] = Field(default="player", description="Type of character.")
 
 
-class NonPlayerCharacter(CharacterBase):
+class NonPlayerCharacterModel(CharacterBaseModel):
     """A character controlled by the system (AI)."""
     type: Literal["npc"] = Field(default="npc", description="Type of character.")
     dynamic_state: DynamicStateModel
