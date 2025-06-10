@@ -215,11 +215,197 @@ class SimulatedMapModel(BaseModel):
     def get_summary_list(self)->str:
         return self._format_cluster_summary(list_all_scenarios=False,max_listed_per_cluster=2)
 
+    def create_scenario(self, args_model: CreateScenarioArgs) -> str:
+        """Creates a new scenario in the simulated map."""
+        effective_id = self.generate_sequential_scene_id(list(self.simulated_scenarios.keys()))
 
+        try:
+            new_scenario_data = {
+                "id": effective_id,
+                "name": args_model.name,
+                "summary_description": args_model.summary_description,
+                "visual_description": args_model.visual_description,
+                "narrative_context": args_model.narrative_context,
+                "indoor_or_outdoor": args_model.indoor_or_outdoor,
+                "type": args_model.type,
+                "zone": args_model.zone,
+                "exits": {}
+            }
+            new_scenario = ScenarioModel(**new_scenario_data)  # Pydantic validation
+            self.simulated_scenarios[effective_id] = new_scenario
+            self.island_clusters.append({effective_id})
+            return self._log_and_summarize("create_scenario_in_simulation", args_model, True, f"Scenario '{args_model.name}' (ID: {effective_id}) created successfully.")
+        except Exception as e:
+            return self._log_and_summarize("create_scenario", args_model, False, f"Error while creating scenario: {e}")
+
+    def modify_scenario(self, args_model: ModifyScenarioArgs) -> str:
+        """Modifies the specified scenario. Only the provided fields will be updated."""
+
+        if args_model.scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("modify_scenario", args_model, False, f"Scenario with ID '{args_model.scenario_id}' does not exist.")
+
+
+        # Apply changes only if the fields are not None
+        scenario = self.simulated_scenarios[args_model.scenario_id]
+        updated_fields = []
+        if args_model.new_name is not None: scenario.name = args_model.new_name; updated_fields.append("name")
+        if args_model.new_summary_description is not None: scenario.summary_description = args_model.new_summary_description; updated_fields.append("summary_description")
+        if args_model.new_visual_description is not None: scenario.visual_description = args_model.new_visual_description; updated_fields.append("visual_description")
+        if args_model.new_narrative_context is not None: scenario.narrative_context = args_model.new_narrative_context; updated_fields.append("narrative_context")
+        if args_model.new_indoor_or_outdoor is not None: scenario.indoor_or_outdoor = args_model.new_indoor_or_outdoor; updated_fields.append("indoor_or_outdoor")
+        if args_model.new_type is not None: scenario.type = args_model.new_type; updated_fields.append("type")
+        if args_model.new_zone is not None: scenario.zone = args_model.new_zone; updated_fields.append("zone")
+        scenario.was_modified_this_run = True
+        return self._log_and_summarize("modify_scenario_in_simulation", args_model, True, f"Scenario '{args_model.scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}.")
     
+    def delete_scenario(self, args_model: DeleteScenarioArgs) -> str:
+        """Deletes the specified scenario. An scenario should only be deleted if necessary to complete the task"""
+
+        if args_model.scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("delete_scenario", args_model, False, f"Scenario with ID '{args_model.scenario_id}' does not exist.")
+        
+        for other_id, other_scenario in self.simulated_scenarios.items():
+            for direction, exit_info in other_scenario.exits.items():
+                if exit_info and exit_info.target_scenario_id == args_model.scenario_id:
+                    other_scenario.exits[direction] = None
+
+        #if notadded this run, store that it was deleted
+        if not self.simulated_scenarios[args_model.scenario_id].was_added_this_run:
+            self.deleted_scenarios[args_model.scenario_id]=self.simulated_scenarios[args_model.scenario_id]
+        # Remove the scenario itself
+        del self.simulated_scenarios[args_model.scenario_id]
+
+        # Recompute island clusters
+        self._compute_island_clusters()
+        
+        return self._log_and_summarize("delete_scenario", args_model, True, f"Scenario '{args_model.scenario_id}' deleted successfully.")
+
+    def create_bidirectional_connection(self, args_model: CreateBidirectionalConnectionArgs) -> str:
+        """Creates a new bidirectional connection between two existing scenarios in the simulation."""
+
+        if args_model.from_scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("create_bidirectional_connection", args_model, False, f"Error: Origin scenario ID '{args_model.from_scenario_id}' not fpund.")
+        if args_model.to_scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("create_bidirectional_connection", args_model, False, f"Error: Destination scenario ID '{args_model.to_scenario_id}' not found.")
+        if args_model.from_scenario_id == args_model.to_scenario_id:
+            return self._log_and_summarize("create_bidirectional_connection", args_model, False, "Error: Cannot connect a scenario to itself.")
+
+        origin_scenario = self.simulated_scenarios[args_model.from_scenario_id]
+        destination_scenario = self.simulated_scenarios[args_model.to_scenario_id]
+        
+        for existing_direction, existing_exit in origin_scenario.exits.items():
+            if existing_exit and existing_exit.target_scenario_id == args_model.to_scenario_id:
+                return self._log_and_summarize(
+                    "create_bidirectional_connection", args_model, False,
+                    f"Error: Origin '{args_model.from_scenario_id}' has an existing exit via direction '{existing_direction}' to '{args_model.to_scenario_id}'. Cannot create another connection between them."
+                )
+
+        direction_to_origin = OppositeDirections[args_model.direction_from_origin]
+
+        if origin_scenario.exits.get(args_model.direction_from_origin) is not None:
+            return self._log_and_summarize("create_bidirectional_connection", args_model, False, f"Error: Origin scenario '{args_model.from_scenario_id}' already has an exit to the '{args_model.direction_from_origin}'.")
+        if destination_scenario.exits.get(direction_to_origin) is not None:
+            return self._log_and_summarize("create_bidirectional_connection", args_model, False, f"Error: Destination scenario '{args_model.to_scenario_id}' already has an exit to its '{direction_to_origin}' (which would be the return path).")
+
+        # Create exits
+        exit_info_origin = ExitInfo(
+            target_scenario_id=args_model.to_scenario_id,
+            connection_type=args_model.connection_type,
+            travel_description=args_model.travel_description,
+            traversal_conditions=args_model.traversal_conditions or []
+        )
+        # For the return path, we might want separate descriptions/conditions, or mirror them.
+        # For now, mirror connection_type, and conditions. Travel description could be generic.
+        exit_info_destination = ExitInfo(
+            target_scenario_id=args_model.from_scenario_id,
+            connection_type=args_model.connection_type, # Mirrored
+            travel_description=args_model.travel_description,
+            traversal_conditions=args_model.traversal_conditions or [] # Mirrored
+        )
+
+        origin_scenario.exits[args_model.direction_from_origin] = exit_info_origin
+        destination_scenario.exits[direction_to_origin] = exit_info_destination
+        
+        #recompute topology
+        self._compute_island_clusters()
+        return self._log_and_summarize("create_bidirectional_connection", args_model, True, f"Connection type'{args_model.connection_type}' created: '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) <-> '{args_model.to_scenario_id}' ({direction_to_origin}).")
 
 
+    def delete_bidirectional_connection(self, args_model: DeleteBidirectionalConnectionArgs) -> str:
+        """Deletes a bidirectional connection starting from scenario_id_A in the specified direction."""
 
+        if args_model.scenario_id_A not in self.simulated_scenarios:
+            return self._log_and_summarize("delete_bidirectional_connection", args_model, False, f"Error: Scenario A ID '{args_model.scenario_id_A}' not found.")
+        
+        scenario_A = self.simulated_scenarios[args_model.scenario_id_A]
+        exit_info_A_to_B = scenario_A.exits.get(args_model.direction_from_A)
+
+        if not exit_info_A_to_B:
+            return self._log_and_summarize("delete_bidirectional_connection", args_model, False, f"Error: Scenario '{args_model.scenario_id_A}' has no exit to the '{args_model.direction_from_A}'.")
+
+        scenario_id_B = exit_info_A_to_B.target_scenario_id
+        if scenario_id_B not in self.simulated_scenarios:
+            # Inconsistent state, but tool should handle it by just clearing A's exit
+            scenario_A.exits[args_model.direction_from_A] = None
+            self._compute_island_clusters()
+            return self._log_and_summarize("delete_bidirectional_connection", args_model, True, f"Exit from '{args_model.scenario_id_A}' ({args_model.direction_from_A}) cleared. Target scenario '{scenario_id_B}' was not found (map was possibly inconsistent).")
+
+        scenario_B = self.simulated_scenarios[scenario_id_B]
+        direction_from_B = OppositeDirections[args_model.direction_from_A]
+
+        # Clear both exits
+        scenario_A.exits[args_model.direction_from_A] = None
+        # Check if the reverse exit actually points back as expected
+        exit_B_to_A = scenario_B.exits.get(direction_from_B)
+        if exit_B_to_A and exit_B_to_A.target_scenario_id == args_model.scenario_id_A:
+            scenario_B.exits[direction_from_B] = None
+            message = f"Bidirectional connection '{args_model.scenario_id_A}' ({args_model.direction_from_A}) <-> '{scenario_id_B}' ({direction_from_B}) deleted."
+        else:
+            message = f"Exit from '{args_model.scenario_id_A}' ({args_model.direction_from_A}) to '{scenario_id_B}' deleted. Reverse connection from '{scenario_id_B}' not found or not pointing back as expected."
+            
+        self._compute_island_clusters() # Rcompute topology
+        return self._log_and_summarize("delete_bidirectional_connection", args_model, True, message)
+
+    def modify_bidirectional_connection(
+        self, 
+        args_model: ModifyBidirectionalConnectionArgs
+    ) -> str:
+        """Modifies attributes of an existing bidirectional connection. Only provided attributes are changed."""
+        
+
+        if args_model.from_scenario_id not in self.simulated_scenarios:
+            return self._log_and_summarize("modify_bidirectional_connection", args_model, False, f"Error: Origin scenario ID '{args_model.from_scenario_id}' not found.")
+
+        origin_scenario = self.simulated_scenarios[args_model.from_scenario_id]
+        exit_info_origin = origin_scenario.exits.get(args_model.direction_from_origin)
+
+        if not exit_info_origin:
+            return self._log_and_summarize("modify_bidirectional_connection", args_model, False, f"Error: Scenario '{args_model.from_scenario_id}' has no exit to the '{args_model.direction_from_origin}'.")
+
+        to_scenario_id = exit_info_origin.target_scenario_id
+        if to_scenario_id not in self.simulated_scenarios:
+            # Connection points to a non-existent scenario, data inconsistency.
+            return self._log_and_summarize("modify_bidirectional_connection", args_model, False, f"Exit from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) points to target scenario '{to_scenario_id}' not found.")
+
+        destination_scenario = self.simulated_scenarios[to_scenario_id]
+        direction_to_origin = OppositeDirections[args_model.direction_from_origin]
+        exit_info_destination = destination_scenario.exits.get(direction_to_origin)
+
+        updated_fields_origin = []
+        if args_model.new_connection_type is not None: exit_info_origin.connection_type = args_model.new_connection_type; updated_fields_origin.append("connection_type")
+        if args_model.new_travel_description is not None: exit_info_origin.travel_description = args_model.new_travel_description; updated_fields_origin.append("travel_description")
+        if args_model.new_traversal_conditions is not None: exit_info_origin.traversal_conditions = args_model.new_traversal_conditions; updated_fields_origin.append("traversal_conditions")
+
+        if exit_info_destination and exit_info_destination.target_scenario_id == args_model.from_scenario_id:
+            # Modify reverse path symmetrically for type and conditions, travel_description could be different.
+            if args_model.new_connection_type is not None: exit_info_destination.connection_type = args_model.new_connection_type
+            if args_model.new_traversal_conditions is not None: exit_info_destination.traversal_conditions = args_model.new_traversal_conditions
+            if args_model.new_travel_description is not None: exit_info_destination.travel_description = args_model.new_travel_description
+            message = f"Bidirectional connection from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) <-> '{to_scenario_id}' ({direction_to_origin}) modified. Updated fields: {', '.join(updated_fields_origin) if updated_fields_origin else 'None'}."
+        else:
+            message = f"Exit from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) modified. Reverse connection from '{to_scenario_id}' not found or not pointing back as expected. Updated fields on forward path: {', '.join(updated_fields_origin) if updated_fields_origin else 'None'}."
+
+        return self._log_and_summarize("modify_bidirectional_connection", args_model, True, message)
 
     def get_scenario_details(self, args_model: GetScenarioDetailsArgs) -> str:
         """(QUERY tool) Retrieves and returns all details for a specific scenario in the simulated map."""
@@ -379,3 +565,23 @@ class SimulatedMapModel(BaseModel):
 
         return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 
+    def finalize_simulation(self, args_model: FinalizeSimulationArgs) -> str:
+        """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
+        self._compute_island_clusters()
+        # Log this specific call type
+        self.task_finalized_by_agent = True
+        self.task_finalized_justification = args_model.justification
+        return self._log_and_summarize("finalize_simulation", args_model, True, "Simulation finalized.")
+
+    def validate_simulated_map(self, args_model:ValidateSimulationMapArgs) -> str:
+        self.agent_validated = True
+        self.agent_validation_conclusion_flag = args_model.does_map_meet_criteria
+        self.agent_validation_assessment_reasoning = args_model.assessment_reasoning
+        if args_model.suggested_improvements:
+            self.agent_validation_suggested_improvements = args_model.suggested_improvements
+        else:
+            self.agent_validation_suggested_improvements = ""
+        if self.agent_validation_conclusion_flag:
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated map meets all criteria. Reason: {args_model.assessment_reasoning}" )
+        else:
+            return self._log_and_summarize("validate_simulated_map", args_model, True, f"Simulated doesn't meet all criteria. Reason: {args_model.assessment_reasoning}. Suggestions: {self.agent_validation_suggested_improvements}" )

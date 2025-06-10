@@ -8,7 +8,6 @@ from langgraph.graph.message import add_messages
 from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections
 from subsystems.map.schemas.simulated_map import SimulatedMapModel
 from subsystems.map.schemas.simulated_map import ListScenariosClusterSummaryArgs
-from subsystems.map.service import MapService
 
 
 
@@ -26,7 +25,6 @@ class MapGraphState(BaseModel):
 
     # --- Executor Agent memo ---
     working_simulated_map: SimulatedMapModel = Field(default_factory=SimulatedMapModel, description="Represents the current working state of the simulated map being built or modified during the session. Serves as the agent's active memory of the map.")
-    map_service: MapService = Field(default_factory=lambda: MapService(SimulatedMapModel()), description="Service layer that operates on the working_simulated_map")
     executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Executor agent")
     current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
     max_executor_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
@@ -53,7 +51,6 @@ class MapGraphState(BaseModel):
             simulated_scenarios=deepcopy(self.scenarios),
         )
         self.working_simulated_map = initial_working_simulated_map
-        self.map_service = MapService(self.working_simulated_map)
         self.executor_messages = []
         self.current_executor_iteration = 0
         self.initial_map_summary = self.working_simulated_map.get_summary_list()

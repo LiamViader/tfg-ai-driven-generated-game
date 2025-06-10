@@ -8,27 +8,26 @@ from langchain_core.messages import ToolMessage
 
 from core_game.map.schemas import Direction, OppositeDirections
 from subsystems.map.schemas.simulated_map import *
-from subsystems.map.service import MapService
 
 
 # --- Tools Schemas -- (adding the injected simulated map)
 class ToolCreateScenarioArgs(CreateScenarioArgs):
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 class ToolModifyScenarioArgs(ModifyScenarioArgs):
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")]
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")]
 
 class ToolDeleteScenarioArgs(DeleteScenarioArgs):
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 class ToolCreateBidirectionalConnectionArgs(CreateBidirectionalConnectionArgs):
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")]
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")]
 
 class ToolDeleteBidirectionalConnectionArgs(DeleteBidirectionalConnectionArgs):
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 class ToolModifyBidirectionalConnectionArgs(ModifyBidirectionalConnectionArgs):
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")]
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")]
 
 class ToolGetScenarioDetailsArgs(GetScenarioDetailsArgs):
     simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
@@ -49,10 +48,10 @@ class ToolGetAvailableExitsArgs(GetAvailableExitsArgs):
     simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 class ToolFinalizeSimulationArgs(FinalizeSimulationArgs):
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 class ToolValidateSimulatedMapArgs(ValidateSimulationMapArgs):
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 
 # --- Tools ---
 
@@ -65,7 +64,7 @@ def create_scenario(
     indoor_or_outdoor: Literal["indoor", "outdoor"],
     type: str,
     zone: str,
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 ) -> str:
     """Creates a new scenario in the simulated map."""
     args_model = CreateScenarioArgs(
@@ -77,7 +76,7 @@ def create_scenario(
         type=type,
         zone=zone
     )
-    return map_service.create_scenario(args_model)
+    return simulated_map_state.create_scenario(args_model)
 
 @tool(args_schema=ToolModifyScenarioArgs)
 def modify_scenario(
@@ -89,7 +88,7 @@ def modify_scenario(
     new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = None,
     new_type: Optional[str] = None,
     new_zone: Optional[str] = None,
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")] = None
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")] = None
 ) -> str:
     """Modifies the specified scenario. Only the provided fields will be updated."""
     args_model = ModifyScenarioArgs(
@@ -102,19 +101,19 @@ def modify_scenario(
         new_type=new_type,
         new_zone=new_zone
     )
-    assert map_service is not None, "Injected state not received"
-    return map_service.modify_scenario(args_model)
+    assert simulated_map_state is not None, "Injected state not received"
+    return simulated_map_state.modify_scenario(args_model=args_model)
 
 @tool(args_schema=ToolDeleteScenarioArgs)
 def delete_scenario(
     scenario_id: str,
-    map_service: Annotated[MapService, InjectedState("map_service")]
+    simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]
 ) -> str:
     """Deletes the specified scenario. An scenario should only be deleted if necessary to complete the task"""
     args_model = DeleteScenarioArgs(
         scenario_id=scenario_id,
     )
-    return map_service.delete_scenario(args_model)
+    return simulated_map_state.delete_scenario(args_model=args_model)
 
 @tool(args_schema=ToolCreateBidirectionalConnectionArgs)
 def create_bidirectional_connection(
@@ -124,7 +123,7 @@ def create_bidirectional_connection(
     connection_type: str, 
     travel_description: Optional[str] = None, 
     traversal_conditions: Optional[List[str]] = None,
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")] = None
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")] = None
 ) -> str:
     """Creates a new bidirectional connection between two existing scenarios in the simulation."""
 
@@ -136,24 +135,24 @@ def create_bidirectional_connection(
         travel_description=travel_description, 
         traversal_conditions=traversal_conditions or []
     )
-    assert map_service is not None, "Injected state not received"
-    return map_service.create_bidirectional_connection(args_model)
+    assert simulated_map_state is not None, "Injected state not received"
+    return simulated_map_state.create_bidirectional_connection(args_model=args_model)
 
 
 @tool(args_schema=ToolDeleteBidirectionalConnectionArgs)
-def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direction, map_service: Annotated[MapService, InjectedState("map_service")]) -> str:
+def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direction, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
     """Deletes a bidirectional connection starting from scenario_id_A in the specified direction."""
     args_model = DeleteBidirectionalConnectionArgs(scenario_id_A=scenario_id_A, direction_from_A=direction_from_A)
-    return map_service.delete_bidirectional_connection(args_model)
+    return simulated_map_state.delete_bidirectional_connection(args_model=args_model)
 
 @tool(args_schema=ToolModifyBidirectionalConnectionArgs)
-def modify_bidirectional_connection(
+def modify_bidirectional_connection( 
     from_scenario_id: str, 
     direction_from_origin: Direction,
     new_connection_type: Optional[str] = None,
     new_travel_description: Optional[str] = None,
     new_traversal_conditions: Optional[List[str]] = None,
-    map_service: Annotated[Optional[MapService], InjectedState("map_service")] = None
+    simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")] = None
 ) -> str:
     """Modifies attributes of an existing bidirectional connection. Only provided attributes are changed."""
     
@@ -164,8 +163,8 @@ def modify_bidirectional_connection(
         new_travel_description=new_travel_description,
         new_traversal_conditions=new_traversal_conditions
     )
-    assert map_service is not None, "Injected state not received"
-    return map_service.modify_bidirectional_connection(args_model)
+    assert simulated_map_state is not None, "Injected state not received"
+    return simulated_map_state.modify_bidirectional_connection(args_model=args_model)
 
 @tool(args_schema=ToolGetScenarioDetailsArgs)
 def get_scenario_details(scenario_id: str, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
@@ -224,21 +223,21 @@ def get_available_exit_directions(scenario_id: str, simulated_map_state: Annotat
     return simulated_map_state.get_available_exit_directions(args_model=args_model)
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
-def finalize_simulation(justification: str, map_service: Annotated[MapService, InjectedState("map_service")]) -> str:
+def finalize_simulation(justification: str, simulated_map_state: Annotated[SimulatedMapModel, InjectedState("working_simulated_map")]) -> str:
     """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
     args_model = FinalizeSimulationArgs(justification=justification)
-    return map_service.finalize_simulation(args_model)
+    return simulated_map_state.finalize_simulation(args_model=args_model)
 
 @tool(args_schema=ToolValidateSimulatedMapArgs)
-def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str] = None, map_service: Annotated[Optional[MapService], InjectedState("map_service")] = None) -> str:
+def validate_simulated_map(does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str] = None, simulated_map_state: Annotated[Optional[SimulatedMapModel], InjectedState("working_simulated_map")] = None) -> str:
     """Validates the simulated_map_state. Call it when you are sure that the map either meets all criteria, or that it does not"""
     args_model = ValidateSimulationMapArgs(
         does_map_meet_criteria=does_map_meet_criteria,
         assessment_reasoning=assessment_reasoning,
         suggested_improvements=suggested_improvements
     )
-    assert map_service is not None
-    return map_service.validate_simulated_map(args_model)
+    assert simulated_map_state is not None
+    return simulated_map_state.validate_simulated_map(args_model=args_model)
 
 
 EXECUTORTOOLS = [
