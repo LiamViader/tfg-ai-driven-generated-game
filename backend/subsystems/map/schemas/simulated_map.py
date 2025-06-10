@@ -215,82 +215,6 @@ class SimulatedMapModel(BaseModel):
     def get_summary_list(self)->str:
         return self._format_cluster_summary(list_all_scenarios=False,max_listed_per_cluster=2)
 
-    def create_scenario(self, args_model: CreateScenarioArgs) -> str:
-        """Creates a new scenario in the simulated map."""
-        from subsystems.map.tools import map_tools
-        return map_tools.create_scenario(
-            name=args_model.name,
-            narrative_context=args_model.narrative_context,
-            visual_description=args_model.visual_description,
-            summary_description=args_model.summary_description,
-            indoor_or_outdoor=args_model.indoor_or_outdoor,
-            type=args_model.type,
-            zone=args_model.zone,
-            simulated_map_state=self,
-        )
-
-    def modify_scenario(self, args_model: ModifyScenarioArgs) -> str:
-        """Modifies the specified scenario. Only the provided fields will be updated."""
-        from subsystems.map.tools import map_tools
-        return map_tools.modify_scenario(
-            scenario_id=args_model.scenario_id,
-            new_name=args_model.new_name,
-            new_summary_description=args_model.new_summary_description,
-            new_visual_description=args_model.new_visual_description,
-            new_narrative_context=args_model.new_narrative_context,
-            new_indoor_or_outdoor=args_model.new_indoor_or_outdoor,
-            new_type=args_model.new_type,
-            new_zone=args_model.new_zone,
-            simulated_map_state=self,
-        )
-    
-    def delete_scenario(self, args_model: DeleteScenarioArgs) -> str:
-        """Deletes the specified scenario. An scenario should only be deleted if necessary to complete the task"""
-        from subsystems.map.tools import map_tools
-        return map_tools.delete_scenario(
-            scenario_id=args_model.scenario_id,
-            simulated_map_state=self,
-        )
-
-    def create_bidirectional_connection(self, args_model: CreateBidirectionalConnectionArgs) -> str:
-        """Creates a new bidirectional connection between two existing scenarios in the simulation."""
-        from subsystems.map.tools import map_tools
-        return map_tools.create_bidirectional_connection(
-            from_scenario_id=args_model.from_scenario_id,
-            direction_from_origin=args_model.direction_from_origin,
-            to_scenario_id=args_model.to_scenario_id,
-            connection_type=args_model.connection_type,
-            travel_description=args_model.travel_description,
-            traversal_conditions=args_model.traversal_conditions,
-            simulated_map_state=self,
-        )
-
-
-    def delete_bidirectional_connection(self, args_model: DeleteBidirectionalConnectionArgs) -> str:
-        """Deletes a bidirectional connection starting from scenario_id_A in the specified direction."""
-        from subsystems.map.tools import map_tools
-        return map_tools.delete_bidirectional_connection(
-            scenario_id_A=args_model.scenario_id_A,
-            direction_from_A=args_model.direction_from_A,
-            simulated_map_state=self,
-        )
-
-    def modify_bidirectional_connection(
-        self, 
-        args_model: ModifyBidirectionalConnectionArgs
-    ) -> str:
-        """Modifies attributes of an existing bidirectional connection. Only provided attributes are changed."""
-        
-
-        from subsystems.map.tools import map_tools
-        return map_tools.modify_bidirectional_connection(
-            from_scenario_id=args_model.from_scenario_id,
-            direction_from_origin=args_model.direction_from_origin,
-            new_connection_type=args_model.new_connection_type,
-            new_travel_description=args_model.new_travel_description,
-            new_traversal_conditions=args_model.new_traversal_conditions,
-            simulated_map_state=self,
-        )
 
     def get_scenario_details(self, args_model: GetScenarioDetailsArgs) -> str:
         """(QUERY tool) Retrieves and returns all details for a specific scenario in the simulated map."""
@@ -450,19 +374,4 @@ class SimulatedMapModel(BaseModel):
 
         return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 
-    def finalize_simulation(self, args_model: FinalizeSimulationArgs) -> str:
-        """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
-        from subsystems.map.tools import map_tools
-        return map_tools.finalize_simulation(
-            justification=args_model.justification,
-            simulated_map_state=self,
-        )
 
-    def validate_simulated_map(self, args_model:ValidateSimulationMapArgs) -> str:
-        from subsystems.map.tools import map_tools
-        return map_tools.validate_simulated_map(
-            does_map_meet_criteria=args_model.does_map_meet_criteria,
-            assessment_reasoning=args_model.assessment_reasoning,
-            suggested_improvements=args_model.suggested_improvements,
-            simulated_map_state=self,
-        )
