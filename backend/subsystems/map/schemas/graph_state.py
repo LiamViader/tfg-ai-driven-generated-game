@@ -5,7 +5,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
 # El '.' significa "desde el directori actual (schemas)"
-from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections
+from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ConnectionInfo
 from subsystems.map.schemas.simulated_map import SimulatedMapModel
 from subsystems.map.schemas.simulated_map import ListScenariosClusterSummaryArgs
 
@@ -22,6 +22,7 @@ class MapGraphState(BaseModel):
 
     # Map Data
     scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="All scenarios in the map, keyed by their unique ID.")
+    connections: Dict[str, ConnectionInfo] = Field(default_factory=dict, description="Mapping of connection IDs to their ConnectionInfo.")
 
     # --- Executor Agent memo ---
     working_simulated_map: SimulatedMapModel = Field(default_factory=SimulatedMapModel, description="Represents the current working state of the simulated map being built or modified during the session. Serves as the agent's active memory of the map.")
@@ -49,6 +50,7 @@ class MapGraphState(BaseModel):
     def reset_working_memory(self):
         initial_working_simulated_map = SimulatedMapModel(
             simulated_scenarios=deepcopy(self.scenarios),
+            simulated_connections=deepcopy(self.connections)
         )
         self.working_simulated_map = initial_working_simulated_map
         self.executor_messages = []
