@@ -78,3 +78,19 @@ class NonPlayerCharacterModel(CharacterBaseModel):
     type: Literal["npc"] = Field(default="npc", description="Type of character.")
     dynamic_state: DynamicStateModel
     narrative: NarrativeWeightModel
+
+class CharacterRelationship(BaseModel):
+    """
+    Represents a relationship between two characters.
+    
+    The 'type' defines the nature of the relationship (e.g., 'love', 'fear', 'submission', 'siblings', etc.).
+    For relationship types that do not imply an intensity (such as 'siblings' or 'parent'), the intensity can be set to None.
+    For relationships that do imply intensity (such as 'love', 'fear', 'trust', etc.), intensity should range from 0 (none) to 10 (maximum).
+    """
+    type: str = Field(..., description="The type or nature of the relationship (e.g., 'love', 'fear', 'submission', 'siblings').")
+    intensity: Optional[int] = Field(
+        None,
+        ge=0,
+        le=10,
+        description="Intensity of the relationship (0-10). Can be None if the relationship type does not imply intensity."
+    )
