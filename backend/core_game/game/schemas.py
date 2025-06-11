@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional, Literal, Any
+from typing import Dict, List, Optional, Literal, Any, Set
 from pydantic import BaseModel, Field
 from core_game.time.schemas import GameTimeModel
-from core_game.map.schemas import ScenarioModel
-from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel, CharacterRelationship
+from core_game.map.schemas import ScenarioModel, GameMapModel
+from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel, CharacterRelationship, RelationshipType
 from core_game.narrative.schemas import NarrativeStateModel
 from core_game.game_event.schemas import GameEventModel
 
@@ -22,11 +22,7 @@ class GameStateModel(BaseModel):
     """
     session: GameSessionModel = Field(..., description="Global information about the game session.")
 
-    game_map: Dict[str, ScenarioModel] = Field(
-        default_factory=dict,
-        description="The world graph, represented as a dictionary mapping scenario IDs to their objects."
-    )
-
+    game_map: GameMapModel
     character_registry: Dict[str, CharacterBaseModel] = Field(
         default_factory=dict,
         description="Registry of all characters (player and NPCs), with their ID as the key."
@@ -37,8 +33,13 @@ class GameStateModel(BaseModel):
         description="The player character"
     )
     
-    # Relationship matrix: Dict[Character_Source_ID, Dict[Character_Target_ID, List[CharacterRelationship]]]
-    relationships_matrix: Dict[str, Dict[str, List[CharacterRelationship]]] = Field(
+    relationship_types: Dict[str, RelationshipType] = Field(
+        default_factory=dict,
+        description=("Available type of relationships in the game, key is relationshiptype.name")
+    )
+
+    # Relationship matrix: Dict[Character_Source_ID, Dict[Character_Target_ID, Dict[relationshiptype.name, CharacterRelationship]]]
+    relationships_matrix: Dict[str, Dict[str, Dict[str, CharacterRelationship]]] = Field(
         default_factory=dict,
         description="Models all kind of relationships between 2 characters."
     )

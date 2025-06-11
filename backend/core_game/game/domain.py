@@ -6,13 +6,6 @@ from typing import Dict
 
 
 class GameState:
-
     def __init__(self, game_state_model: GameStateModel):
-
-        self.game_map: GameMap = GameMap(
-            {
-                sid: Scenario(scenario_model) 
-                for sid, scenario_model in game_state_model.game_map.items()
-            }
-        )
+        self.game_map: GameMap = GameMap(game_state_model.game_map)
 

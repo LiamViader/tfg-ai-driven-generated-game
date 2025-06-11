@@ -1,4 +1,4 @@
-from core_game.map.schemas import ScenarioModel, ScenarioSnapshot
+from core_game.map.schemas import ScenarioModel, ScenarioSnapshot, ConnectionInfo, GameMapModel
 from typing import Dict
 
 class Scenario:
@@ -31,5 +31,5 @@ class Scenario:
 
 
 class GameMap():
-    def __init__(self, game_map: Dict[str, Scenario]):
-        self.map: Dict[str, Scenario] = game_map
+    def __init__(self, map_model: GameMapModel):
+        self._data: GameMapModel = map_model

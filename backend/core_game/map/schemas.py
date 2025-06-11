@@ -73,3 +73,6 @@ class ScenarioModel(BaseModel):
         description="List of previous versions (snapshots) of this scenario."
     )
 
+class GameMapModel(BaseModel):
+    scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="Dictionary where key is scenario id and value scenariomodel")
+    connections: Dict[str, ConnectionInfo] = Field(default_factory=dict, description="Dictionary where key is connection id and value connectioninfo")
