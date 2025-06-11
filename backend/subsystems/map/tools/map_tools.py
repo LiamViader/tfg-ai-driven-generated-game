@@ -6,7 +6,7 @@ from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 
-from core_game.map.schemas import Direction, OppositeDirections, ScenarioModel, ExitInfo
+from core_game.map.schemas import Direction, OppositeDirections, ScenarioModel, ConnectionInfo
 from subsystems.map.schemas.simulated_map import *
 
 
@@ -87,7 +87,7 @@ def create_scenario(
             "indoor_or_outdoor": args_model.indoor_or_outdoor,
             "type": args_model.type,
             "zone": args_model.zone,
-            "exits": {},
+            "connections": {},
         }
         new_scenario = ScenarioModel(**new_scenario_data)
         simulated_map_state.simulated_scenarios[effective_id] = new_scenario
@@ -187,9 +187,12 @@ def delete_scenario(
         )
 
     for other_id, other_scenario in simulated_map_state.simulated_scenarios.items():
-        for direction, exit_info in other_scenario.exits.items():
-            if exit_info and exit_info.target_scenario_id == args_model.scenario_id:
-                other_scenario.exits[direction] = None
+        for direction, conn_id in other_scenario.connections.items():
+            if conn_id:
+                conn = simulated_map_state.simulated_connections.get(conn_id)
+                if conn and (conn.scenario_a_id == args_model.scenario_id or conn.scenario_b_id == args_model.scenario_id):
+                    other_scenario.connections[direction] = None
+                    simulated_map_state.simulated_connections.pop(conn_id, None)
 
     if not simulated_map_state.simulated_scenarios[args_model.scenario_id].was_added_this_run:
         simulated_map_state.deleted_scenarios[args_model.scenario_id] = simulated_map_state.simulated_scenarios[args_model.scenario_id]
@@ -251,25 +254,28 @@ def create_bidirectional_connection(
     origin_scenario = simulated_map_state.simulated_scenarios[args_model.from_scenario_id]
     destination_scenario = simulated_map_state.simulated_scenarios[args_model.to_scenario_id]
 
-    for existing_direction, existing_exit in origin_scenario.exits.items():
-        if existing_exit and existing_exit.target_scenario_id == args_model.to_scenario_id:
-            return simulated_map_state._log_and_summarize(
-                "create_bidirectional_connection",
-                args_model,
-                False,
-                f"Error: Origin '{args_model.from_scenario_id}' has an existing exit via direction '{existing_direction}' to '{args_model.to_scenario_id}'. Cannot create another connection between them.",
-            )
+    for existing_direction, conn_id in origin_scenario.connections.items():
+        if conn_id:
+            conn = simulated_map_state.simulated_connections.get(conn_id)
+            if conn and ((conn.scenario_a_id == args_model.from_scenario_id and conn.scenario_b_id == args_model.to_scenario_id) or
+                         (conn.scenario_b_id == args_model.from_scenario_id and conn.scenario_a_id == args_model.to_scenario_id)):
+                return simulated_map_state._log_and_summarize(
+                    "create_bidirectional_connection",
+                    args_model,
+                    False,
+                    f"Error: Origin '{args_model.from_scenario_id}' has an existing connection via direction '{existing_direction}' to '{args_model.to_scenario_id}'. Cannot create another connection between them.",
+                )
 
     direction_to_origin = OppositeDirections[args_model.direction_from_origin]
 
-    if origin_scenario.exits.get(args_model.direction_from_origin) is not None:
+    if origin_scenario.connections.get(args_model.direction_from_origin) is not None:
         return simulated_map_state._log_and_summarize(
             "create_bidirectional_connection",
             args_model,
             False,
             f"Error: Origin scenario '{args_model.from_scenario_id}' already has an exit to the '{args_model.direction_from_origin}'.",
         )
-    if destination_scenario.exits.get(direction_to_origin) is not None:
+    if destination_scenario.connections.get(direction_to_origin) is not None:
         return simulated_map_state._log_and_summarize(
             "create_bidirectional_connection",
             args_model,
@@ -277,21 +283,19 @@ def create_bidirectional_connection(
             f"Error: Destination scenario '{args_model.to_scenario_id}' already has an exit to its '{direction_to_origin}' (which would be the return path).",
         )
 
-    exit_info_origin = ExitInfo(
-        target_scenario_id=args_model.to_scenario_id,
+    connection_id = simulated_map_state.generate_sequential_connection_id(list(simulated_map_state.simulated_connections.keys()))
+    connection = ConnectionInfo(
+        id=connection_id,
+        scenario_a_id=args_model.from_scenario_id,
+        scenario_b_id=args_model.to_scenario_id,
+        direction_from_a=args_model.direction_from_origin,
         connection_type=args_model.connection_type,
         travel_description=args_model.travel_description,
         traversal_conditions=args_model.traversal_conditions or [],
     )
-    exit_info_destination = ExitInfo(
-        target_scenario_id=args_model.from_scenario_id,
-        connection_type=args_model.connection_type,
-        travel_description=args_model.travel_description,
-        traversal_conditions=args_model.traversal_conditions or [],
-    )
-
-    origin_scenario.exits[args_model.direction_from_origin] = exit_info_origin
-    destination_scenario.exits[direction_to_origin] = exit_info_destination
+    simulated_map_state.simulated_connections[connection_id] = connection
+    origin_scenario.connections[args_model.direction_from_origin] = connection_id
+    destination_scenario.connections[direction_to_origin] = connection_id
 
     simulated_map_state._compute_island_clusters()
     return simulated_map_state._log_and_summarize(
@@ -315,19 +319,21 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
         )
 
     scenario_A = simulated_map_state.simulated_scenarios[args_model.scenario_id_A]
-    exit_info_A_to_B = scenario_A.exits.get(args_model.direction_from_A)
+    conn_id_A_to_B = scenario_A.connections.get(args_model.direction_from_A)
+    conn = simulated_map_state.simulated_connections.get(conn_id_A_to_B) if conn_id_A_to_B else None
 
-    if not exit_info_A_to_B:
+    if conn is None:
         return simulated_map_state._log_and_summarize(
             "delete_bidirectional_connection",
             args_model,
             False,
-            f"Error: Scenario '{args_model.scenario_id_A}' has no exit to the '{args_model.direction_from_A}'.",
+            f"Error: Scenario '{args_model.scenario_id_A}' has no connection to the '{args_model.direction_from_A}'.",
         )
 
-    scenario_id_B = exit_info_A_to_B.target_scenario_id
+    scenario_id_B = conn.scenario_b_id if conn.scenario_a_id == args_model.scenario_id_A else conn.scenario_a_id
     if scenario_id_B not in simulated_map_state.simulated_scenarios:
-        scenario_A.exits[args_model.direction_from_A] = None
+        scenario_A.connections[args_model.direction_from_A] = None
+        simulated_map_state.simulated_connections.pop(conn.id, None)
         simulated_map_state._compute_island_clusters()
         return simulated_map_state._log_and_summarize(
             "delete_bidirectional_connection",
@@ -339,13 +345,15 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
     scenario_B = simulated_map_state.simulated_scenarios[scenario_id_B]
     direction_from_B = OppositeDirections[args_model.direction_from_A]
 
-    scenario_A.exits[args_model.direction_from_A] = None
-    exit_B_to_A = scenario_B.exits.get(direction_from_B)
-    if exit_B_to_A and exit_B_to_A.target_scenario_id == args_model.scenario_id_A:
-        scenario_B.exits[direction_from_B] = None
+    scenario_A.connections[args_model.direction_from_A] = None
+    conn_B_id = scenario_B.connections.get(direction_from_B)
+    if conn_B_id and conn_B_id == conn.id:
+        scenario_B.connections[direction_from_B] = None
+        simulated_map_state.simulated_connections.pop(conn.id, None)
         message = f"Bidirectional connection '{args_model.scenario_id_A}' ({args_model.direction_from_A}) <-> '{scenario_id_B}' ({direction_from_B}) deleted."
     else:
-        message = f"Exit from '{args_model.scenario_id_A}' ({args_model.direction_from_A}) to '{scenario_id_B}' deleted. Reverse connection from '{scenario_id_B}' not found or not pointing back as expected."
+        simulated_map_state.simulated_connections.pop(conn.id, None)
+        message = f"Connection from '{args_model.scenario_id_A}' ({args_model.direction_from_A}) to '{scenario_id_B}' deleted. Reverse connection from '{scenario_id_B}' not found or not pointing back as expected."
 
     simulated_map_state._compute_island_clusters()
     return simulated_map_state._log_and_summarize(
@@ -384,17 +392,18 @@ def modify_bidirectional_connection(
         )
 
     origin_scenario = simulated_map_state.simulated_scenarios[args_model.from_scenario_id]
-    exit_info_origin = origin_scenario.exits.get(args_model.direction_from_origin)
+    conn_id_origin = origin_scenario.connections.get(args_model.direction_from_origin)
+    conn_origin = simulated_map_state.simulated_connections.get(conn_id_origin) if conn_id_origin else None
 
-    if not exit_info_origin:
+    if conn_origin is None:
         return simulated_map_state._log_and_summarize(
             "modify_bidirectional_connection",
             args_model,
             False,
-            f"Error: Scenario '{args_model.from_scenario_id}' has no exit to the '{args_model.direction_from_origin}'.",
+            f"Error: Scenario '{args_model.from_scenario_id}' has no connection to the '{args_model.direction_from_origin}'.",
         )
 
-    to_scenario_id = exit_info_origin.target_scenario_id
+    to_scenario_id = conn_origin.scenario_b_id if conn_origin.scenario_a_id == args_model.from_scenario_id else conn_origin.scenario_a_id
     if to_scenario_id not in simulated_map_state.simulated_scenarios:
         return simulated_map_state._log_and_summarize(
             "modify_bidirectional_connection",
@@ -405,32 +414,34 @@ def modify_bidirectional_connection(
 
     destination_scenario = simulated_map_state.simulated_scenarios[to_scenario_id]
     direction_to_origin = OppositeDirections[args_model.direction_from_origin]
-    exit_info_destination = destination_scenario.exits.get(direction_to_origin)
+    conn_id_destination = destination_scenario.connections.get(direction_to_origin)
+    conn_destination = simulated_map_state.simulated_connections.get(conn_id_destination) if conn_id_destination else None
 
     updated_fields_origin = []
     if args_model.new_connection_type is not None:
-        exit_info_origin.connection_type = args_model.new_connection_type
+        conn_origin.connection_type = args_model.new_connection_type
         updated_fields_origin.append("connection_type")
     if args_model.new_travel_description is not None:
-        exit_info_origin.travel_description = args_model.new_travel_description
+        conn_origin.travel_description = args_model.new_travel_description
         updated_fields_origin.append("travel_description")
     if args_model.new_traversal_conditions is not None:
-        exit_info_origin.traversal_conditions = args_model.new_traversal_conditions
+        conn_origin.traversal_conditions = args_model.new_traversal_conditions
         updated_fields_origin.append("traversal_conditions")
 
-    if exit_info_destination and exit_info_destination.target_scenario_id == args_model.from_scenario_id:
+    if conn_destination and (conn_destination.scenario_a_id == to_scenario_id and conn_destination.scenario_b_id == args_model.from_scenario_id or
+                             conn_destination.scenario_b_id == to_scenario_id and conn_destination.scenario_a_id == args_model.from_scenario_id):
         if args_model.new_connection_type is not None:
-            exit_info_destination.connection_type = args_model.new_connection_type
+            conn_destination.connection_type = args_model.new_connection_type
         if args_model.new_traversal_conditions is not None:
-            exit_info_destination.traversal_conditions = args_model.new_traversal_conditions
+            conn_destination.traversal_conditions = args_model.new_traversal_conditions
         if args_model.new_travel_description is not None:
-            exit_info_destination.travel_description = args_model.new_travel_description
+            conn_destination.travel_description = args_model.new_travel_description
         message = (
             f"Bidirectional connection from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) <-> '{to_scenario_id}' ({direction_to_origin}) modified. Updated fields: {', '.join(updated_fields_origin) if updated_fields_origin else 'None'}."
         )
     else:
         message = (
-            f"Exit from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) modified. Reverse connection from '{to_scenario_id}' not found or not pointing back as expected. Updated fields on forward path: {', '.join(updated_fields_origin) if updated_fields_origin else 'None'}."
+            f"Connection from '{args_model.from_scenario_id}' ({args_model.direction_from_origin}) modified. Reverse connection from '{to_scenario_id}' not found or not pointing back as expected. Updated fields on forward path: {', '.join(updated_fields_origin) if updated_fields_origin else 'None'}."
         )
 
     return simulated_map_state._log_and_summarize(

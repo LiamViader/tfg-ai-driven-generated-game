@@ -12,13 +12,23 @@ ConnectionType = Literal[
 connection_type: ConnectionType = Field(..., description=EXIT_FIELDS["connection_type"])"""
 
 
-class ExitInfo(BaseModel):
-    target_scenario_id: str = Field(..., description="Unique identifier of the target scenario the exit points to.")
+class ConnectionInfo(BaseModel):
+    """Represents a bidirectional connection between two scenarios."""
+
+    id: str = Field(..., description="Unique identifier of this connection.")
+    scenario_a_id: str = Field(..., description="ID of the first scenario.")
+    scenario_b_id: str = Field(..., description="ID of the second scenario.")
+    direction_from_a: 'Direction' = Field(..., description="Direction from scenario A towards scenario B.")
     connection_type: str = Field(..., description=EXIT_FIELDS["connection_type"])
     travel_description: Optional[str] = Field(default=None, description=EXIT_FIELDS["travel_description"])
     traversal_conditions: List[str] = Field(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
     exit_appearance_description: Optional[str] = Field(default=None, description=EXIT_FIELDS["exit_appearance_description"])
     is_blocked: bool = Field(default=False, description=EXIT_FIELDS["is_blocked"])
+
+    @property
+    def direction_from_b(self) -> 'Direction':
+        """Return the direction from scenario B towards scenario A."""
+        return OppositeDirections[self.direction_from_a]
 
 Direction = Literal["north", "south", "east", "west"]
 OppositeDirections: Dict[Direction, Direction] = {
@@ -38,7 +48,7 @@ class ScenarioSnapshot(BaseModel):
     indoor_or_outdoor: Literal["indoor", "outdoor"] = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
     type: str = Field(..., description=SCENARIO_FIELDS["type"])
     zone: str = Field(..., description=SCENARIO_FIELDS["zone"])
-    exits: Dict[Direction, Optional[ExitInfo]]
+    connections: Dict[Direction, Optional[str]]
 
 
 class ScenarioModel(BaseModel):
@@ -53,9 +63,9 @@ class ScenarioModel(BaseModel):
     was_added_this_run: bool = Field(default=True,description="Flag indicating if the scenario was added this run of the graph")
     was_modified_this_run: bool = Field(default=False,description="Flag indicating if the scenario was modified this run of the graph")
     valid_from: Optional[float] = Field(default=None, description="Timestamp of when this scenario version was created. If it was the first scenario version then set to None")
-    exits: Dict[Direction, Optional[ExitInfo]] = Field(
+    connections: Dict[Direction, Optional[str]] = Field(
         default_factory=lambda: {direction: None for direction in Direction.__args__},
-        description="Connections from this scenario to others, by direction."
+        description="Mapping from direction to connection ID, if any."
     )
     present_character_ids: set[str] = Field(default_factory=set,description="Ids of the present characters in the map")
     previous_versions: List[ScenarioSnapshot] = Field(
