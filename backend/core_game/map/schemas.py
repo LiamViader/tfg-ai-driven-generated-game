@@ -57,23 +57,9 @@ class ScenarioModel(BaseModel):
         default_factory=lambda: {direction: None for direction in Direction.__args__},
         description="Connections from this scenario to others, by direction."
     )
+    present_character_ids: set[str] = Field(default_factory=set,description="Ids of the present characters in the map")
     previous_versions: List[ScenarioSnapshot] = Field(
         default_factory=list,
         description="List of previous versions (snapshots) of this scenario."
     )
-
-    def snapshot_scenario(self, current_time: float):
-        snapshot = ScenarioSnapshot(
-            name=self.name,
-            visual_description=self.visual_description,
-            narrative_context=self.narrative_context,
-            summary_description=self.summary_description,
-            indoor_or_outdoor=self.indoor_or_outdoor,
-            type=self.type,
-            zone=self.zone,
-            exits=self.exits.copy(),  # Copiem la dict
-            valid_from=self.valid_from,
-            valid_until=current_time
-        )
-        self.previous_versions.append(snapshot)
 

@@ -22,7 +22,7 @@ class GameStateModel(BaseModel):
     """
     session: GameSessionModel = Field(..., description="Global information about the game session.")
 
-    world_map: Dict[str, ScenarioModel] = Field(
+    game_map: Dict[str, ScenarioModel] = Field(
         default_factory=dict,
         description="The world graph, represented as a dictionary mapping scenario IDs to their objects."
     )
@@ -37,8 +37,8 @@ class GameStateModel(BaseModel):
         description="The player character"
     )
     
-    # Relationship matrix: Dict[Character_Source_ID, Dict[Character_Target_ID, CharacterRelationship]]
-    relationship_matrix: Dict[str, Dict[str, CharacterRelationship]] = Field(
+    # Relationship matrix: Dict[Character_Source_ID, Dict[Character_Target_ID, List[CharacterRelationship]]]
+    relationships_matrix: Dict[str, Dict[str, List[CharacterRelationship]]] = Field(
         default_factory=dict,
         description="Models all kind of relationships between 2 characters."
     )
