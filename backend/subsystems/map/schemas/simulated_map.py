@@ -3,7 +3,7 @@ from pydantic import BaseModel, model_validator, Field as PydanticField
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 import re
 
-from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ExitInfo
+from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ConnectionInfo
 
 
 class CreateScenarioArgs(BaseModel):
@@ -96,6 +96,7 @@ class ValidateSimulationMapArgs(BaseModel):
 
 class SimulatedMapModel(BaseModel):
     simulated_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Represents the current state of all scenarios in the simulated map.")
+    simulated_connections: Dict[str, ConnectionInfo] = PydanticField(default_factory=dict, description="Mapping of connection IDs to their ConnectionInfo.")
     island_clusters: List[Set[str]] = PydanticField(default_factory=list, description="A list of clusters (sets of scenario IDs), where each cluster represents a group of interconnected scenarios. Scenarios that are not connected to others form singleton clusters.")
     deleted_scenarios: Dict[str, ScenarioModel] = PydanticField(default_factory=dict, description="A dictionary mapping scenario IDs to their corresponding ScenarioModel objects. Stores the scenarios that were deleted.")
     executor_applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'args', 'success', 'message'.")
@@ -133,6 +134,20 @@ class SimulatedMapModel(BaseModel):
 
         return f"scene_{next_number:03d}"
 
+    @staticmethod
+    def generate_sequential_connection_id(existing_ids: List[str]) -> str:
+        """Generates a unique connection ID in the form 'connection_001', ..."""
+        used_numbers = set()
+        pattern = re.compile(r"^connection_(\d+)$")
+        for existing_id in existing_ids:
+            match = pattern.match(existing_id)
+            if match:
+                used_numbers.add(int(match.group(1)))
+        next_number = 1
+        while next_number in used_numbers:
+            next_number += 1
+        return f"connection_{next_number:03d}"
+
     def _compute_island_clusters(self):
         "Computes the clusters formed by scenarios in the map"
         visited = set()
@@ -146,12 +161,17 @@ class SimulatedMapModel(BaseModel):
                     if current not in visited:
                         visited.add(current)
                         cluster.add(current)
-                        exits = self.simulated_scenarios[current].exits
-                        connected_ids = [
-                            exit_info.target_scenario_id
-                            for exit_info in exits.values()
-                            if exit_info and exit_info.target_scenario_id in self.simulated_scenarios
-                        ]
+                        conns = self.simulated_scenarios[current].connections
+                        connected_ids = []
+                        for conn_id in conns.values():
+                            if conn_id:
+                                conn = self.simulated_connections.get(conn_id)
+                                if not conn:
+                                    continue
+                                other_id = conn.scenario_b_id if conn.scenario_a_id == current else conn.scenario_a_id
+                                if other_id in self.simulated_scenarios:
+                                    connected_ids.append(other_id)
+                        
                         to_visit.extend([sid for sid in connected_ids if sid not in visited])
                 clusters.append(cluster)
         self.island_clusters=clusters
@@ -232,14 +252,20 @@ class SimulatedMapModel(BaseModel):
         details_str += f"  Visual Description: {scenario.visual_description}\n"
         details_str += f"  Narrative Context: {scenario.narrative_context}\n"
         details_str +=  "  Connections:\n"
-        if any(exit_info for exit_info in scenario.exits.values()):
-            for direction, exit_info in scenario.exits.items():
-                if exit_info:
-                    details_str += f"    - {direction}: to '{exit_info.target_scenario_id}' (Connection type: {exit_info.connection_type}, Conditions: {exit_info.traversal_conditions}, Travel: \"{exit_info.travel_description}\")\n"
+        if any(conn_id for conn_id in scenario.connections.values()):
+            for direction, conn_id in scenario.connections.items():
+                if conn_id:
+                    conn = self.simulated_connections.get(conn_id)
+                    if conn:
+                        other_id = conn.scenario_b_id if conn.scenario_a_id == scenario.id else conn.scenario_a_id
+                        details_str += (
+                            f"    - {direction}: to '{other_id}' (Connection type: {conn.connection_type}, "
+                            f"Conditions: {conn.traversal_conditions}, Travel: \"{conn.travel_description}\")\n"
+                        )
                 else:
                     details_str += f"    - {direction}: (None)\n"
         else:
-            details_str += "    (No exits defined)\n"
+            details_str += "    (No connections defined)\n"
         return self._log_and_summarize("get_scenario_details", args_model, True, details_str)
 
     def get_neighbors_at_distance(self, args_model:GetNeighborsAtDistanceArgs) -> str:
@@ -263,23 +289,28 @@ class SimulatedMapModel(BaseModel):
             if distance >= args_model.max_distance: continue
 
             current_scenario = self.simulated_scenarios.get(current_id)
-            if not current_scenario or not current_scenario.exits: continue
+            if not current_scenario or not current_scenario.connections:
+                continue
 
-            for direction, exit_info in current_scenario.exits.items():
-                if exit_info and exit_info.target_scenario_id in self.simulated_scenarios:
-                    neighbor_id = exit_info.target_scenario_id
-                    # Process if not visited, or found via a shorter/equal path to add all connections at this distance
-                    if neighbor_id not in visited_at_dist or visited_at_dist[neighbor_id] >= distance + 1 :
-                        if neighbor_id not in visited_at_dist : # Add to queue only if truly new or shorter path (for BFS structure)
-                            visited_at_dist[neighbor_id] = distance + 1
-                            if distance + 1 < args_model.max_distance : # Only add to queue if we need to explore further from it
-                                queue.append((neighbor_id, distance + 1, []))
-                        
-                        if visited_at_dist[neighbor_id] == distance + 1: # ensure we only list it once per distance level from different paths
+            for direction, conn_id in current_scenario.connections.items():
+                if conn_id:
+                    conn = self.simulated_connections.get(conn_id)
+                    if conn is None:
+                        continue
+                    neighbor_id = conn.scenario_b_id if conn.scenario_a_id == current_id else conn.scenario_a_id
+                    if neighbor_id in self.simulated_scenarios:
+                        # Process if not visited, or found via a shorter/equal path to add all connections at this distance
+                        if neighbor_id not in visited_at_dist or visited_at_dist[neighbor_id] >= distance + 1:
+                            if neighbor_id not in visited_at_dist : # Add to queue only if truly new or shorter path (for BFS structure)
+                                visited_at_dist[neighbor_id] = distance + 1
+                                if distance + 1 < args_model.max_distance : # Only add to queue if we need to explore further from it
+                                    queue.append((neighbor_id, distance + 1, []))
+
+                        if visited_at_dist[neighbor_id] == distance + 1:  # ensure we only list it once per distance level from different paths
                             neighbor_scenario = self.simulated_scenarios[neighbor_id]
-                            connection_desc = f"from '{current_scenario.name}' (ID: {current_id}) via '{direction}' (exit type: {exit_info.connection_type})"
+                            connection_desc = f"from '{current_scenario.name}' (ID: {current_id}) via '{direction}' (connection type: {conn.connection_type})"
                             entry_str = f"- '{neighbor_scenario.name}' (ID: {neighbor_id}, Type: {neighbor_scenario.type}, Zone: {neighbor_scenario.zone}) reached {connection_desc}."
-                            if entry_str not in results_by_distance[distance + 1]: # Avoid duplicate entries if multiple paths lead at same shortest distance
+                            if entry_str not in results_by_distance[distance + 1]:  # Avoid duplicate entries if multiple paths lead at same shortest distance
                                 results_by_distance[distance + 1].append(entry_str)
         
         has_results = False
@@ -340,17 +371,19 @@ class SimulatedMapModel(BaseModel):
             return self._log_and_summarize("get_connection_details", args_model, False, f"Error: Scenario ID '{args_model.from_scenario_id}' not found.")
 
         scenario = self.simulated_scenarios[args_model.from_scenario_id]
-        exit_info = scenario.exits.get(args_model.direction)
+        conn_id = scenario.connections.get(args_model.direction)
+        conn = self.simulated_connections.get(conn_id) if conn_id else None
 
-        if not exit_info:
-            return self._log_and_summarize("get_connection_details", args_model, True, f"Scenario '{args_model.from_scenario_id}' has no exit defined in the direction '{args_model.direction}'.")
+        if conn is None:
+            return self._log_and_summarize("get_connection_details", args_model, True, f"Scenario '{args_model.from_scenario_id}' has no connection defined in the direction '{args_model.direction}'.")
 
+        target_id = conn.scenario_b_id if conn.scenario_a_id == args_model.from_scenario_id else conn.scenario_a_id
         details_str = (
-            f"Details for exit from '{args_model.from_scenario_id}' towards '{args_model.direction}':\n"
-            f"  - Leads to Scenario ID: {exit_info.target_scenario_id}\n"
-            f"  - Connection Type: {exit_info.connection_type}\n"
-            f"  - Travel Description: {exit_info.travel_description or 'N/A'}\n"
-            f"  - Traversal Conditions: {', '.join(exit_info.traversal_conditions) if exit_info.traversal_conditions else 'None'}"
+            f"Details for connection from '{args_model.from_scenario_id}' towards '{args_model.direction}':\n"
+            f"  - Leads to Scenario ID: {target_id}\n"
+            f"  - Connection Type: {conn.connection_type}\n"
+            f"  - Travel Description: {conn.travel_description or 'N/A'}\n"
+            f"  - Traversal Conditions: {', '.join(conn.traversal_conditions) if conn.traversal_conditions else 'None'}"
         )
         return self._log_and_summarize("get_connection_details", args_model, True, details_str)
 
@@ -363,14 +396,14 @@ class SimulatedMapModel(BaseModel):
 
         scenario = self.simulated_scenarios[args_model.scenario_id]
         available_directions = [
-            direction for direction in Direction.__args__ # type: ignore
-            if scenario.exits.get(direction) is None
+            direction for direction in Direction.__args__  # type: ignore
+            if scenario.connections.get(direction) is None
         ]
 
         if not available_directions:
-            message = f"Scenario '{scenario.name}' (ID: {args_model.scenario_id}) has no available (empty) exit directions; all directions are occupied or it has no exit slots."
+            message = f"Scenario '{scenario.name}' (ID: {args_model.scenario_id}) has no available (empty) directions; all are occupied or there are no slots."
         else:
-            message = f"Available (empty) exit directions for scenario '{scenario.name}' (ID: {args_model.scenario_id}): {', '.join(available_directions)}."
+            message = f"Available (empty) directions for scenario '{scenario.name}' (ID: {args_model.scenario_id}): {', '.join(available_directions)}."
 
         return self._log_and_summarize("get_available_exit_directions", args_model, True, message)
 

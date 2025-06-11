@@ -22,7 +22,7 @@ class Scenario:
             indoor_or_outdoor=self._data.indoor_or_outdoor,
             type=self._data.type,
             zone=self._data.zone,
-            exits=self._data.exits.copy(),  # Copiem la dict
+            connections=self._data.connections.copy(),
             valid_from=self._data.valid_from,
             valid_until=current_time
         )

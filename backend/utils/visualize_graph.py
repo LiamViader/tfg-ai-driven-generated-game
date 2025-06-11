@@ -33,12 +33,17 @@ def visualize_map_graph(simulated_map: SimulatedMapModel):
     # Añadir aristas (conexiones)
     edge_labels = {}
     for scenario_id, scenario in simulated_map.simulated_scenarios.items():
-        for direction, exit_info in scenario.exits.items():
-            if exit_info and exit_info.target_scenario_id in simulated_map.simulated_scenarios:
-                G.add_edge(scenario_id, exit_info.target_scenario_id)
-                edge_labels[(scenario_id, exit_info.target_scenario_id)] = f"{direction}\n({exit_info.connection_type})"
-            elif exit_info:
-                print(f"Advertencia: El escenario '{scenario_id}' tiene una salida a un escenario no existente '{exit_info.target_scenario_id}'.")
+        for direction, conn_id in scenario.connections.items():
+            if not conn_id:
+                continue
+            conn = simulated_map.simulated_connections.get(conn_id)
+            if conn:
+                target_id = conn.scenario_b_id if conn.scenario_a_id == scenario_id else conn.scenario_a_id
+                if target_id in simulated_map.simulated_scenarios:
+                    G.add_edge(scenario_id, target_id)
+                    edge_labels[(scenario_id, target_id)] = f"{direction}\n({conn.connection_type})"
+                else:
+                    print(f"Advertencia: El escenario '{scenario_id}' tiene una conexión a un escenario no existente '{target_id}'.")
 
     if not G.nodes():
         print("Grafo vacío después de procesar escenarios.")

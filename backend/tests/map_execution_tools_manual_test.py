@@ -8,6 +8,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 from subsystems.map.schemas.simulated_map import *
+from subsystems.map.tools.map_tools import (
+    create_scenario,
+    create_bidirectional_connection,
+    modify_scenario,
+    get_scenario_details,
+    list_scenarios_summary_per_cluster,
+    find_scenarios_by_attribute,
+    get_neighbors_at_distance,
+    finalize_simulation,
+)
 
 
 def print_step(title: str):
@@ -36,7 +46,16 @@ if __name__ == "__main__":
             type=typ,
             zone=zone
         )
-        print(simulated_map.create_scenario(args))
+        print(create_scenario(
+            name=args.name,
+            narrative_context=args.narrative_context,
+            visual_description=args.visual_description,
+            summary_description=args.summary_description,
+            indoor_or_outdoor=args.indoor_or_outdoor,
+            type=args.type,
+            zone=args.zone,
+            simulated_map_state=simulated_map,
+        ))
 
     # === CONNECT SCENARIOS ===
     print_step("Connect Scenarios")
@@ -56,7 +75,15 @@ if __name__ == "__main__":
             travel_description=f"A {conn_type} from {from_id} to {to_id}.",
             traversal_conditions=[]
         )
-        print(simulated_map.create_bidirectional_connection(conn_args))
+        print(create_bidirectional_connection(
+            from_scenario_id=conn_args.from_scenario_id,
+            direction_from_origin=conn_args.direction_from_origin,
+            to_scenario_id=conn_args.to_scenario_id,
+            connection_type=conn_args.connection_type,
+            travel_description=conn_args.travel_description,
+            traversal_conditions=conn_args.traversal_conditions,
+            simulated_map_state=simulated_map,
+        ))
 
     # === MODIFY A SCENARIO ===
     print_step("Modify Scenario Name")
@@ -64,33 +91,62 @@ if __name__ == "__main__":
         scenario_id="scene_003",
         new_name="Bright Clearing"
     )
-    print(simulated_map.modify_scenario(modify_args))
+    print(modify_scenario(
+        scenario_id=modify_args.scenario_id,
+        new_name=modify_args.new_name,
+        new_summary_description=None,
+        new_visual_description=None,
+        new_narrative_context=None,
+        new_indoor_or_outdoor=None,
+        new_type=None,
+        new_zone=None,
+        simulated_map_state=simulated_map,
+    ))
 
     # === GET SCENARIO DETAILS ===
     print_step("Get Scenario Details")
     details_args = GetScenarioDetailsArgs(scenario_id="scene_004")
-    print(simulated_map.get_scenario_details(details_args))
+    print(get_scenario_details(
+        scenario_id=details_args.scenario_id,
+        simulated_map_state=simulated_map,
+    ))
 
     # === CLUSTER SUMMARY ===
     print_step("List Scenario Clusters")
     summary_args = ListScenariosClusterSummaryArgs(list_all_scenarios_in_each_cluster=True)
-    print(simulated_map.list_scenarios_summary_per_cluster(summary_args))
+    print(list_scenarios_summary_per_cluster(
+        list_all_scenarios_in_each_cluster=summary_args.list_all_scenarios_in_each_cluster,
+        max_scenarios_to_list_per_cluster_if_not_all=summary_args.max_scenarios_to_list_per_cluster_if_not_all,
+        simulated_map_state=simulated_map,
+    ))
 
     # === FIND SCENARIOS ===
     print_step("Find Scenarios by Zone")
     find_args = FindScenariosArgs(attribute_to_filter="zone", value_to_match="north woods")
-    print(simulated_map.find_scenarios_by_attribute(find_args))
+    print(find_scenarios_by_attribute(
+        attribute_to_filter=find_args.attribute_to_filter,
+        value_to_match=find_args.value_to_match,
+        max_results=find_args.max_results,
+        simulated_map_state=simulated_map,
+    ))
 
     # === SPATIAL INFO ===
     print_step("SPATIAL INFO")
     spatialinfo_args = GetNeighborsAtDistanceArgs(start_scenario_id="scene_002",max_distance=3)
-    print(simulated_map.get_neighbors_at_distance(spatialinfo_args))
+    print(get_neighbors_at_distance(
+        start_scenario_id=spatialinfo_args.start_scenario_id,
+        max_distance=spatialinfo_args.max_distance,
+        simulated_map_state=simulated_map,
+    ))
 
 
     # === FINALIZE ===
     print_step("Finalize Simulation")
     final_args = FinalizeSimulationArgs(justification="Map includes indoor/outdoor areas, multiple connections, and zone variety.")
-    final_result = simulated_map.finalize_simulation_and_provide_map(final_args)
+    final_result = finalize_simulation(
+        justification=final_args.justification,
+        simulated_map_state=simulated_map,
+    )
     print("Final Justification:", final_result["final_justification"])
     print("Scenarios in Final Map:", len(final_result["final_simulated_map_scenarios"]))
     print("Clusters:", simulated_map.island_clusters)
