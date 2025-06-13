@@ -26,22 +26,46 @@ class FailureConditionModel(BaseModel):
     is_active: bool = Field(False, description="Indicates whether this failure condition has been fully triggered (risk level reached 100) and the narrative has failed as a result.")
     risk_triggered_beats: List[RiskTriggeredBeats] = Field(default_factory=list, description="List of risk level ranges mapped to narrative beats that should be triggered when the risk is within those ranges.")
 
-class NarrativeStageModel(BaseModel):
-    """Represents a stage in the narrative structure."""
-    name: str = Field(..., description="Stage name e.g. Introductio, climax, etc.")
-    narrative_objectives: str = Field(..., description="General objectives for this narrative stage, e.g., introducing characters, presenting conflicts, revealing the world, etc.")
-    stage_beats: List[NarrativeBeatModel] = Field(default_factory=list, description="Available narrative beats in the stage")
+class NarrativeStageTypeModel(BaseModel):
+    """Defines a stage in a narrative structure type (static info only)."""
+    name: str = Field(..., description="Stage name e.g. Introduction, climax, etc.")
+    narrative_objectives: str = Field(
+        ..., description="General objectives for this stage, e.g., introducing characters, presenting conflicts, revealing the world, etc."
+    )
+
+
+class NarrativeStageModel(NarrativeStageTypeModel):
+    """Represents a stage in an active narrative structure with beats."""
+    stage_beats: List[NarrativeBeatModel] = Field(
+        default_factory=list, description="Available narrative beats in the stage"
+    )
+
+class NarrativeStructureTypeModel(BaseModel):
+    """Static definition of a narrative structure without concrete beats."""
+    name: str = Field(..., description="Name of the narrative structure e.g. 5 act, Hero's journey")
+    description: str = Field(..., description="General description of the narrative structure and its logic.")
+    orientative_use_cases: str = Field(
+        ..., description="Typical use cases for this structure (genres or tones where it works well)."
+    )
+    stages: List[NarrativeStageTypeModel] = Field(
+        default_factory=list, description="Ordered stages that define this structure"
+    )
+
 
 class NarrativeStructureModel(BaseModel):
-    """Represents a commonly used narrative structure."""
-    name: str = Field(...,description="Name of the narrative structure e.g. 5 act, Heros journey")
-    description: str = Field(..., description="General description of the narrative structure and its logic.")
-    orientative_use_cases: str = Field(..., description="Typical use cases for this narrative structure (e.g., genres or narrative tones where it works well).")
-    stages: List[NarrativeStageModel] = Field(default_factory=list, description="Sorted stages of the narrative structure")
+    """Active narrative structure that contains dynamic beats."""
+    structure_type: NarrativeStructureTypeModel = Field(
+        ..., description="Reference to the static narrative structure definition."
+    )
+    stages: List[NarrativeStageModel] = Field(
+        default_factory=list, description="Stages of this structure with their narrative beats"
+    )
 
 class NarrativeStateModel(BaseModel):
     """Tracks the state of the plot, goals, and progression."""
     main_goal: Optional[GoalModel] = Field(None, description="The main goal of the narrative.")
     failure_conditions: List[FailureConditionModel] = Field(default_factory=list, description="List of failure conditions.")
     current_stage_index: Optional[int] = Field(0, description="Index of the currently active narrative stage.")
-    narrative_structure: NarrativeStructureModel = Field(...,description="Narrative structure selected for the narrative.")
+    narrative_structure: NarrativeStructureModel = Field(
+        ..., description="Narrative structure selected for the narrative."
+    )
