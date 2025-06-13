@@ -92,7 +92,7 @@ def narrative_structure_reason_node(state: GenerationGraphState):
 
     llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(tools_availale, tool_choice="any")
 
-    names = ", ".join([f"**\n id: {s.id} name: {s.name} description: {s.description}\n**\n" for s in AVAILABLE_NARRATIVE_STRUCTURES])
+    names = ", ".join([f"id: {s.id} name: {s.name}\n" for s in AVAILABLE_NARRATIVE_STRUCTURES])
     prompt = format_structure_selection_prompt(
         refined_prompt=state.refined_prompt,
         main_goal=state.main_goal,

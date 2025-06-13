@@ -23,6 +23,8 @@ For the objective to be effective in a narrative game, it must adhere to the fol
         - *Why is this good?* Because the "solution" is not defined. It allows the player to choose their strategy: leading a rebellion, seeking a diplomatic solution, exposing a secret, sabotaging his source of power, etc.
     - **EXAMPLE OF A BAD, LINEAR OBJECTIVE:** "Retrieve the 'Sun-shadow Dagger' from the 'Volcanic Forge' to assassinate the Emperor in his Throne Room."
         - *Why is this bad?* Because it prescribes a specific sequence of actions (Go to A, get B, do C at D). It leaves small room for strategic decisions; there is only so little ways to fulfill the objective. The player becomes a mere task-doer instead of an agent of change.
+
+4.  ** Must be concise:** The goal has to be one sentence or so.
 """
 
 GENERATE_MAIN_GOAL_SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(

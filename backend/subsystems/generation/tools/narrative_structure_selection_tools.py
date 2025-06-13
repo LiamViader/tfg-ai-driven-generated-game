@@ -20,19 +20,18 @@ class ToolGetStructureInfoArgs(BaseModel):
 def select_narrative_structure(structure_id: str, state: Annotated[GenerationGraphState, InjectedState()]) -> str:
     """Select one of the available narrative structures by its id."""
     struct = AVAILABLE_STRUCTURES_BY_ID.get(structure_id)
-    print("selected")
     if struct is None:
         return f"Structure id '{structure_id}' not found"
     state.selected_structure = struct
     return f"Selected narrative structure '{struct.name}'"
 
 @tool(args_schema=ToolGetStructureInfoArgs)
-def get_structure_use_cases(structure_id: str) -> str:
-    """Get some use cases examples of a narrative structure. Use cases are just an example, does NOT imply the structure can only be used on those use cases"""
+def get_structure_description(structure_id: str) -> str:
+    """Get description and use cases of a narrative structure."""
     struct = AVAILABLE_STRUCTURES_BY_ID.get(structure_id)
     if struct is None:
         return f"Structure id '{structure_id}' not found"
-    return f"{struct.name}: Use cases: {struct.orientative_use_cases}"
+    return f"{struct.name}: {struct.description} Use cases: {struct.orientative_use_cases}"
 
 @tool(args_schema=ToolGetStructureInfoArgs)
 def get_structure_stages(structure_id: str) -> str:
@@ -42,4 +41,4 @@ def get_structure_stages(structure_id: str) -> str:
         return f"Structure id '{structure_id}' not found"
     return "\n".join([f"{i+1}. {stage.name}: {stage.narrative_objectives}" for i, stage in enumerate(struct.stages)])
 
-STRUCTURE_TOOLS = [select_narrative_structure, get_structure_use_cases, get_structure_stages]
+STRUCTURE_TOOLS = [select_narrative_structure, get_structure_description, get_structure_stages]
