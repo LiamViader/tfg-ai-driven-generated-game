@@ -10,18 +10,18 @@ You are an AI narrative designer specializing in interactive games. Your task is
 
 This goal is the player's primary motivation and the central axis that will guide their decision-making throughout the entire narrative experience. It must feel like a natural consequence of the world and the situation described in the document.
 
-# PRINCIPLES FOR A GOOD OBJECTIVE
-For the objective to be effective in a narrative game, it must adhere to the following principles:
+# PRINCIPLES FOR A GOOD MAIN GOAL
+For the main goal to be effective in a narrative game, it must adhere to the following principles:
 
 1.  **Must be Player-Centric and Actionable:** The goal must be phrased so that the player understands it is their mission. It should be a call to action.
 
 2.  **Must be a Guiding 'North Star' for Decisions:** The goal must give the player a clear direction. When faced with a choice, the player should be able to ask themselves, "Which option gets me closer to achieving [main_goal]?".
 
 3.  **Must be OPEN-ENDED and Allow Multiple Paths to achieve it (Very Important):**
-    - The objective must define a **desired end state**, not a specific method to achieve it. It must leave room for the player's creativity and agency.
-    - **EXAMPLE OF A GOOD, OPEN-ENDED OBJECTIVE:** "End the tyranny of the Galactic Emperor."
+    - The main goal must define a **desired end state**, not a specific method to achieve it. It must leave room for the player's creativity and agency.
+    - **EXAMPLE OF A GOOD, OPEN-ENDED MAIN GOAL:** "End the tyranny of the Galactic Emperor."
         - *Why is this good?* Because the "solution" is not defined. It allows the player to choose their strategy: leading a rebellion, seeking a diplomatic solution, exposing a secret, sabotaging his source of power, etc.
-    - **EXAMPLE OF A BAD, LINEAR OBJECTIVE:** "Retrieve the 'Sun-shadow Dagger' from the 'Volcanic Forge' to assassinate the Emperor in his Throne Room."
+    - **EXAMPLE OF A BAD, LINEAR MAIN GOAL:** "Retrieve the 'Sun-shadow Dagger' from the 'Volcanic Forge' to assassinate the Emperor in his Throne Room."
         - *Why is this bad?* Because it prescribes a specific sequence of actions (Go to A, get B, do C at D). It leaves small room for strategic decisions; there is only so little ways to fulfill the objective. The player becomes a mere task-doer instead of an agent of change.
 
 4.  ** Must be concise:** The goal has to be one sentence or so.

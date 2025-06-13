@@ -53,7 +53,7 @@ def generate_main_goal(state: GenerationGraphState):
 
 
     try:
-        generate_main_goal_llm = ChatOpenAI(model="gpt-4.1")
+        generate_main_goal_llm = ChatOpenAI(model="o4-mini")
         generate_main_goal_llm_structured_output=generate_main_goal_llm.with_structured_output(MainGoal)
 
         full_prompt = format_main_goal_generation_prompt(

@@ -13,4 +13,4 @@ if __name__ == '__main__':
     final_graph_state_instance = GenerationGraphState(**final_state)
 
     print("\n--- FINAL STATE ---\n\n")
-    print(final_graph_state_instance.structure_selection_messages)
+    print(final_graph_state_instance.main_goal)
