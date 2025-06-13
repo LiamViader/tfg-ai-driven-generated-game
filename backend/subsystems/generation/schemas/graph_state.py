@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from copy import deepcopy
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
-
+from core_game.narrative.schemas import NarrativeStructureTypeModel
 
 
 
@@ -18,8 +18,8 @@ class GenerationGraphState(BaseModel):
     generate_main_goal_error_message: str = Field(default="", description="Error raised while trying to generate main goal")
 
     # NARRATIVE STRUCTURE SELECTION
-    selected_structure_type_id: str = Field(default="", description="ID of the chosen narrative structure type")
-    selected_structure_type_name: str = Field(default="", description="Name of the chosen narrative structure type")
     structure_selection_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages for the structure selection agent")
     current_structure_selection_iteration: int = Field(default=0, description="Current iteration in the structure selection process")
-    max_structure_selection_iterations: int = Field(default=3, description="Maximum attempts to select a structure")
+    max_structure_selection_reason_iterations: int = Field(default=4, description="Maximum attempts to select a structure")
+    max_structure_forced_selection_iterations: int = Field(default=2, description="Maximum attempts to select a structure")
+    selected_structure: Optional[NarrativeStructureTypeModel] = Field(default=None, description="Narrative structure selected by the agent")

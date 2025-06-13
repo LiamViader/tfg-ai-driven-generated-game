@@ -19,6 +19,17 @@ def validate_main_goal(state: GenerationGraphState) -> str:
         else:
             return "end_by_error"
 
+def structure_selected_or_reason_again(state: GenerationGraphState) -> str:
+    """Check if a narrative structure has been selected."""
+    print(state.selected_structure)
+    if state.selected_structure is not None:
+        return "continue"
+    elif state.current_structure_selection_iteration < state.max_structure_selection_reason_iterations + state.max_structure_forced_selection_iterations:
+        return "reason"
+    else:
+        return "end_by_error"
+
+
 def get_generator_graph_app():
     """
     Builds and compiles the map generation graph.
@@ -47,10 +58,10 @@ def get_generator_graph_app():
     )
     workflow.add_conditional_edges(
         "narrative_structure_tool",
-        structure_selected_or_retry,
+        structure_selected_or_reason_again,
         {
             "continue": END,
-            "retry": "narrative_structure_reason",
+            "reason": "narrative_structure_reason",
             "end_by_error": END,
         }
     )

@@ -9,7 +9,7 @@ from subsystems.generation.prompts.generate_main_goal import format_main_goal_ge
 from subsystems.generation.prompts.select_narrative_structure import format_structure_selection_prompt
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.schemas.main_goal import MainGoal
-from subsystems.generation.tools.narrative_structure_tools import STRUCTURE_TOOLS
+from subsystems.generation.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError
@@ -66,12 +66,10 @@ def generate_main_goal(state: GenerationGraphState):
         if "as an ai model" in structured_response.main_goal.lower():
             raise ValueError("LLM returned a refusal response.")
 
-        print(f"---SUCCESS! Main goal: {structured_response.main_goal}---")
         state.main_goal = structured_response.main_goal
         state.generate_main_goal_error_message = ""
 
     except (ValidationError, ValueError) as e:
-        print(f"---VALIDATION FAILED: {e}---")
         state.main_goal = ""
         state.generate_main_goal_error_message = str(e)
 
@@ -86,9 +84,15 @@ def narrative_structure_reason_node(state: GenerationGraphState):
     """Reasoning step for selecting a narrative structure."""
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
 
-    llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(STRUCTURE_TOOLS, tool_choice="any")
+    #Si s'acosta el màxim d'iteracions, es força a seleccionar la estructura. 2 iteracions de marge per si hi ha errors
+    if state.current_structure_selection_iteration < state.max_structure_selection_reason_iterations:
+        tools_availale = STRUCTURE_TOOLS
+    else:
+        tools_availale = [select_narrative_structure]
 
-    names = ", ".join([f"{s.id}:{s.name}" for s in AVAILABLE_NARRATIVE_STRUCTURES])
+    llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(tools_availale, tool_choice="any")
+
+    names = ", ".join([f"**\n id: {s.id} name: {s.name} description: {s.description}\n**\n" for s in AVAILABLE_NARRATIVE_STRUCTURES])
     prompt = format_structure_selection_prompt(
         refined_prompt=state.refined_prompt,
         main_goal=state.main_goal,
@@ -108,12 +112,5 @@ def narrative_structure_reason_node(state: GenerationGraphState):
 narrative_structure_tool_node = ToolNode(STRUCTURE_TOOLS)
 narrative_structure_tool_node.messages_key = "structure_selection_messages"
 
-def structure_selected_or_retry(state: GenerationGraphState) -> str:
-    """Check if a narrative structure has been selected."""
-    if state.selected_structure_type_id:
-        return "continue"
-    elif state.current_structure_selection_iteration < state.max_structure_selection_iterations:
-        return "retry"
-    else:
-        return "end_by_error"
+
 
