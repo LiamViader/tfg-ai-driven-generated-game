@@ -28,17 +28,30 @@ def get_generator_graph_app():
     workflow.add_node("receive_generation_prompt", receive_generation_prompt)
     workflow.add_node("refine_generation_prompt", refine_generation_prompt)
     workflow.add_node("generate_main_goal", generate_main_goal)
+    workflow.add_node("narrative_structure_reason", narrative_structure_reason_node)
+    workflow.add_node("narrative_structure_tool", narrative_structure_tool_node)
 
     workflow.add_edge(START, "receive_generation_prompt")
     workflow.add_edge("receive_generation_prompt", "refine_generation_prompt")
     workflow.add_edge("refine_generation_prompt", "generate_main_goal")
+    workflow.add_edge("generate_main_goal", "narrative_structure_reason")
+    workflow.add_edge("narrative_structure_reason", "narrative_structure_tool")
     workflow.add_conditional_edges(
         "generate_main_goal",
         validate_main_goal,
         {
-            "continue": END,
+            "continue": "narrative_structure_reason",
             "retry": "generate_main_goal",
             "end_by_error": END
+        }
+    )
+    workflow.add_conditional_edges(
+        "narrative_structure_tool",
+        structure_selected_or_retry,
+        {
+            "continue": END,
+            "retry": "narrative_structure_reason",
+            "end_by_error": END,
         }
     )
 

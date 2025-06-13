@@ -1,7 +1,6 @@
 from typing import Dict, List, Any, Optional, Literal, Set, Tuple
 from pydantic import BaseModel, model_validator, Field as PydanticField
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
-import re
 
 from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ConnectionInfo
 
@@ -119,34 +118,23 @@ class SimulatedMapModel(BaseModel):
 
     @staticmethod
     def generate_sequential_scene_id(existing_ids: List[str]) -> str:
-        """Generates a unique ID in the format 'scene_001', 'scene_002', ... based on existing IDs."""
-        used_numbers = set()
+        """Generate a globally unique sequential scenario ID."""
+        from core_game.map.schemas import _generate_scenario_id
 
-        pattern = re.compile(r"^scene_(\d+)$")
-        for existing_id in existing_ids:
-            match = pattern.match(existing_id)
-            if match:
-                used_numbers.add(int(match.group(1)))
-
-        next_number = 1
-        while next_number in used_numbers:
-            next_number += 1
-
-        return f"scene_{next_number:03d}"
+        new_id = _generate_scenario_id()
+        while new_id in existing_ids:
+            new_id = _generate_scenario_id()
+        return new_id
 
     @staticmethod
     def generate_sequential_connection_id(existing_ids: List[str]) -> str:
-        """Generates a unique connection ID in the form 'connection_001', ..."""
-        used_numbers = set()
-        pattern = re.compile(r"^connection_(\d+)$")
-        for existing_id in existing_ids:
-            match = pattern.match(existing_id)
-            if match:
-                used_numbers.add(int(match.group(1)))
-        next_number = 1
-        while next_number in used_numbers:
-            next_number += 1
-        return f"connection_{next_number:03d}"
+        """Generate a globally unique sequential connection ID."""
+        from core_game.map.schemas import _generate_connection_id
+
+        new_id = _generate_connection_id()
+        while new_id in existing_ids:
+            new_id = _generate_connection_id()
+        return new_id
 
     def _compute_island_clusters(self):
         "Computes the clusters formed by scenarios in the map"

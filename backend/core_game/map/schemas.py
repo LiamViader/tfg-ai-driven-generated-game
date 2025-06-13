@@ -1,5 +1,24 @@
 from typing import Dict, List, Optional, Literal, Any, Tuple, Set
 from pydantic import BaseModel, Field
+
+# Internal counter to generate sequential scenario ids
+_scenario_id_counter = 0
+# Internal counter to generate sequential connection ids
+_connection_id_counter = 0
+
+
+def _generate_scenario_id() -> str:
+    """Return a sequential id of the form 'scene_001'."""
+    global _scenario_id_counter
+    _scenario_id_counter += 1
+    return f"scene_{_scenario_id_counter:03d}"
+
+
+def _generate_connection_id() -> str:
+    """Return a sequential id of the form 'connection_001'."""
+    global _connection_id_counter
+    _connection_id_counter += 1
+    return f"connection_{_connection_id_counter:03d}"
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 
 """
@@ -15,7 +34,7 @@ connection_type: ConnectionType = Field(..., description=EXIT_FIELDS["connection
 class ConnectionInfo(BaseModel):
     """Represents a bidirectional connection between two scenarios."""
 
-    id: str = Field(..., description="Unique identifier of this connection.")
+    id: str = Field(default_factory=_generate_connection_id, description="Unique identifier of this connection.")
     scenario_a_id: str = Field(..., description="ID of the first scenario.")
     scenario_b_id: str = Field(..., description="ID of the second scenario.")
     direction_from_a: 'Direction' = Field(..., description="Direction from scenario A towards scenario B.")
@@ -52,7 +71,7 @@ class ScenarioSnapshot(BaseModel):
 
 
 class ScenarioModel(BaseModel):
-    id: str = Field(..., description="Unique identifier for the scenario.")
+    id: str = Field(default_factory=_generate_scenario_id, description="Unique identifier for the scenario.")
     name: str = Field(..., description=SCENARIO_FIELDS["name"])
     visual_description: str = Field(..., description=SCENARIO_FIELDS["visual_description"])
     narrative_context: str = Field(..., description=SCENARIO_FIELDS["narrative_context"])
