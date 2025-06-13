@@ -12,7 +12,7 @@ AVAILABLE_STRUCTURES_BY_ID = {s.id: s for s in AVAILABLE_NARRATIVE_STRUCTURES}
 
 class ToolSelectStructureArgs(BaseModel):
     structure_id: str = Field(..., description="ID of the narrative structure to select")
-    tool_call_id: Annotated[str, InjectedToolCallId]  # entire state injection
+    tool_call_id: Annotated[str, InjectedToolCallId] 
 
 class ToolGetStructureInfoArgs(BaseModel):
     structure_id: str = Field(..., description="ID of the structure")
