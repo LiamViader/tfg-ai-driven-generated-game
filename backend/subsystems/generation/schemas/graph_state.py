@@ -16,3 +16,10 @@ class GenerationGraphState(BaseModel):
     generate_main_goal_attempts: int = Field(default=0,description="Current attempt of generating main goal")
     generate_main_goal_max_attempts: int = Field(...,description="Max attemps for generating the main goal")
     generate_main_goal_error_message: str = Field(default="", description="Error raised while trying to generate main goal")
+
+    # NARRATIVE STRUCTURE SELECTION
+    selected_structure_type_id: str = Field(default="", description="ID of the chosen narrative structure type")
+    selected_structure_type_name: str = Field(default="", description="Name of the chosen narrative structure type")
+    structure_selection_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages for the structure selection agent")
+    current_structure_selection_iteration: int = Field(default=0, description="Current iteration in the structure selection process")
+    max_structure_selection_iterations: int = Field(default=3, description="Maximum attempts to select a structure")

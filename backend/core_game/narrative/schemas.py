@@ -1,6 +1,15 @@
 from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
+# Internal counter to generate sequential ids for narrative structures
+_structure_id_counter = 0
+
+def _generate_structure_id() -> str:
+    """Return a sequential id of the form 'structure_001'."""
+    global _structure_id_counter
+    _structure_id_counter += 1
+    return f"structure_{_structure_id_counter:03d}"
+
 class GoalModel(BaseModel):
     """Defines a main goal for the player in the narrative. This will guide the narrative."""
     description: str = Field(..., description="Clear description of the goal to be achieved.")
@@ -42,6 +51,7 @@ class NarrativeStageModel(NarrativeStageTypeModel):
 
 class NarrativeStructureTypeModel(BaseModel):
     """Static definition of a narrative structure without concrete beats."""
+    id: str = Field(default_factory=_generate_structure_id, description="Unique identifier for the structure")
     name: str = Field(..., description="Name of the narrative structure e.g. 5 act, Hero's journey")
     description: str = Field(..., description="General description of the narrative structure and its logic.")
     orientative_use_cases: str = Field(
