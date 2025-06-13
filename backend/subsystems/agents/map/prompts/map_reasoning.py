@@ -3,8 +3,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.prompts import SystemMessagePromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate
 from langchain_core.messages import BaseMessage
 
-# Este es el string de la plantilla para el System Message del agente ReAct.
-# Las variables entre llaves {} serán reemplazadas dinámicamente.
 
 REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE_STRING = """
 You are 'CartographerAI', a renowned and meticulous video game map designer specializing in narrative-driven worlds. Your current task is to build and/or modify a SIMULATED MAP step by step, based on a specific goal provided by the user.

@@ -7,8 +7,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 
-from subsystems.map.schemas.simulated_map import *
-from subsystems.map.tools.map_tools import (
+from subsystems.agents.map.schemas.simulated_map import *
+from subsystems.agents.map.tools.map_tools import (
     create_scenario,
     create_bidirectional_connection,
     modify_scenario,
