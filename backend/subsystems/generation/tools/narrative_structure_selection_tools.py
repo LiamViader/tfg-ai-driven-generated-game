@@ -1,8 +1,9 @@
 from typing import Annotated, List
 from pydantic import BaseModel, Field
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
-
+from langgraph.types import Command
+from langchain_core.messages import ToolMessage
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 
@@ -11,19 +12,36 @@ AVAILABLE_STRUCTURES_BY_ID = {s.id: s for s in AVAILABLE_NARRATIVE_STRUCTURES}
 
 class ToolSelectStructureArgs(BaseModel):
     structure_id: str = Field(..., description="ID of the narrative structure to select")
-    state: Annotated[GenerationGraphState, InjectedState()]  # entire state injection
+    tool_call_id: Annotated[str, InjectedToolCallId]  # entire state injection
 
 class ToolGetStructureInfoArgs(BaseModel):
     structure_id: str = Field(..., description="ID of the structure")
 
 @tool(args_schema=ToolSelectStructureArgs)
-def select_narrative_structure(structure_id: str, state: Annotated[GenerationGraphState, InjectedState()]) -> str:
+def select_narrative_structure(structure_id: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Select one of the available narrative structures by its id."""
     struct = AVAILABLE_STRUCTURES_BY_ID.get(structure_id)
     if struct is None:
-        return f"Structure id '{structure_id}' not found"
-    state.selected_structure = struct
-    return f"Selected narrative structure '{struct.name}'"
+        return Command(update={
+            "structure_selection_messages": [
+                ToolMessage(
+                    f"Structure id '{structure_id}' not found",
+                    tool_call_id=tool_call_id
+                )
+            ]
+        })
+    
+    else:
+        return Command(update={
+            "selected_structure": struct,
+            # update the message history
+            "structure_selection_messages": [
+                ToolMessage(
+                    f"Selected narrative structure '{struct.name}'",
+                    tool_call_id=tool_call_id
+                )
+            ]
+        })
 
 @tool(args_schema=ToolGetStructureInfoArgs)
 def get_structure_description(structure_id: str) -> str:
