@@ -20,7 +20,7 @@ class GenerationGraphState(BaseModel):
     #MAIN GOAL
     main_goal: str = Field(default="",description="Main goal that gives direction to the player in the narrative.")
     generate_main_goal_attempts: int = Field(default=0,description="Current attempt of generating main goal")
-    generate_main_goal_max_attempts: int = Field(...,description="Max attemps for generating the main goal")
+    generate_main_goal_max_attempts: int = Field(default=3,description="Max attemps for generating the main goal")
     generate_main_goal_error_message: str = Field(default="", description="Error raised while trying to generate main goal")
 
     # NARRATIVE STRUCTURE SELECTION

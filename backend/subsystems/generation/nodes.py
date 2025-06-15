@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from typing import cast, Optional
+from typing import cast
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
