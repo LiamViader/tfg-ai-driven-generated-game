@@ -29,5 +29,4 @@ class GenerationGraphState(BaseModel):
     max_structure_selection_reason_iterations: int = Field(default=4, description="Maximum iterations to reason to select a structure")
     max_structure_forced_selection_iterations: int = Field(default=3, description="Maximum attempts to select a structure")
     selected_structure: Optional[NarrativeStructureTypeModel] = Field(default=None, description="Narrative structure selected by the agent")
-
-
+    structure_selection_justification: Optional[str] = Field(default=None, description="Justification of why the selected structure was chosen")
