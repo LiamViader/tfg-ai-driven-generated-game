@@ -19,7 +19,7 @@ def validate_refined_prompt(state: GenerationGraphState) -> str:
 
 def validate_main_goal(state: GenerationGraphState) -> str:
     """
-    Determines whether to continue to the reasoning node or end the process
+    Determines whether to continue to the reasoning node, retry or end the process
     based on the iteration count and task completion (agent called finalize_task).
     """
     if state.main_goal != "" and state.generate_main_goal_error_message == "":

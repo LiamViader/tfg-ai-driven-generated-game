@@ -46,33 +46,40 @@ def refine_generation_prompt(state: GenerationGraphState):
         min_words = int(desired_word_count * min_ratio)
         return word_count >= min_words, word_count, min_words
 
-    def validate_prompt_with_llm_structured(prompt: str) -> tuple[bool, str]:
+    def validate_prompt_with_llm_structured(prompt: str, original_prompt: str) -> tuple[bool, str]:
         """
         Uses a validator LLM to check the quality of the refined prompt with structured output.
         Returns (is_valid, message)
+        Now also checks that the refined prompt is a true refinement of the original prompt.
         """
         validator_llm = ChatOpenAI(model="gpt-4.1-nano")
         system = SystemMessagePromptTemplate.from_template(
             """
-            You are a narrative design assistant. Your job is to validate a narrative seed for creativity, coherence, and richness. 
-            Reply ONLY with a JSON object with two fields: 'valid' (true/false) and 'reason' (short string, required if not valid).
+            You are a narrative design assistant. Your job is to validate a narrative seed for creativity, coherence, and richness, and to ensure it is a true refinement of the original user prompt. 
+            The refined prompt must:
+            - Be creative, coherent, and rich in narrative potential.
+            - Clearly expand, enrich, or clarify the original prompt, not contradict or ignore it.
+            - Maintain the core ideas of the original prompt, but add value and depth.
+            If the refined prompt is not a true refinement, set 'valid' to false and explain why in 'reason'.
             """
         )
         human = HumanMessagePromptTemplate.from_template(
             """
-            Here is the narrative seed to validate:
+            ORIGINAL PROMPT:
+            {original_prompt}
+            ---
+            REFINED PROMPT (narrative seed):
             {prompt}
             """
         )
         chat_prompt = ChatPromptTemplate([system, human])
-        messages = chat_prompt.format_messages(prompt=prompt)
+        messages = chat_prompt.format_messages(prompt=prompt, original_prompt=original_prompt)
         validator_llm_structured = validator_llm.with_structured_output(RefinedPromptValidation)
         try:
             result = validator_llm_structured.invoke(messages)
             structured_response = cast(RefinedPromptValidation, result)
             return structured_response.valid, structured_response.reason
         except Exception as e:
-            # If the LLM fails to return structured output, treat as invalid and return the error message
             return False, f"Validator LLM failed to return structured output: {str(e)}"
 
     refining_llm = ChatOpenAI(model="gpt-4.1")
@@ -100,7 +107,7 @@ def refine_generation_prompt(state: GenerationGraphState):
         }
 
     # LLM-based structured validation
-    llm_valid, llm_message = validate_prompt_with_llm_structured(refined_prompt)
+    llm_valid, llm_message = validate_prompt_with_llm_structured(refined_prompt, state.initial_prompt)
     if not llm_valid:
         return {
             "refined_prompt": refined_prompt,
