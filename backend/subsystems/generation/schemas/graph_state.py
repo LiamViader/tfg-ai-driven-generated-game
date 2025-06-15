@@ -9,7 +9,13 @@ from core_game.narrative.schemas import NarrativeStructureTypeModel
 
 class GenerationGraphState(BaseModel):
     initial_prompt: str = Field(..., description="User's initial prompt.")
+
+    #REFINING PROMPT
     refined_prompt: str = Field(default="", description="User's refined prompt.")
+    refined_prompt_desired_word_length: int = Field(default=1000, description="Desired word length for the refined prompt.")
+    refine_generation_prompt_attempts: int = Field(default=0, description="Current attempt of refining the prompt.")
+    refine_generation_prompt_max_attempts: int = Field(default=3, description="Max attempts for refining the prompt.")
+    refine_generation_prompt_error_message: str = Field(default="", description="Error raised while trying to refine the prompt.")
 
     #MAIN GOAL
     main_goal: str = Field(default="",description="Main goal that gives direction to the player in the narrative.")

@@ -3,12 +3,26 @@ from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.nodes import *
 from langchain_core.messages import ToolMessage
 
+def validate_refined_prompt(state: GenerationGraphState) -> str:
+    """
+    Determines whether to continue to the next node or end/retry based on the refined prompt validation.
+    """
+    if state.refine_generation_prompt_error_message == "":
+        return "continue"
+    else:
+        current_attempt = state.refine_generation_prompt_attempts
+        max_attempts = state.refine_generation_prompt_max_attempts
+        if current_attempt < max_attempts:
+            return "retry"
+        else:
+            return "end_by_error"
+
 def validate_main_goal(state: GenerationGraphState) -> str:
     """
     Determines whether to continue to the reasoning node or end the process
     based on the iteration count and task completion (agent called finalize_task).
     """
-    if state.main_goal != "":
+    if state.main_goal != "" and state.generate_main_goal_error_message == "":
         return "continue"
     else:
         current_attempt = state.generate_main_goal_attempts
@@ -30,6 +44,7 @@ def structure_selected_or_reason_again(state: GenerationGraphState) -> str:
         return "end_by_error"
 
 
+
 def get_generator_graph_app():
     """
     Builds and compiles the map generation graph.
@@ -47,6 +62,15 @@ def get_generator_graph_app():
     workflow.add_edge("refine_generation_prompt", "generate_main_goal")
     workflow.add_edge("generate_main_goal", "narrative_structure_reason")
     workflow.add_edge("narrative_structure_reason", "narrative_structure_tool")
+    workflow.add_conditional_edges(
+        "refine_generation_prompt",
+        validate_refined_prompt,
+        {
+            "continue": "generate_main_goal",
+            "retry": "refine_generation_prompt",
+            "end_by_error": END
+        }
+    )
     workflow.add_conditional_edges(
         "generate_main_goal",
         validate_main_goal,

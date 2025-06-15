@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from typing import cast
+from typing import cast, Optional
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from subsystems.generation.prompts.refine_generation_prompt import format_refining_prompt
 from subsystems.generation.prompts.generate_main_goal import format_main_goal_generation_prompt
 from subsystems.generation.prompts.select_narrative_structure import format_structure_selection_prompt
@@ -25,23 +26,92 @@ def receive_generation_prompt(state: GenerationGraphState) -> GenerationGraphSta
 
 def refine_generation_prompt(state: GenerationGraphState):
     """
-    This node calls an llm to refine the user promp.
+    This node calls an llm to refine the user promp and validates the result.
     """
 
     print("---ENTERING: REFINE GENERATION PROMPT NODE---")
 
+    from pydantic import BaseModel, Field
+
+    class RefinedPromptValidation(BaseModel):
+        valid: bool = Field(..., description="Whether the refined prompt is valid for creativity, coherence, and richness.")
+        reason: str = Field(..., description="If not valid, a short reason why.")
+
+    def validate_prompt_word_count(prompt: str, desired_word_count: int, min_ratio: float = 0.75) -> tuple[bool, int, int]:
+        """
+        Validates if the prompt has at least min_ratio * desired_word_count words.
+        Returns (is_valid, word_count, min_words_required)
+        """
+        word_count = len(prompt.split())
+        min_words = int(desired_word_count * min_ratio)
+        return word_count >= min_words, word_count, min_words
+
+    def validate_prompt_with_llm_structured(prompt: str) -> tuple[bool, str]:
+        """
+        Uses a validator LLM to check the quality of the refined prompt with structured output.
+        Returns (is_valid, message)
+        """
+        validator_llm = ChatOpenAI(model="gpt-4.1-nano")
+        system = SystemMessagePromptTemplate.from_template(
+            """
+            You are a narrative design assistant. Your job is to validate a narrative seed for creativity, coherence, and richness. 
+            Reply ONLY with a JSON object with two fields: 'valid' (true/false) and 'reason' (short string, required if not valid).
+            """
+        )
+        human = HumanMessagePromptTemplate.from_template(
+            """
+            Here is the narrative seed to validate:
+            {prompt}
+            """
+        )
+        chat_prompt = ChatPromptTemplate([system, human])
+        messages = chat_prompt.format_messages(prompt=prompt)
+        validator_llm_structured = validator_llm.with_structured_output(RefinedPromptValidation)
+        try:
+            result = validator_llm_structured.invoke(messages)
+            structured_response = cast(RefinedPromptValidation, result)
+            return structured_response.valid, structured_response.reason
+        except Exception as e:
+            # If the LLM fails to return structured output, treat as invalid and return the error message
+            return False, f"Validator LLM failed to return structured output: {str(e)}"
 
     refining_llm = ChatOpenAI(model="gpt-4.1")
 
     full_prompt = format_refining_prompt(
         initial_user_prompt=state.initial_prompt,
+        refined_prompt_length=state.refined_prompt_desired_word_length
     )
 
 
     response = refining_llm.invoke(full_prompt)
+    refined_prompt = response.content
+
+    if isinstance(refined_prompt, list):
+        refined_prompt = " ".join([str(x) for x in refined_prompt if isinstance(x, str)])
+
+    desired_word_count = state.refined_prompt_desired_word_length
+    is_valid, word_count, min_words = validate_prompt_word_count(refined_prompt, desired_word_count)
+    state.refine_generation_prompt_attempts += 1
+    if not is_valid:
+        return {
+            "refined_prompt": refined_prompt,
+            "refine_generation_prompt_error_message": f"Refined prompt too short: {word_count} words (minimum required: {min_words})",
+            "refine_generation_prompt_attempts": state.refine_generation_prompt_attempts
+        }
+
+    # LLM-based structured validation
+    llm_valid, llm_message = validate_prompt_with_llm_structured(refined_prompt)
+    if not llm_valid:
+        return {
+            "refined_prompt": refined_prompt,
+            "refine_generation_prompt_error_message": f"Validator LLM rejected the prompt: {llm_message}",
+            "refine_generation_prompt_attempts": state.refine_generation_prompt_attempts
+        }
 
     return {
-        "refined_prompt": response.content
+        "refined_prompt": refined_prompt,
+        "refine_generation_prompt_error_message": "",
+        "refine_generation_prompt_attempts": state.refine_generation_prompt_attempts
     }
 
 def generate_main_goal(state: GenerationGraphState):
