@@ -11,14 +11,15 @@ from subsystems.generation.schemas.graph_state import GenerationGraphState
 AVAILABLE_STRUCTURES_BY_ID = {s.id: s for s in AVAILABLE_NARRATIVE_STRUCTURES}
 
 class ToolSelectStructureArgs(BaseModel):
+    justification: str = Field(..., description="Short explanation of why this structure is chosen")
     structure_id: str = Field(..., description="ID of the narrative structure to select")
-    tool_call_id: Annotated[str, InjectedToolCallId] 
+    tool_call_id: Annotated[str, InjectedToolCallId]
 
 class ToolGetStructureInfoArgs(BaseModel):
     structure_id: str = Field(..., description="ID of the structure")
 
 @tool(args_schema=ToolSelectStructureArgs)
-def select_narrative_structure(structure_id: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def select_narrative_structure(justification: str, structure_id: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Select one of the available narrative structures by its id."""
     struct = AVAILABLE_STRUCTURES_BY_ID.get(structure_id)
     if struct is None:
@@ -34,6 +35,7 @@ def select_narrative_structure(structure_id: str, tool_call_id: Annotated[str, I
     else:
         return Command(update={
             "selected_structure": struct,
+            "structure_selection_justification": justification,
             # update the message history
             "structure_selection_messages": [
                 ToolMessage(
