@@ -129,9 +129,43 @@ def generate_main_goal(state: GenerationGraphState):
     print("---ENTERING: GENERATE MAIN GOAL NODE---")
 
 
+    from pydantic import BaseModel, Field
+
+    class MainGoalValidation(BaseModel):
+        valid: bool = Field(..., description="Whether the main goal is actionable, open-ended and coherent with the narrative seed.")
+        reason: str = Field(..., description="If not valid, a short reason why.")
+
+    def validate_main_goal_with_llm_structured(main_goal: str, refined_prompt: str) -> tuple[bool, str]:
+        validator_llm = ChatOpenAI(model="gpt-4.1-nano")
+        system = SystemMessagePromptTemplate.from_template(
+            """
+            You are a narrative design assistant. Validate the proposed main goal for a narrative game.
+            The main goal must be player centric, actionable, concise and open-ended.
+            It should align with the following narrative seed.
+            """
+        )
+        human = HumanMessagePromptTemplate.from_template(
+            """
+            NARRATIVE SEED:
+            {refined_prompt}
+            ---
+            MAIN GOAL:
+            {main_goal}
+            """
+        )
+        chat_prompt = ChatPromptTemplate([system, human])
+        messages = chat_prompt.format_messages(refined_prompt=refined_prompt, main_goal=main_goal)
+        validator_llm_structured = validator_llm.with_structured_output(MainGoalValidation)
+        try:
+            result = validator_llm_structured.invoke(messages)
+            structured_response = cast(MainGoalValidation, result)
+            return structured_response.valid, structured_response.reason
+        except Exception as e:
+            return False, f"Validator LLM failed to return structured output: {str(e)}"
+
     try:
         generate_main_goal_llm = ChatOpenAI(model="o4-mini")
-        generate_main_goal_llm_structured_output=generate_main_goal_llm.with_structured_output(MainGoal)
+        generate_main_goal_llm_structured_output = generate_main_goal_llm.with_structured_output(MainGoal)
 
         full_prompt = format_main_goal_generation_prompt(
             refined_user_prompt=state.refined_prompt
@@ -142,6 +176,10 @@ def generate_main_goal(state: GenerationGraphState):
 
         if "as an ai model" in structured_response.main_goal.lower():
             raise ValueError("LLM returned a refusal response.")
+
+        llm_valid, llm_message = validate_main_goal_with_llm_structured(structured_response.main_goal, state.refined_prompt)
+        if not llm_valid:
+            raise ValueError(f"Validator LLM rejected the main goal: {llm_message}")
 
         state.main_goal = structured_response.main_goal
         state.generate_main_goal_error_message = ""
