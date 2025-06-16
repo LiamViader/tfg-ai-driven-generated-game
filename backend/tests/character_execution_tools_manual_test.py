@@ -9,14 +9,24 @@ from core_game.character.schemas import (
     PhysicalAttributesModel,
     PsychologicalAttributesModel,
     NarrativeWeightModel,
+    NarrativePurposeModel,
 )
 from subsystems.agents.character_cast.schemas.simulated_characters import (
     SimulatedCharactersModel,
-    CreateFullNPCArgs,
+    CreateNPCArgs,
+    CreatePlayerArgs,
 )
 from subsystems.agents.character_cast.tools.character_tools import (
     create_full_npc,
+    create_player,
+    place_character,
+    remove_character_from_scenario,
+    delete_character,
     list_characters,
+    get_player_details,
+    modify_identity,
+    modify_dynamic_state,
+    modify_narrative,
 )
 
 
@@ -34,8 +44,15 @@ if __name__ == "__main__":
 
     print_step("Create Characters")
 
-    char1_args = CreateFullNPCArgs(
-        identity=IdentityModel(full_name="Lia the Merchant", gender="female"),
+    char1_args = CreateNPCArgs(
+        identity=IdentityModel(
+            full_name="Lia the Merchant",
+            gender="female",
+            age=30,
+            profession="merchant",
+            species="human",
+            alignment="neutral",
+        ),
         physical=PhysicalAttributesModel(
             appearance="Short woman with sharp eyes",
             clothing_style="travel garb",
@@ -44,24 +61,41 @@ if __name__ == "__main__":
         ),
         psychological=PsychologicalAttributesModel(
             personality_summary="Shrewd yet kind-hearted",
+            personality_tags=["shrewd", "kind"],
+            motivations=["profit"],
+            values=["fairness"],
+            fears_and_weaknesses=[],
+            communication_style="direct",
             backstory="Former street orphan turned successful trader",
+            quirks=["hums while working"],
         ),
         narrative=NarrativeWeightModel(
             narrative_role="ally",
-            narrative_importance="secondary",
-            narrative_purpose=[],
+            current_narrative_importance="secondary",
+            narrative_purposes=[
+                NarrativePurposeModel(mission="support protagonist", is_hidden=False)
+            ],
         ),
     )
 
     print(
-        create_full_npc(
-            **char1_args.model_dump(),
-            simulated_characters_state=characters_state,
+        create_full_npc.invoke(
+            {
+                **char1_args.model_dump(),
+                "simulated_characters_state": characters_state,
+            }
         )
     )
 
-    char2_args = CreateFullNPCArgs(
-        identity=IdentityModel(full_name="Bran the Guard", gender="male"),
+    char2_args = CreateNPCArgs(
+        identity=IdentityModel(
+            full_name="Bran the Guard",
+            gender="male",
+            age=35,
+            profession="guard",
+            species="human",
+            alignment="lawful good",
+        ),
         physical=PhysicalAttributesModel(
             appearance="Tall and muscular",
             clothing_style="town guard uniform",
@@ -70,24 +104,177 @@ if __name__ == "__main__":
         ),
         psychological=PsychologicalAttributesModel(
             personality_summary="Loyal and steadfast",
+            personality_tags=["loyal"],
+            motivations=["duty"],
+            values=["honor"],
+            fears_and_weaknesses=[],
+            communication_style="formal",
             backstory="Veteran of border skirmishes",
+            quirks=["polishes armor obsessively"],
         ),
         narrative=NarrativeWeightModel(
-            narrative_role="support",
-            narrative_importance="secondary",
-            narrative_purpose=[],
+            narrative_role="ally",
+            current_narrative_importance="secondary",
+            narrative_purposes=[
+                NarrativePurposeModel(mission="defend town", is_hidden=False)
+            ],
         ),
     )
 
     print(
-        create_full_npc(
-            **char2_args.model_dump(),
-            simulated_characters_state=characters_state,
+        create_full_npc.invoke(
+            {
+                **char2_args.model_dump(),
+                "simulated_characters_state": characters_state,
+            }
+        )
+    )
+
+    print_step("Create Player")
+
+    player_args = CreatePlayerArgs(
+        identity=IdentityModel(
+            full_name="Arin the Wanderer",
+            gender="non-binary",
+            age=24,
+            profession="adventurer",
+            species="human",
+            alignment="chaotic good",
+        ),
+        physical=PhysicalAttributesModel(
+            appearance="Lean and quick on their feet",
+            clothing_style="traveler's gear",
+            characteristic_items=["map", "lute"],
+            distinctive_features=["tattooed arms"],
+        ),
+        psychological=PsychologicalAttributesModel(
+            personality_summary="Curious and brave",
+            personality_tags=["curious", "brave"],
+            motivations=["explore"],
+            values=["freedom"],
+            fears_and_weaknesses=[],
+            communication_style="friendly",
+            backstory="Left home seeking adventure",
+            quirks=["talks to animals"],
+        ),
+        present_in_scenario="scene_001",
+    )
+
+    print(
+        create_player.invoke(
+            {
+                **player_args.model_dump(),
+                "simulated_characters_state": characters_state,
+            }
+        )
+    )
+
+    print_step("Move Player")
+    print(
+        place_character.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+                "new_scene_id": "scene_002",
+            }
+        )
+    )
+
+    print_step("Place Lia in Scene")
+    print(
+        place_character.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_001",
+                "new_scene_id": "scene_002",
+            }
+        )
+    )
+
+    print_step("Unplace Bran")
+    print(
+        remove_character_from_scenario.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_002",
+            }
         )
     )
 
     print_step("Final State")
-    print(list_characters(simulated_characters_state=characters_state))
+    print(
+        list_characters.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "list_identity": True,
+                "list_physical": True,
+                "list_psychological": False,
+            }
+        )
+    )
+
+    print_step("Filter By Gender")
+    print(
+        list_characters.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "attribute_to_filter": "gender",
+                "value_to_match": "female",
+            }
+        )
+    )
+
+    print_step("Player Details")
+    print(
+        get_player_details.invoke(
+            {
+                "simulated_characters_state": characters_state,
+            }
+        )
+    )
+
+    print_step("Modify Player Identity")
+    print(
+        modify_identity.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+                "new_full_name": "Arin the Hero",
+            }
+        )
+    )
+
+    print_step("Attempt Modify Player Dynamic (should fail)")
+    print(
+        modify_dynamic_state.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+                "new_current_emotion": "excited",
+            }
+        )
+    )
+
+    print_step("Attempt Modify Player Narrative (should fail)")
+    print(
+        modify_narrative.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+                "new_narrative_role": "protagonist",
+            }
+        )
+    )
+
+    print_step("Attempt Delete Player (should fail)")
+    print(
+        delete_character.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+            }
+        )
+    )
 
     for cid, char in characters_state.simulated_characters.items():
         print(f"\nID: {cid}")
