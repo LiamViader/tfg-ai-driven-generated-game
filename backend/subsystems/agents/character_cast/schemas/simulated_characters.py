@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Any, Optional, Annotated, Literal
 from pydantic import BaseModel, Field as PydanticField, model_validator
+from core_game.character.constants import Gender, NarrativeRole, NarrativeImportance
 
 
 from core_game.character.schemas import (
@@ -50,7 +51,7 @@ class ModifyIdentityArgs(BaseModel):
     new_full_name: Optional[str] = PydanticField(None, description="New full name")
     new_alias: Optional[str] = PydanticField(None, description="New alias")
     new_age: Optional[int] = PydanticField(None, description="New age")
-    new_gender: Optional[Literal["male", "female", "non-binary", "undefined", "other"]] = PydanticField(
+    new_gender: Optional[Gender] = PydanticField(
         None, description="New gender"
     )
     new_profession: Optional[str] = PydanticField(None, description="New profession")
@@ -159,10 +160,10 @@ class ModifyNarrativeArgs(BaseModel):
         ...,
         description="ID of the NPC to modify; the player cannot be modified",
     )
-    new_narrative_role: Optional[Literal["protagonist", "secondary", "extra", "antagonist", "ally", "informational figure"]] = PydanticField(
+    new_narrative_role: Optional[NarrativeRole] = PydanticField(
         None, description="New narrative role"
     )
-    new_current_narrative_importance: Optional[Literal["important", "secondary", "minor", "inactive"]] = PydanticField(
+    new_current_narrative_importance: Optional[NarrativeImportance] = PydanticField(
         None, description="New narrative importance"
     )
     new_narrative_purposes: Optional[List[NarrativePurposeModel]] = PydanticField(
