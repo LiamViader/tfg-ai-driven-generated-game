@@ -1,6 +1,7 @@
 """Pydantic models used by the character creation agent."""
 
 from typing import Dict, List, Any, Optional, Annotated, Literal
+import json
 from pydantic import BaseModel, Field as PydanticField, model_validator
 from core_game.character.constants import Gender, NarrativeRole, NarrativeImportance
 
@@ -18,6 +19,27 @@ from core_game.character.schemas import (
     CharacterBaseModel,
     _generate_character_id,
 )
+
+
+def _format_nested_dict(data: Dict[str, Any], indent: int = 0) -> List[str]:
+    """Convert a nested dictionary to indented bullet lines for readability."""
+    lines: List[str] = []
+    prefix = "    " * indent
+    for key, value in data.items():
+        if isinstance(value, dict):
+            lines.append(f"{prefix}{key}:")
+            lines.extend(_format_nested_dict(value, indent + 1))
+        elif isinstance(value, list):
+            lines.append(f"{prefix}{key}:")
+            for item in value:
+                if isinstance(item, dict):
+                    lines.append(f"{prefix}  -")
+                    lines.extend(_format_nested_dict(item, indent + 2))
+                else:
+                    lines.append(f"{prefix}  - {item}")
+        else:
+            lines.append(f"{prefix}{key}: {value}")
+    return lines
 
 
 class CreateNPCArgs(BaseModel):
@@ -273,6 +295,11 @@ class GetPlayerDetailsArgs(BaseModel):
     pass
 
 
+class ListCharactersByScenarioArgs(BaseModel):
+    """Arguments for listing characters grouped by scenario."""
+    pass
+
+
 class SimulatedCharactersModel(BaseModel):
     """In-memory representation of characters cast manipulated by the agent."""
 
@@ -359,27 +386,31 @@ class SimulatedCharactersModel(BaseModel):
                 if match_val not in str(value).lower():
                     continue
 
-            summary = f"- ID: {char.id}, Name: '{char.identity.full_name}', Type: {char.type}"
+            detail_lines: List[str] = [
+                f"ID: {char.id}",
+                f"Name: {char.identity.full_name}",
+                f"Type: {char.type}",
+            ]
             role = (
                 char.narrative.narrative_role
                 if isinstance(char, NonPlayerCharacterModel)
                 else "N/A"
             )
-            summary += f", Role: {role}"
+            detail_lines.append(f"Role: {role}")
             if args_model.list_identity:
-                summary += f", identity={char.identity.model_dump()}"
+                detail_lines.append("Identity:\n  " + "\n  ".join(_format_nested_dict(char.identity.model_dump())))
             if args_model.list_physical:
-                summary += f", physical={char.physical.model_dump()}"
+                detail_lines.append("Physical:\n  " + "\n  ".join(_format_nested_dict(char.physical.model_dump())))
             if args_model.list_psychological:
-                summary += f", psychological={char.psychological.model_dump()}"
+                detail_lines.append("Psychological:\n  " + "\n  ".join(_format_nested_dict(char.psychological.model_dump())))
             if args_model.list_knowledge:
-                summary += f", knowledge={char.knowledge.model_dump()}"
+                detail_lines.append("Knowledge:\n  " + "\n  ".join(_format_nested_dict(char.knowledge.model_dump())))
             if isinstance(char, NonPlayerCharacterModel) and args_model.list_dynamic_state:
-                summary += f", dynamic_state={char.dynamic_state.model_dump()}"
+                detail_lines.append("Dynamic State:\n  " + "\n  ".join(_format_nested_dict(char.dynamic_state.model_dump())))
             if isinstance(char, NonPlayerCharacterModel) and args_model.list_narrative:
-                summary += f", narrative={char.narrative.model_dump()}"
+                detail_lines.append("Narrative:\n  " + "\n  ".join(_format_nested_dict(char.narrative.model_dump())))
 
-            matches.append(summary)
+            matches.append("\n  ".join(detail_lines))
             if args_model.max_results and len(matches) >= args_model.max_results:
                 break
 
@@ -398,6 +429,37 @@ class SimulatedCharactersModel(BaseModel):
             "\n".join(matches),
         )
 
+    def list_characters_by_scenario(
+        self, args_model: ListCharactersByScenarioArgs
+    ) -> str:
+        """(QUERY tool) Lists characters grouped by their current scenario."""
+        if not self.simulated_characters:
+            return self._log_and_summarize(
+                "list_characters_by_scenario",
+                args_model,
+                True,
+                "The cast is currently empty.",
+            )
+
+        groups: Dict[str, List[str]] = {}
+        for char in self.simulated_characters.values():
+            scenario = char.present_in_scenario or "NO_SCENARIO"
+            groups.setdefault(scenario, []).append(
+                f"{char.identity.full_name} ({char.id})"
+            )
+
+        lines: List[str] = []
+        for scene in sorted(groups.keys()):
+            lines.append(f"Scene '{scene}':")
+            lines.extend(f"  - {name}" for name in sorted(groups[scene]))
+            lines.append("")
+        return self._log_and_summarize(
+            "list_characters_by_scenario",
+            args_model,
+            True,
+            "\n".join(lines).strip(),
+        )
+
 
     def get_player_details(self, args_model: GetPlayerDetailsArgs) -> str:
         """(QUERY tool) Get details about the player character."""
@@ -410,18 +472,14 @@ class SimulatedCharactersModel(BaseModel):
             )
 
         player = self.player_character
-        details = [
-            f"ID: {player.id}",
-            f"Name: {player.identity.full_name}",
-            f"Scene: {player.present_in_scenario}",
-            f"Profession: {player.identity.profession}",
-            f"Species: {player.identity.species}",
-        ]
+        details = player.model_dump()
+        details["present_in_scenario"] = player.present_in_scenario or "None"
+        pretty_details = "\n".join(_format_nested_dict(details))
         return self._log_and_summarize(
             "get_player_details",
             args_model,
             True,
-            "\n".join(details),
+            pretty_details,
         )
 
     def get_character_details(self, args_model: GetCharacterDetailsArgs) -> str:
@@ -435,24 +493,14 @@ class SimulatedCharactersModel(BaseModel):
                 f"Error: Character ID '{args_model.character_id}' not found.",
             )
 
-        role = (
-            char.narrative.narrative_role
-            if isinstance(char, NonPlayerCharacterModel)
-            else "N/A"
-        )
-        details = [
-            f"ID: {char.id}",
-            f"Name: {char.identity.full_name}",
-            f"Species: {char.identity.species}",
-            f"Profession: {char.identity.profession}",
-            f"Narrative Role: {role}",
-            f"Personality: {char.psychological.personality_summary}",
-        ]
+        details = char.model_dump()
+        details["present_in_scenario"] = char.present_in_scenario or "None"
+        pretty_details = "\n".join(_format_nested_dict(details))
         return self._log_and_summarize(
             "get_character_details",
             args_model,
             True,
-            "\n".join(details),
+            pretty_details,
         )
 
 
