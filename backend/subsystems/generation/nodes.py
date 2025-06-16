@@ -13,7 +13,7 @@ from subsystems.generation.schemas.main_goal import MainGoal
 from subsystems.generation.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel, Field
 
 def receive_generation_prompt(state: GenerationGraphState) -> GenerationGraphState:
     """
@@ -30,8 +30,6 @@ def refine_generation_prompt(state: GenerationGraphState):
     """
 
     print("---ENTERING: REFINE GENERATION PROMPT NODE---")
-
-    from pydantic import BaseModel, Field
 
     class RefinedPromptValidation(BaseModel):
         valid: bool = Field(..., description="Whether the refined prompt is valid for creativity, coherence, and richness.")
@@ -127,9 +125,6 @@ def generate_main_goal(state: GenerationGraphState):
     This goal purpose is to give direction to the player on the narrative.
     """
     print("---ENTERING: GENERATE MAIN GOAL NODE---")
-
-
-    from pydantic import BaseModel, Field
 
     class MainGoalValidation(BaseModel):
         valid: bool = Field(..., description="Whether the main goal is actionable, open-ended and coherent with the narrative seed.")
