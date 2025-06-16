@@ -87,9 +87,6 @@ def finalize_simulation(
 
 EXECUTORTOOLS = [
     create_full_npc,
-    modify_character,
-    delete_character,
-    list_characters,
     finalize_simulation,
 ]
 
