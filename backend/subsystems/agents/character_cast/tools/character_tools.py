@@ -69,66 +69,6 @@ def create_full_npc(
     )
 
 
-@tool(args_schema=ModifyCharacterArgs)
-def modify_character(
-    character_id: str,
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-    new_full_name: Optional[str] = None,
-    new_personality_summary: Optional[str] = None,
-) -> str:
-    """Modify basic character information."""
-    if character_id not in simulated_characters_state.simulated_characters:
-        return simulated_characters_state._log_and_summarize(
-            "modify_character",
-            ModifyCharacterArgs(character_id=character_id, new_full_name=new_full_name, new_personality_summary=new_personality_summary),
-            False,
-            f"Character id '{character_id}' not found.",
-        )
-
-    char = simulated_characters_state.simulated_characters[character_id]
-    if new_full_name is not None:
-        char.identity.full_name = new_full_name
-    if new_personality_summary is not None:
-        char.psychological.personality_summary = new_personality_summary
-
-    return simulated_characters_state._log_and_summarize(
-        "modify_character",
-        ModifyCharacterArgs(character_id=character_id, new_full_name=new_full_name, new_personality_summary=new_personality_summary),
-        True,
-        f"Character '{character_id}' modified.",
-    )
-
-
-@tool(args_schema=DeleteCharacterArgs)
-def delete_character(
-    character_id: str,
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-) -> str:
-    """Delete a character from the simulation."""
-    if character_id not in simulated_characters_state.simulated_characters:
-        return simulated_characters_state._log_and_summarize(
-            "delete_character",
-            DeleteCharacterArgs(character_id=character_id),
-            False,
-            f"Character id '{character_id}' not found.",
-        )
-
-    char = simulated_characters_state.simulated_characters.pop(character_id)
-    simulated_characters_state.deleted_characters[character_id] = char
-    return simulated_characters_state._log_and_summarize(
-        "delete_character",
-        DeleteCharacterArgs(character_id=character_id),
-        True,
-        f"Character '{character_id}' deleted.",
-    )
-
-
-@tool
-def list_characters(simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]) -> str:
-    """Return a short summary of current characters."""
-    return simulated_characters_state.get_summary()
-
-
 @tool
 def finalize_simulation(
     justification: str,
