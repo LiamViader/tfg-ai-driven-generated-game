@@ -21,7 +21,7 @@ class MapGraphState(BaseModel):
     initial_map_summary: str = Field(default="", description="Initial summary of the map when starting the workflow")
 
     # Map Data
-    scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="All scenarios in the map, keyed by their unique ID.")
+    scenarios: Dict[str, ScenarioModel] = Field(default_factory=dict, description="All initial scenarios in the map, keyed by their unique ID.")
     connections: Dict[str, ConnectionInfo] = Field(default_factory=dict, description="Mapping of connection IDs to their ConnectionInfo.")
 
     # --- Executor Agent memo ---

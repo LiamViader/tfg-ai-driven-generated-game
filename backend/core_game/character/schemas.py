@@ -16,31 +16,31 @@ class IdentityModel(BaseModel):
     """Core identity traits of the character."""
     full_name: str = Field(..., description=IDENTITY_MODEL_FIELDS["full_name"])
     alias: Optional[str] = Field(default=None, description=IDENTITY_MODEL_FIELDS["alias"])
-    age: Optional[int] = Field(default=None, description=IDENTITY_MODEL_FIELDS["age"])
+    age: int = Field(..., description=IDENTITY_MODEL_FIELDS["age"])
     gender: Literal["male", "female", "non-binary", "undefined", "other"] = Field(..., description=IDENTITY_MODEL_FIELDS["gender"])
-    profession: Optional[str] = Field(default=None, description=IDENTITY_MODEL_FIELDS["profession"])
-    species: Optional[str] = Field(default=None, description=IDENTITY_MODEL_FIELDS["species"])
-    alignment: Optional[str] = Field(default=None, description=IDENTITY_MODEL_FIELDS["alignment"])
+    profession: str = Field(..., description=IDENTITY_MODEL_FIELDS["profession"])
+    species: str = Field(..., description=IDENTITY_MODEL_FIELDS["species"])
+    alignment: str = Field(..., description=IDENTITY_MODEL_FIELDS["alignment"])
 
 
 class PhysicalAttributesModel(BaseModel):
     """Physical characteristics and appearance."""
     appearance: str = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["appearance"])
-    distinctive_features: List[str] = Field(default_factory=list, description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["distinctive_features"])
-    clothing_style: Optional[str] = Field(default=None, description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["clothing_style"])
-    characteristic_items: List[str] = Field(default_factory=list, description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["characteristic_items"])
+    distinctive_features: List[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["distinctive_features"])
+    clothing_style: Optional[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["clothing_style"])
+    characteristic_items: List[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["characteristic_items"])
 
 
 class PsychologicalAttributesModel(BaseModel):
     """The character's personality, mind, and backstory."""
     personality_summary: str = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["personality_summary"])
-    personality_tags: List[str] = Field(default_factory=list, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["personality_tags"])
-    motivations: List[str] = Field(default_factory=list, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["motivations"])
-    values: List[str] = Field(default_factory=list, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["values"])
+    personality_tags: List[str] = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["personality_tags"])
+    motivations: List[str] = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["motivations"])
+    values: List[str] = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["values"])
     fears_and_weaknesses: List[str] = Field(default_factory=list, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["fears_and_weaknesses"])
     communication_style: Optional[str] = Field(default=None, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["communication_style"])
-    backstory: Optional[str] = Field(default=None, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["backstory"])
-    quirks: List[str] = Field(default_factory=list, description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["quirks"])
+    backstory: str = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["backstory"])
+    quirks: List[str] = Field(..., description=PSYCHOLOGICAL_ATTRIBUTES_MODEL_FIELDS["quirks"])
 
 
 class NarrativePurposeModel(BaseModel):
@@ -50,15 +50,14 @@ class NarrativePurposeModel(BaseModel):
 
 class NarrativeWeightModel(BaseModel):
     """Defines a character's weight and function within the narrative."""
-    narrative_role: str = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_role"])
-    narrative_importance: Literal["important", "secondary", "minor", "inactive"] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_importance"])
-    narrative_purpose: List[NarrativePurposeModel] = Field(default_factory=list, description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_purpose"])
+    narrative_role: Literal["protagonist", "secondary", "extra", "antagonist", "ally", "informational figure"] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_role"])
+    current_narrative_importance: Literal["important", "secondary", "minor", "inactive"] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_importance"])
+    narrative_purposes: List[NarrativePurposeModel] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_purpose"])
 
 class KnowledgeModel(BaseModel):
     """Tracks the information known by the character."""
     background_knowledge: List[str] = Field(default_factory=list, description=KNOWLEDGE_MODEL_FIELDS["background_knowledge"])
     acquired_knowledge: List[str] = Field(default_factory=list, description=KNOWLEDGE_MODEL_FIELDS["acquired_knowledge"])
-
 
 class DynamicStateModel(BaseModel):
     """Tracks the character's immediate, changing state."""

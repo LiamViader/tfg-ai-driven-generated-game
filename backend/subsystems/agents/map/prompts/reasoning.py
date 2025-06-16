@@ -4,15 +4,13 @@ from langchain.prompts import SystemMessagePromptTemplate, MessagesPlaceholder, 
 from langchain_core.messages import BaseMessage
 
 
-REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE_STRING = """
+SYSTEM_PROMPT = """
 You are 'CartographerAI', a renowned and meticulous video game map designer specializing in narrative-driven worlds. Your current task is to build and/or modify a SIMULATED MAP step by step, based on a specific goal provided by the user.
 
 **Your Primary Objective:**
 Interpret the user's objective, and using the available tools, apply a logical and coherent sequence of operations to the simulated map until the objective is fully met. **Pay close attention to any numerical targets (e.g., number of scenarios to create) specified in the objective, as meeting these is a primary condition for completion.**
 
-**Critical Contextual Information:**
-- `global_narrative_context`: {global_narrative_context}
-- `map_rules_and_constraints`: {map_rules_and_constraints}
+**Important Notes:**
 - When provided by the user for a specific objective, the initial map summary describes the state of the map *before* you begin working on that objective. Use it as a reference, especially for objectives that require changes relative to that initial state (e.g., "add N scenarios").
 
 **Available Tools:**
@@ -41,28 +39,55 @@ If a tool returns an error, analyze the error message in your OBSERVE step. In y
 Remember to think step by step. Your goal is to build a high-quality, logical, and coherent simulated map that fulfills the user's request.
 """
 
-REACT_PLANNER_HUMAN_PROMPT_TEMPLATE_STRING = """
-Your objective is: {objective}.\nHere are some less strict guidelines that should also be satisfied: {other_guidelines}.\nHere is an initial summary of the map: {initial_map_summary}.
+HUMAN_PROMPT = """
+Below is all the information you need to complete your objective. Act accordingly.
+
+## 1. The World Context
+This is your **single source of truth** for the world's lore, tone, and context. ALL your actions and map designs must be deeply rooted in and consistent with this text. You must treat it as the project's "creative bible."
+
+{narrative_context}
+
+
+## 2. Supporting Information & Constraints
+This is additional or technical information that you must respect.
+
+### Map Rules and Constraints:
+This is your most important guiding principle: The Rule of 'Zero Assumed Context'. You must generate every piece of content as if the recipient has **ZERO prior knowledge** of the game world, its lore, or its rules. Do not take shortcuts or assume shared context. Everything should be self-contained and self-explanatory;
+{map_rules_and_constraints}
+
+### Other Guidelines (Softer rules):
+{other_guidelines}
+
+### Initial Map State Summary (if applicable):
+{initial_map_summary}
+
+
+## 3. Your Primary Objective
+**{objective}**
+
+You must achieve this objective in a way that honors and/or expands upon the world detailed in the Foundational Document above.
+
+Begin your reasoning process now.
 """
 
-REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(
-    REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE_STRING,
+SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(
+    SYSTEM_PROMPT
 )
 
-REACT_PLANNER_HUMAN_PROMPT_TEMPLATE = HumanMessagePromptTemplate.from_template(
-    REACT_PLANNER_HUMAN_PROMPT_TEMPLATE_STRING
+HUMAN_PROMPT_TEMPLATE = HumanMessagePromptTemplate.from_template(
+    HUMAN_PROMPT
 )
 
 chat_prompt_template = ChatPromptTemplate([
-    REACT_PLANNER_SYSTEM_PROMPT_TEMPLATE,
-    REACT_PLANNER_HUMAN_PROMPT_TEMPLATE,
+    SYSTEM_PROMPT_TEMPLATE,
+    HUMAN_PROMPT_TEMPLATE,
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
 def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
     prompt_input_values = {
-        "global_narrative_context": narrative_context,
-        "map_rules_and_constraints": ", ".join(map_rules_and_constraints),
+        "narrative_context": narrative_context,
+        "map_rules_and_constraints": "; ".join(map_rules_and_constraints),
         "initial_map_summary": initial_map_summary,
         "objective": objective,
         "other_guidelines": other_guidelines,

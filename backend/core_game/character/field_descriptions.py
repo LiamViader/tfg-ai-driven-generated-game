@@ -1,6 +1,6 @@
 IDENTITY_MODEL_FIELDS = {
     "full_name": "Character's full name.",
-    "alias": "An optional nickname or alias.",
+    "alias": "An optional nickname or alias. Can be empty.",
     "age": "Character's age.",
     "gender": "Character's gender.",
     "profession": "Character's profession or social role within the narrative world.",
@@ -9,7 +9,7 @@ IDENTITY_MODEL_FIELDS = {
 }
 
 PHYSICAL_ATTRIBUTES_MODEL_FIELDS = {
-    "appearance": "A detailed description of the character's physical appearance.",
+    "appearance": "A detailed description of the character's physical appearance. Aprox 100 words. The description must be visually concrete and self-contained, explicitly stating all physical traits, Detailed enough for someone to draw it unequivocally.",
     "distinctive_features": "A list of distinctive physical features like scars, tattoos, or unique traits.",
     "clothing_style": "Description of the character's clothing, armor, or style of dress.",
     "characteristic_items": "A list of notable items the character carries that reinforce their identity, can be empty."
@@ -32,7 +32,7 @@ NARRATIVE_PURPOSE_MODEL_FIELDS = {
 }
 
 NARRATIVE_WEIGHT_MODEL_FIELDS = {
-    "narrative_role": "The character's narrative role (e.g., protagonist, ally, antagonist, secondary, informational figure, extra, etc).",
+    "narrative_role": "The character's narrative role (e.g., protagonist, extra, etc).",
     "narrative_importance": "The character's current degree of relevance in the narrative (important, secondary, marginal, or inactive).",
     "narrative_purpose": "The specific missions that guide the character, including whether it's known or hidden to the others."
 }

@@ -10,11 +10,11 @@ from core_game.character.schemas import (
     PsychologicalAttributesModel,
     NarrativeWeightModel,
 )
-from subsystems.agents.character.schemas.simulated_characters import (
+from subsystems.agents.character_cast.schemas.simulated_characters import (
     SimulatedCharactersModel,
     CreateFullNPCArgs,
 )
-from subsystems.agents.character.tools.character_tools import (
+from subsystems.agents.character_cast.tools.character_tools import (
     create_full_npc,
     list_characters,
 )

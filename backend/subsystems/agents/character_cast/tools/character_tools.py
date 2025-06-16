@@ -15,15 +15,21 @@ from core_game.character.schemas import (
     NonPlayerCharacterModel,
 )
 
-
 from ..schemas.simulated_characters import (
     SimulatedCharactersModel,
-    CreateFullNPCArgs,
+    CreateNPCArgs,
     ModifyCharacterArgs,
     DeleteCharacterArgs,
 )
 
-@tool(args_schema=CreateFullNPCArgs)
+
+# --- Tools Schemas -- (adding the injected simulated map)
+class ToolCreateScenarioArgs(CreateNPCArgs):
+    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
+
+
+
+@tool(args_schema=ToolCreateScenarioArgs)
 def create_full_npc(
     identity: IdentityModel,
     physical: PhysicalAttributesModel,
@@ -33,7 +39,7 @@ def create_full_npc(
     knowledge: KnowledgeModel = KnowledgeModel(),
     dynamic_state: DynamicStateModel = DynamicStateModel(),
 ) -> str:
-    """Create an NPC providing complete attribute information."""
+    """Create a new NPC providing complete attribute information."""
 
     new_id = SimulatedCharactersModel.generate_sequential_character_id(list(simulated_characters_state.simulated_characters.keys()))
     npc = NonPlayerCharacterModel(
@@ -50,7 +56,7 @@ def create_full_npc(
     simulated_characters_state.simulated_characters[new_id] = npc
     return simulated_characters_state._log_and_summarize(
         "create_full_npc",
-        CreateFullNPCArgs(
+        CreateNPCArgs(
             identity=identity,
             physical=physical,
             psychological=psychological,
