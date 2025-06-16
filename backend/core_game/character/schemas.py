@@ -1,5 +1,11 @@
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional
+from core_game.character.constants import (
+    Gender,
+    CharacterType,
+    NarrativeRole,
+    NarrativeImportance,
+)
 from core_game.character.field_descriptions import *
 
 # Internal counter used for sequential character ids
@@ -17,7 +23,7 @@ class IdentityModel(BaseModel):
     full_name: str = Field(..., description=IDENTITY_MODEL_FIELDS["full_name"])
     alias: Optional[str] = Field(default=None, description=IDENTITY_MODEL_FIELDS["alias"])
     age: int = Field(..., description=IDENTITY_MODEL_FIELDS["age"])
-    gender: Literal["male", "female", "non-binary", "undefined", "other"] = Field(..., description=IDENTITY_MODEL_FIELDS["gender"])
+    gender: Gender = Field(..., description=IDENTITY_MODEL_FIELDS["gender"])
     profession: str = Field(..., description=IDENTITY_MODEL_FIELDS["profession"])
     species: str = Field(..., description=IDENTITY_MODEL_FIELDS["species"])
     alignment: str = Field(..., description=IDENTITY_MODEL_FIELDS["alignment"])
@@ -50,9 +56,15 @@ class NarrativePurposeModel(BaseModel):
 
 class NarrativeWeightModel(BaseModel):
     """Defines a character's weight and function within the narrative."""
-    narrative_role: Literal["protagonist", "secondary", "extra", "antagonist", "ally", "informational figure"] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_role"])
-    current_narrative_importance: Literal["important", "secondary", "minor", "inactive"] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_importance"])
-    narrative_purposes: List[NarrativePurposeModel] = Field(..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_purpose"])
+    narrative_role: NarrativeRole = Field(
+        ..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_role"]
+    )
+    current_narrative_importance: NarrativeImportance = Field(
+        ..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_importance"]
+    )
+    narrative_purposes: List[NarrativePurposeModel] = Field(
+        ..., description=NARRATIVE_WEIGHT_MODEL_FIELDS["narrative_purpose"]
+    )
 
 class KnowledgeModel(BaseModel):
     """Tracks the information known by the character."""
@@ -70,7 +82,7 @@ class DynamicStateModel(BaseModel):
 class CharacterBaseModel(BaseModel):
     """The base model that all character types inherit from."""
     id: str = Field(..., description="Unique identifier for the character.")
-    type: Literal["player", "npc"] = Field(default="player", description="Type of character.")
+    type: CharacterType = Field(default="player", description="Type of character.")
     identity: IdentityModel
     physical: PhysicalAttributesModel
     psychological: PsychologicalAttributesModel
@@ -80,12 +92,12 @@ class CharacterBaseModel(BaseModel):
 
 class PlayerCharacterModel(CharacterBaseModel):
     """A character controlled by a human player."""
-    type: Literal["player"] = Field(default="player", description="Type of character.")
+    type: CharacterType = Field(default="player", description="Type of character.")
 
 
 class NonPlayerCharacterModel(CharacterBaseModel):
     """A character controlled by the system (AI)."""
-    type: Literal["npc"] = Field(default="npc", description="Type of character.")
+    type: CharacterType = Field(default="npc", description="Type of character.")
     dynamic_state: DynamicStateModel
     narrative: NarrativeWeightModel
 

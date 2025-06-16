@@ -1,6 +1,7 @@
 """Tool functions used by the character agent."""
 
 from typing import Annotated, Optional, Literal
+from core_game.character.constants import Gender
 from pydantic import BaseModel
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedState
@@ -120,6 +121,10 @@ def create_npc(
     )
 
 
+# Backwards compatibility alias
+create_full_npc = create_npc
+
+
 @tool
 def finalize_simulation(
     justification: str,
@@ -210,7 +215,7 @@ def modify_identity(
     new_full_name: Optional[str] = None,
     new_alias: Optional[str] = None,
     new_age: Optional[int] = None,
-    new_gender: Optional[Literal["male", "female", "non-binary", "undefined", "other"]] = None,
+    new_gender: Optional[Gender] = None,
     new_profession: Optional[str] = None,
     new_species: Optional[str] = None,
     new_alignment: Optional[str] = None,
