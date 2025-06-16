@@ -158,7 +158,36 @@ def create_player(
         knowledge=knowledge,
         present_in_scenario=present_in_scenario,
     )
-    return simulated_characters_state.create_player(args_model=args_model)
+
+    if simulated_characters_state.player_character is not None:
+        return simulated_characters_state._log_and_summarize(
+            "create_player",
+            args_model,
+            False,
+            "Error: Player already exists.",
+        )
+
+    new_id = SimulatedCharactersModel.generate_sequential_character_id(
+        list(simulated_characters_state.simulated_characters.keys())
+    )
+    player = PlayerCharacterModel(
+        id=new_id,
+        identity=identity,
+        physical=physical,
+        psychological=psychological,
+        knowledge=knowledge,
+        present_in_scenario=present_in_scenario,
+    )
+
+    simulated_characters_state.player_character = player
+    simulated_characters_state.simulated_characters[new_id] = player
+
+    return simulated_characters_state._log_and_summarize(
+        "create_player",
+        args_model,
+        True,
+        f"Player '{player.identity.full_name}' created with id {new_id} in scene {present_in_scenario}.",
+    )
 
 
 @tool(args_schema=ToolGetPlayerDetailsArgs)
