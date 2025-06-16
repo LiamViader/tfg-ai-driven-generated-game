@@ -82,9 +82,17 @@ class ModifyPhysicalArgs(BaseModel):
     new_distinctive_features: Optional[List[str]] = PydanticField(
         None, description="New distinctive features list"
     )
+    append_distinctive_features: bool = PydanticField(
+        default=False,
+        description="Append features instead of replacing the list",
+    )
     new_clothing_style: Optional[str] = PydanticField(None, description="New clothing style")
     new_characteristic_items: Optional[List[str]] = PydanticField(
         None, description="New characteristic items list"
+    )
+    append_characteristic_items: bool = PydanticField(
+        default=False,
+        description="Append items instead of replacing the list",
     )
 
 
@@ -97,14 +105,34 @@ class ModifyPsychologicalArgs(BaseModel):
     )
     new_personality_summary: Optional[str] = PydanticField(None, description="New personality summary")
     new_personality_tags: Optional[List[str]] = PydanticField(None, description="New personality tags")
+    append_personality_tags: bool = PydanticField(
+        default=False,
+        description="Append personality tags instead of replacing the list",
+    )
     new_motivations: Optional[List[str]] = PydanticField(None, description="New motivations")
+    append_motivations: bool = PydanticField(
+        default=False,
+        description="Append motivations instead of replacing the list",
+    )
     new_values: Optional[List[str]] = PydanticField(None, description="New values")
+    append_values: bool = PydanticField(
+        default=False,
+        description="Append values instead of replacing the list",
+    )
     new_fears_and_weaknesses: Optional[List[str]] = PydanticField(
         None, description="New fears and weaknesses"
+    )
+    append_fears_and_weaknesses: bool = PydanticField(
+        default=False,
+        description="Append fears and weaknesses instead of replacing the list",
     )
     new_communication_style: Optional[str] = PydanticField(None, description="New communication style")
     new_backstory: Optional[str] = PydanticField(None, description="New backstory")
     new_quirks: Optional[List[str]] = PydanticField(None, description="New quirks list")
+    append_quirks: bool = PydanticField(
+        default=False,
+        description="Append quirks instead of replacing the list",
+    )
 
 
 class ModifyKnowledgeArgs(BaseModel):
@@ -115,7 +143,15 @@ class ModifyKnowledgeArgs(BaseModel):
         description="ID of the character (NPC or player) to modify",
     )
     new_background_knowledge: Optional[List[str]] = PydanticField(None, description="New background knowledge")
+    append_background_knowledge: bool = PydanticField(
+        default=False,
+        description="Append background knowledge instead of replacing the list",
+    )
     new_acquired_knowledge: Optional[List[str]] = PydanticField(None, description="New acquired knowledge")
+    append_acquired_knowledge: bool = PydanticField(
+        default=False,
+        description="Append acquired knowledge instead of replacing the list",
+    )
 
 
 class ModifyDynamicStateArgs(BaseModel):
@@ -144,6 +180,10 @@ class ModifyNarrativeArgs(BaseModel):
     )
     new_narrative_purposes: Optional[List[NarrativePurposeModel]] = PydanticField(
         None, description="New narrative purposes"
+    )
+    append_narrative_purposes: bool = PydanticField(
+        default=False,
+        description="Append narrative purposes instead of replacing the list",
     )
 
 
