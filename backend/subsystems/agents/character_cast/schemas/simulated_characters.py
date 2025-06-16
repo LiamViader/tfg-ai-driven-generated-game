@@ -398,35 +398,6 @@ class SimulatedCharactersModel(BaseModel):
             "\n".join(matches),
         )
 
-    def create_player(self, args_model: CreatePlayerArgs) -> str:
-        """(MODIFICATION tool) Create the player character."""
-        if self.player_character is not None:
-            return self._log_and_summarize(
-                "create_player",
-                args_model,
-                False,
-                "Error: Player already exists.",
-            )
-
-        new_id = self.generate_sequential_character_id(list(self.simulated_characters.keys()))
-        player = PlayerCharacterModel(
-            id=new_id,
-            identity=args_model.identity,
-            physical=args_model.physical,
-            psychological=args_model.psychological,
-            knowledge=args_model.knowledge,
-            present_in_scenario=args_model.present_in_scenario,
-        )
-
-        self.player_character = player
-        self.simulated_characters[new_id] = player
-
-        return self._log_and_summarize(
-            "create_player",
-            args_model,
-            True,
-            f"Player '{player.identity.full_name}' created with id {new_id} in scene {args_model.present_in_scenario}.",
-        )
 
     def get_player_details(self, args_model: GetPlayerDetailsArgs) -> str:
         """(QUERY tool) Get details about the player character."""
