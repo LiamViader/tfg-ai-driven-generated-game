@@ -19,7 +19,6 @@ from core_game.character.schemas import (
 from ..schemas.simulated_characters import (
     SimulatedCharactersModel,
     CreateNPCArgs,
-    ModifyCharacterArgs,
     ModifyIdentityArgs,
     ModifyPhysicalArgs,
     ModifyPsychologicalArgs,
@@ -82,7 +81,7 @@ class ToolGetPlayerDetailsArgs(GetPlayerDetailsArgs):
 
 
 @tool(args_schema=ToolCreateScenarioArgs)
-def create_full_npc(
+def create_npc(
     identity: IdentityModel,
     physical: PhysicalAttributesModel,
     psychological: PsychologicalAttributesModel,
@@ -107,7 +106,7 @@ def create_full_npc(
 
     simulated_characters_state.simulated_characters[new_id] = npc
     return simulated_characters_state._log_and_summarize(
-        "create_full_npc",
+        "create_npc",
         CreateNPCArgs(
             identity=identity,
             physical=physical,
@@ -695,7 +694,7 @@ def delete_character(
 
 
 EXECUTORTOOLS = [
-    create_full_npc,
+    create_npc,
     create_player,
     list_characters,
     get_player_details,
