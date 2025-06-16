@@ -9,7 +9,7 @@ IDENTITY_MODEL_FIELDS = {
 }
 
 PHYSICAL_ATTRIBUTES_MODEL_FIELDS = {
-    "appearance": "A detailed description of the character's physical appearance. Aprox 100 words. The description must be visually concrete and self-contained, explicitly stating all physical traits, Detailed enough for someone to draw it unequivocally.",
+    "appearance": "A detailed description of the character's physical appearance. Approx. 150 words. The description must be visually concrete and self-contained, explicitly stating all physical traits. It should be detailed enough for someone to draw or generate the character image without ambiguity. It must include, among other things: body type and build, facial structure, eye shape and color, hairstyle and color, skin tone, facial expression, clothing style and color, notable accessories, posture, and any unique or identifying features.",
     "distinctive_features": "A list of distinctive physical features like scars, tattoos, or unique traits.",
     "clothing_style": "Description of the character's clothing, armor, or style of dress.",
     "characteristic_items": "A list of notable items the character carries that reinforce their identity, can be empty."
