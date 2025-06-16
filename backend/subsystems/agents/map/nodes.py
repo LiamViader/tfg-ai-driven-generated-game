@@ -65,7 +65,7 @@ def receive_result_for_validation_node(state: MapGraphState):
         for operation in operation_logs:
             if operation["success"]:
                 if operation["tool_called"] not in query_tool_names:
-                    final_str += f"Result of '{operation["tool_called"]}': {operation["message"]}.\n"
+                    final_str += f"Result of '{operation['tool_called']}': {operation['message']}.\n"
         return final_str
 
     state.working_simulated_map.executor_or_validator = "validator"

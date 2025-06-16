@@ -173,31 +173,39 @@ class SimulatedMapModel(BaseModel):
         if not self.island_clusters:
             return "The simulated map currently has 0 scenarios."
         
-        summary = f"The simulated map has {len(self.simulated_scenarios)} scenarios and {len(self.island_clusters)} cluster(s) of scenarios:\n"
+        summary_lines = [
+            f"The simulated map has {len(self.simulated_scenarios)} scenarios and {len(self.island_clusters)} cluster(s) of scenarios:"
+        ]
         for i, cluster_set in enumerate(self.island_clusters, 1):
-            cluster_list_sorted = sorted(list(cluster_set)) 
-            
-            scenario_strings = []
-            num_to_display = len(cluster_list_sorted) if list_all_scenarios else (max_listed_per_cluster or len(cluster_list_sorted))
+            cluster_list_sorted = sorted(list(cluster_set))
+            num_to_display = len(cluster_list_sorted) if list_all_scenarios else (
+                max_listed_per_cluster or len(cluster_list_sorted)
+            )
 
+            scenario_lines: List[str] = []
             for k, scenario_id in enumerate(cluster_list_sorted):
                 if k < num_to_display:
                     scenario = self.simulated_scenarios.get(scenario_id)
                     if scenario:
-                        scenario_strings.append(f'"{scenario.name}" (ID: {scenario.id})')
+                        scenario_lines.append(f"  - \"{scenario.name}\" (ID: {scenario.id})")
                 else:
                     break
-            
-            summary_line = f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios): "
-            if scenario_strings:
-                summary_line += ", ".join(scenario_strings)
-                if not list_all_scenarios and len(cluster_list_sorted) > num_to_display:
-                    summary_line += f", ...and {len(cluster_list_sorted) - num_to_display} more."
-            else:
-                summary_line += "(No scenarios found for this cluster - this might indicate an issue)."
 
-            summary += summary_line + "\n"
-        return summary.strip()
+            if not list_all_scenarios and len(cluster_list_sorted) > num_to_display:
+                scenario_lines.append(
+                    f"  - ...and {len(cluster_list_sorted) - num_to_display} more."
+                )
+
+            if scenario_lines:
+                summary_lines.append(
+                    f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios):\n" + "\n".join(scenario_lines)
+                )
+            else:
+                summary_lines.append(
+                    f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios): (No scenarios found for this cluster - this might indicate an issue)."
+                )
+
+        return "\n".join(summary_lines)
 
     def _log_and_summarize(self, tool_name: str, args: BaseModel, success: bool, message: str) -> str:
         """Helper to log the operation and create consistent observation messages."""

@@ -33,6 +33,7 @@ from ..schemas.simulated_characters import (
     GetCharacterDetailsArgs,
     CreatePlayerArgs,
     GetPlayerDetailsArgs,
+    ListCharactersByScenarioArgs,
 )
 
 
@@ -77,6 +78,9 @@ class ToolCreatePlayerArgs(CreatePlayerArgs):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
 class ToolGetPlayerDetailsArgs(GetPlayerDetailsArgs):
+    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
+
+class ToolListCharactersByScenarioArgs(BaseModel):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
 
@@ -224,6 +228,15 @@ def list_characters(
         list_narrative=list_narrative,
     )
     return simulated_characters_state.list_characters(args_model=args_model)
+
+
+@tool(args_schema=ToolListCharactersByScenarioArgs)
+def list_characters_by_scenario(
+    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
+) -> str:
+    """(QUERY tool) List characters grouped by scenario."""
+    args_model = ListCharactersByScenarioArgs()
+    return simulated_characters_state.list_characters_by_scenario(args_model=args_model)
 
 
 @tool(args_schema=ToolGetCharacterDetailsArgs)
@@ -731,6 +744,7 @@ EXECUTORTOOLS = [
     create_npc,
     create_player,
     list_characters,
+    list_characters_by_scenario,
     get_player_details,
     get_character_details,
     modify_identity,
