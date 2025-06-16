@@ -1,6 +1,6 @@
 """Tool functions used by the character agent."""
 
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Literal
 from pydantic import BaseModel
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedState
@@ -38,9 +38,6 @@ from ..schemas.simulated_characters import (
 
 # --- Tools Schemas -- (adding the injected simulated map)
 class ToolCreateScenarioArgs(CreateNPCArgs):
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
-
-class ToolModifyCharacterArgs(ModifyCharacterArgs):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
 class ToolModifyIdentityArgs(ModifyIdentityArgs):
@@ -171,7 +168,7 @@ def get_player_details(
 @tool(args_schema=ToolListCharactersArgs)
 def list_characters(
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-    attribute_to_filter: Optional[str] = None,
+    attribute_to_filter: Optional[Literal[ "narrative_role","current_narrative_importance", "species","profession","gender","alias","name_contains"]] = None,
     value_to_match: Optional[str] = None,
     max_results: Optional[int] = 10,
     list_identity: bool = False,
@@ -206,47 +203,6 @@ def get_character_details(
     return simulated_characters_state.get_character_details(args_model=args_model)
 
 
-@tool(args_schema=ToolModifyCharacterArgs)
-def modify_character(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-    character_id: str,
-    new_full_name: Optional[str] = None,
-    new_personality_summary: Optional[str] = None,
-) -> str:
-    """(MODIFICATION tool) Modify a character's basic attributes."""
-
-    # Works on both NPCs and the player.
-    args_model = ModifyCharacterArgs(
-        character_id=character_id,
-        new_full_name=new_full_name,
-        new_personality_summary=new_personality_summary,
-    )
-
-    char = simulated_characters_state.simulated_characters.get(character_id)
-    if not char:
-        return simulated_characters_state._log_and_summarize(
-            "modify_character",
-            args_model,
-            False,
-            f"Error: Character ID '{character_id}' not found.",
-        )
-
-    updated_fields = []
-    if new_full_name is not None:
-        char.identity.full_name = new_full_name
-        updated_fields.append("full_name")
-    if new_personality_summary is not None:
-        char.psychological.personality_summary = new_personality_summary
-        updated_fields.append("personality_summary")
-
-    message = "No changes applied." if not updated_fields else f"Updated fields: {', '.join(updated_fields)}."
-    return simulated_characters_state._log_and_summarize(
-        "modify_character",
-        args_model,
-        True,
-        message,
-    )
-
 
 @tool(args_schema=ToolModifyIdentityArgs)
 def modify_identity(
@@ -255,7 +211,7 @@ def modify_identity(
     new_full_name: Optional[str] = None,
     new_alias: Optional[str] = None,
     new_age: Optional[int] = None,
-    new_gender: Optional[str] = None,
+    new_gender: Optional[Literal["male", "female", "non-binary", "undefined", "other"]] = None,
     new_profession: Optional[str] = None,
     new_species: Optional[str] = None,
     new_alignment: Optional[str] = None,
@@ -529,7 +485,7 @@ def modify_dynamic_state(
     new_current_emotion: Optional[str] = None,
     new_immediate_goal: Optional[str] = None,
 ) -> str:
-    """(MODIFICATION tool) Update an NPC's dynamic state."
+    """(MODIFICATION tool) Update an NPC's dynamic state.
 
     This tool does not work on the player character.
     """
@@ -554,6 +510,8 @@ def modify_dynamic_state(
             False,
             "Error: Cannot modify the player's dynamic state.",
         )
+
+    assert isinstance(char, NonPlayerCharacterModel), "Character must be an NPC."
 
     updated_fields = []
     if new_current_emotion is not None:
@@ -581,9 +539,8 @@ def modify_narrative(
     new_narrative_purposes: Optional[list] = None,
     append_narrative_purposes: bool = False,
 ) -> str:
-    """(MODIFICATION tool) Update an NPC's narrative attributes."
+    """(MODIFICATION tool) Update an NPC's narrative attributes.
 
-    This tool cannot modify the player character.
     """
     args_model = ModifyNarrativeArgs(
         character_id=character_id,
@@ -608,7 +565,7 @@ def modify_narrative(
             False,
             "Error: Cannot modify the player's narrative attributes.",
         )
-
+    assert isinstance(char, NonPlayerCharacterModel), "Character must be an NPC."
     updated_fields = []
     if new_narrative_role is not None:
         char.narrative.narrative_role = new_narrative_role
@@ -672,8 +629,6 @@ def remove_character_from_scenario(
     character_id: str,
 ) -> str:
     """(MODIFICATION tool) Remove an NPC from its current scenario.
-
-    The player cannot be removed from a scenario.
     """
 
     args_model = RemoveCharacterFromScenarioArgs(character_id=character_id)
@@ -745,7 +700,6 @@ EXECUTORTOOLS = [
     list_characters,
     get_player_details,
     get_character_details,
-    modify_character,
     modify_identity,
     modify_physical,
     modify_psychological,

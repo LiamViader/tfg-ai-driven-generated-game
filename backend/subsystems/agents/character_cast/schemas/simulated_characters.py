@@ -38,19 +38,6 @@ class CreatePlayerArgs(BaseModel):
     present_in_scenario: str = PydanticField(..., description="ID of the scenario where the player starts")
 
 
-class ModifyCharacterArgs(BaseModel):
-    """Arguments for basic modifications valid for NPCs and the player."""
-
-    character_id: str = PydanticField(
-        ...,
-        description="ID of the character (NPC or player) to modify",
-    )
-    new_full_name: Optional[str] = PydanticField(
-        None, description="New full name"
-    )
-    new_personality_summary: Optional[str] = PydanticField(
-        None, description="New personality summary"
-    )
 
 
 class ModifyIdentityArgs(BaseModel):
@@ -243,7 +230,7 @@ class ListCharactersArgs(BaseModel):
     )
     value_to_match: Optional[str] = PydanticField(
         default=None,
-        description="Value that the attribute should match or contain",
+        description="Value that the attribute should match",
     )
     max_results: Optional[int] = PydanticField(
         default=10,

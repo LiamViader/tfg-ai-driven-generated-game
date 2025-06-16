@@ -70,6 +70,7 @@ class DynamicStateModel(BaseModel):
 class CharacterBaseModel(BaseModel):
     """The base model that all character types inherit from."""
     id: str = Field(..., description="Unique identifier for the character.")
+    type: Literal["player", "npc"] = Field(default="player", description="Type of character.")
     identity: IdentityModel
     physical: PhysicalAttributesModel
     psychological: PsychologicalAttributesModel
