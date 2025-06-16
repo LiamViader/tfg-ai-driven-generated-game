@@ -2,6 +2,16 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Literal
 from core_game.character.field_descriptions import *
 
+# Internal counter used for sequential character ids
+_character_id_counter = 0
+
+
+def _generate_character_id() -> str:
+    """Return a sequential id of the form 'char_001'."""
+    global _character_id_counter
+    _character_id_counter += 1
+    return f"char_{_character_id_counter:03d}"
+
 class IdentityModel(BaseModel):
     """Core identity traits of the character."""
     full_name: str = Field(..., description=IDENTITY_MODEL_FIELDS["full_name"])
