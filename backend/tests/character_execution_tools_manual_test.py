@@ -25,6 +25,7 @@ from subsystems.agents.character_cast.tools.character_tools import (
     list_characters,
     get_player_details,
     modify_identity,
+    modify_knowledge,
     modify_dynamic_state,
     modify_narrative,
 )
@@ -240,6 +241,32 @@ if __name__ == "__main__":
                 "simulated_characters_state": characters_state,
                 "character_id": "char_003",
                 "new_full_name": "Arin the Hero",
+            }
+        )
+    )
+
+    print_step("Append Player Knowledge")
+    print(
+        modify_knowledge.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_003",
+                "new_acquired_knowledge": ["secret treasure location"],
+                "append_acquired_knowledge": True,
+            }
+        )
+    )
+
+    print_step("Append Lia Narrative Purpose")
+    print(
+        modify_narrative.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_001",
+                "new_narrative_purposes": [
+                    NarrativePurposeModel(mission="sell goods", is_hidden=False)
+                ],
+                "append_narrative_purposes": True,
             }
         )
     )

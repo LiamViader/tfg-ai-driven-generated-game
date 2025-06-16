@@ -320,8 +320,10 @@ def modify_physical(
     character_id: str,
     new_appearance: Optional[str] = None,
     new_distinctive_features: Optional[list] = None,
+    append_distinctive_features: bool = False,
     new_clothing_style: Optional[str] = None,
     new_characteristic_items: Optional[list] = None,
+    append_characteristic_items: bool = False,
 ) -> str:
     """(MODIFICATION tool) Update physical traits of a character."""
 
@@ -330,8 +332,10 @@ def modify_physical(
         character_id=character_id,
         new_appearance=new_appearance,
         new_distinctive_features=new_distinctive_features,
+        append_distinctive_features=append_distinctive_features,
         new_clothing_style=new_clothing_style,
         new_characteristic_items=new_characteristic_items,
+        append_characteristic_items=append_characteristic_items,
     )
     char = simulated_characters_state.simulated_characters.get(character_id)
     if not char:
@@ -347,13 +351,19 @@ def modify_physical(
         char.physical.appearance = new_appearance
         updated_fields.append("appearance")
     if new_distinctive_features is not None:
-        char.physical.distinctive_features = new_distinctive_features
+        if args_model.append_distinctive_features:
+            char.physical.distinctive_features.extend(new_distinctive_features)
+        else:
+            char.physical.distinctive_features = new_distinctive_features
         updated_fields.append("distinctive_features")
     if new_clothing_style is not None:
         char.physical.clothing_style = new_clothing_style
         updated_fields.append("clothing_style")
     if new_characteristic_items is not None:
-        char.physical.characteristic_items = new_characteristic_items
+        if args_model.append_characteristic_items:
+            char.physical.characteristic_items.extend(new_characteristic_items)
+        else:
+            char.physical.characteristic_items = new_characteristic_items
         updated_fields.append("characteristic_items")
 
     message = "No changes applied." if not updated_fields else f"Updated fields: {', '.join(updated_fields)}."
@@ -371,12 +381,17 @@ def modify_psychological(
     character_id: str,
     new_personality_summary: Optional[str] = None,
     new_personality_tags: Optional[list] = None,
+    append_personality_tags: bool = False,
     new_motivations: Optional[list] = None,
+    append_motivations: bool = False,
     new_values: Optional[list] = None,
+    append_values: bool = False,
     new_fears_and_weaknesses: Optional[list] = None,
+    append_fears_and_weaknesses: bool = False,
     new_communication_style: Optional[str] = None,
     new_backstory: Optional[str] = None,
     new_quirks: Optional[list] = None,
+    append_quirks: bool = False,
 ) -> str:
     """(MODIFICATION tool) Update psychological traits of a character."""
 
@@ -385,12 +400,17 @@ def modify_psychological(
         character_id=character_id,
         new_personality_summary=new_personality_summary,
         new_personality_tags=new_personality_tags,
+        append_personality_tags=append_personality_tags,
         new_motivations=new_motivations,
+        append_motivations=append_motivations,
         new_values=new_values,
+        append_values=append_values,
         new_fears_and_weaknesses=new_fears_and_weaknesses,
+        append_fears_and_weaknesses=append_fears_and_weaknesses,
         new_communication_style=new_communication_style,
         new_backstory=new_backstory,
         new_quirks=new_quirks,
+        append_quirks=append_quirks,
     )
     char = simulated_characters_state.simulated_characters.get(character_id)
     if not char:
@@ -406,16 +426,28 @@ def modify_psychological(
         char.psychological.personality_summary = new_personality_summary
         updated_fields.append("personality_summary")
     if new_personality_tags is not None:
-        char.psychological.personality_tags = new_personality_tags
+        if args_model.append_personality_tags:
+            char.psychological.personality_tags.extend(new_personality_tags)
+        else:
+            char.psychological.personality_tags = new_personality_tags
         updated_fields.append("personality_tags")
     if new_motivations is not None:
-        char.psychological.motivations = new_motivations
+        if args_model.append_motivations:
+            char.psychological.motivations.extend(new_motivations)
+        else:
+            char.psychological.motivations = new_motivations
         updated_fields.append("motivations")
     if new_values is not None:
-        char.psychological.values = new_values
+        if args_model.append_values:
+            char.psychological.values.extend(new_values)
+        else:
+            char.psychological.values = new_values
         updated_fields.append("values")
     if new_fears_and_weaknesses is not None:
-        char.psychological.fears_and_weaknesses = new_fears_and_weaknesses
+        if args_model.append_fears_and_weaknesses:
+            char.psychological.fears_and_weaknesses.extend(new_fears_and_weaknesses)
+        else:
+            char.psychological.fears_and_weaknesses = new_fears_and_weaknesses
         updated_fields.append("fears_and_weaknesses")
     if new_communication_style is not None:
         char.psychological.communication_style = new_communication_style
@@ -424,7 +456,10 @@ def modify_psychological(
         char.psychological.backstory = new_backstory
         updated_fields.append("backstory")
     if new_quirks is not None:
-        char.psychological.quirks = new_quirks
+        if args_model.append_quirks:
+            char.psychological.quirks.extend(new_quirks)
+        else:
+            char.psychological.quirks = new_quirks
         updated_fields.append("quirks")
 
     message = "No changes applied." if not updated_fields else f"Updated fields: {', '.join(updated_fields)}."
@@ -441,7 +476,9 @@ def modify_knowledge(
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
     character_id: str,
     new_background_knowledge: Optional[list] = None,
+    append_background_knowledge: bool = False,
     new_acquired_knowledge: Optional[list] = None,
+    append_acquired_knowledge: bool = False,
 ) -> str:
     """(MODIFICATION tool) Update a character's knowledge."""
 
@@ -449,7 +486,9 @@ def modify_knowledge(
     args_model = ModifyKnowledgeArgs(
         character_id=character_id,
         new_background_knowledge=new_background_knowledge,
+        append_background_knowledge=append_background_knowledge,
         new_acquired_knowledge=new_acquired_knowledge,
+        append_acquired_knowledge=append_acquired_knowledge,
     )
     char = simulated_characters_state.simulated_characters.get(character_id)
     if not char:
@@ -462,10 +501,16 @@ def modify_knowledge(
 
     updated_fields = []
     if new_background_knowledge is not None:
-        char.knowledge.background_knowledge = new_background_knowledge
+        if args_model.append_background_knowledge:
+            char.knowledge.background_knowledge.extend(new_background_knowledge)
+        else:
+            char.knowledge.background_knowledge = new_background_knowledge
         updated_fields.append("background_knowledge")
     if new_acquired_knowledge is not None:
-        char.knowledge.acquired_knowledge = new_acquired_knowledge
+        if args_model.append_acquired_knowledge:
+            char.knowledge.acquired_knowledge.extend(new_acquired_knowledge)
+        else:
+            char.knowledge.acquired_knowledge = new_acquired_knowledge
         updated_fields.append("acquired_knowledge")
 
     message = "No changes applied." if not updated_fields else f"Updated fields: {', '.join(updated_fields)}."
@@ -534,6 +579,7 @@ def modify_narrative(
     new_narrative_role: Optional[str] = None,
     new_current_narrative_importance: Optional[str] = None,
     new_narrative_purposes: Optional[list] = None,
+    append_narrative_purposes: bool = False,
 ) -> str:
     """(MODIFICATION tool) Update an NPC's narrative attributes."
 
@@ -544,6 +590,7 @@ def modify_narrative(
         new_narrative_role=new_narrative_role,
         new_current_narrative_importance=new_current_narrative_importance,
         new_narrative_purposes=new_narrative_purposes,
+        append_narrative_purposes=append_narrative_purposes,
     )
     char = simulated_characters_state.simulated_characters.get(character_id)
     if not char:
@@ -570,7 +617,10 @@ def modify_narrative(
         char.narrative.current_narrative_importance = new_current_narrative_importance
         updated_fields.append("current_narrative_importance")
     if new_narrative_purposes is not None:
-        char.narrative.narrative_purposes = new_narrative_purposes
+        if args_model.append_narrative_purposes:
+            char.narrative.narrative_purposes.extend(new_narrative_purposes)
+        else:
+            char.narrative.narrative_purposes = new_narrative_purposes
         updated_fields.append("narrative_purposes")
 
     message = "No changes applied." if not updated_fields else f"Updated fields: {', '.join(updated_fields)}."
