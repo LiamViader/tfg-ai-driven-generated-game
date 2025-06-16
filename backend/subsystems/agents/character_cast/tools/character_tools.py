@@ -117,7 +117,7 @@ def create_npc(
             narrative=narrative,
         ),
         True,
-        f"Full NPC '{identity.full_name}' created with id {new_id}.",
+        f"NPC '{identity.full_name}' created with id {new_id}.",
     )
 
 
@@ -164,7 +164,7 @@ def create_player(
             "create_player",
             args_model,
             False,
-            "Error: Player already exists.",
+            "Error: A Player already exists.",
         )
 
     new_id = SimulatedCharactersModel.generate_sequential_character_id(

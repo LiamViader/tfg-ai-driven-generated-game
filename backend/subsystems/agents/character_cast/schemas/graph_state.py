@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
-from core_game.character.schemas import CharacterBaseModel
+from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel
 from .simulated_characters import SimulatedCharactersModel
 
 
@@ -17,6 +17,7 @@ class CharacterGraphState(BaseModel):
     other_guidelines: str = Field(..., description="Additional softer guidelines")
 
     characters: Dict[str, CharacterBaseModel] = Field(default_factory=dict)
+    player: Optional[PlayerCharacterModel] = Field(default=None, description="Player character, if any.")
 
     working_simulated_characters: SimulatedCharactersModel = Field(default_factory=SimulatedCharactersModel)
 
@@ -25,6 +26,6 @@ class CharacterGraphState(BaseModel):
     max_executor_iterations: int = Field(..., description="Maximum iterations for the executor to achieve the objective.")
 
     def reset_working_memory(self) -> None:
-        self.working_simulated_characters = SimulatedCharactersModel(simulated_characters=self.characters.copy())
+        self.working_simulated_characters = SimulatedCharactersModel(simulated_characters=self.characters.copy(), player_character=self.player)
         self.executor_messages = []
         self.current_executor_iteration = 0

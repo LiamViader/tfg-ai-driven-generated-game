@@ -19,7 +19,7 @@ if __name__ == "__main__":
         character_rules_and_constraints=[
             "Characters should have unique personalities and physical atributes that make them outstand.",
         ],
-        current_objective="Create two unique NPCs who could appear in this context.",
+        current_objective="Create two unique NPCs who could appear in this context. Then create the player character. Place them in the same scenario.",
         other_guidelines="Keep them distinct from canonical characters.",
         max_executor_iterations=3,
     )
