@@ -1,7 +1,7 @@
 """Tool functions used by the character agent."""
 
 from typing import Annotated, Optional, Literal
-from core_game.character.constants import Gender
+from core_game.character.constants import Gender, NarrativeImportance, NarrativeRole
 from pydantic import BaseModel
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedState
@@ -538,8 +538,8 @@ def modify_dynamic_state(
 def modify_narrative(
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
     character_id: str,
-    new_narrative_role: Optional[str] = None,
-    new_current_narrative_importance: Optional[str] = None,
+    new_narrative_role: Optional[NarrativeRole] = None,
+    new_current_narrative_importance: Optional[NarrativeImportance] = None,
     new_narrative_purposes: Optional[list] = None,
     append_narrative_purposes: bool = False,
 ) -> str:
