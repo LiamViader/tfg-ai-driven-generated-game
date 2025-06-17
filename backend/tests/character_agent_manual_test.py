@@ -3,8 +3,8 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from subsystems.agents.character_cast import get_character_graph_app
-from subsystems.agents.character_cast.schemas.graph_state import CharacterGraphState
+from subsystems.agents.character_handler import get_character_graph_app
+from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 
 
 def print_step(title: str) -> None:

@@ -2,7 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
-from subsystems.agents.map.schemas.simulated_map import SimulatedMapModel
+from subsystems.agents.map_handler.schemas.simulated_map import SimulatedMapModel
 
 def visualize_map_graph(simulated_map: SimulatedMapModel):
     """

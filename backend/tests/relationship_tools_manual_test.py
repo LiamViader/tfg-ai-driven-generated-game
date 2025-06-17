@@ -3,12 +3,12 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from subsystems.agents.relationship.schemas.simulated_relationships import (
+from subsystems.agents.relationship_handler.schemas.simulated_relationships import (
     SimulatedRelationshipsModel,
     GetRelationshipDetailsArgs,
     FinalizeSimulationArgs,
 )
-from subsystems.agents.relationship.tools.relationship_tools import (
+from subsystems.agents.relationship_handler.tools.relationship_tools import (
     get_relationship_details,
     finalize_simulation,
     create_relationship_type,

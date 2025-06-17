@@ -1,6 +1,6 @@
-from subsystems.agents.map.orchestrator import get_map_graph_app
-from subsystems.agents.map.schemas.graph_state import MapGraphState
-from subsystems.agents.map.schemas.simulated_map import *
+from subsystems.agents.map_handler.orchestrator import get_map_graph_app
+from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
+from subsystems.agents.map_handler.schemas.simulated_map import *
 
 from utils.visualize_graph import visualize_map_graph
 

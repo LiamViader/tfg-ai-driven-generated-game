@@ -6,8 +6,8 @@ from langgraph.graph.message import add_messages
 
 # El '.' significa "desde el directori actual (schemas)"
 from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections, ConnectionInfo
-from subsystems.agents.map.schemas.simulated_map import SimulatedMapModel
-from subsystems.agents.map.schemas.simulated_map import ListScenariosClusterSummaryArgs
+from subsystems.agents.map_handler.schemas.simulated_map import SimulatedMapModel
+from subsystems.agents.map_handler.schemas.simulated_map import ListScenariosClusterSummaryArgs
 
 
 

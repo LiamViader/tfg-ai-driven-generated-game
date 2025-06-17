@@ -7,7 +7,7 @@ from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 
 from core_game.map.schemas import Direction, OppositeDirections, ScenarioModel, ConnectionInfo
-from subsystems.agents.map.schemas.simulated_map import *
+from subsystems.agents.map_handler.schemas.simulated_map import *
 
 
 # --- Tools Schemas -- (adding the injected simulated map)

@@ -11,12 +11,12 @@ from core_game.character.schemas import (
     NarrativeWeightModel,
     NarrativePurposeModel,
 )
-from subsystems.agents.character_cast.schemas.simulated_characters import (
+from subsystems.agents.character_handler.schemas.simulated_characters import (
     SimulatedCharactersModel,
     CreateNPCArgs,
     CreatePlayerArgs,
 )
-from subsystems.agents.character_cast.tools.character_tools import (
+from subsystems.agents.character_handler.tools.character_tools import (
     create_npc,
     get_character_details,
     create_player,
