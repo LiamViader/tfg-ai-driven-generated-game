@@ -43,7 +43,7 @@ HUMAN_PROMPT = """
 Below is all the information you need to complete your objective. Act accordingly.
 
 ## 1. The World Context
-This is your **single source of truth** for the world's lore, tone, and context. ALL your actions and map designs must be deeply rooted in and consistent with this text. You must treat it as the project's "creative bible."
+This is your **single initial source of truth** for the world's lore, tone, and context. ALL your actions and map designs must be deeply rooted in and consistent with this text. You must treat it as the project's "creative bible."
 
 {narrative_context}
 
