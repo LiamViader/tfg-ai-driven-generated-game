@@ -3,13 +3,6 @@ from pydantic import BaseModel, Field as PydanticField
 from core_game.character.schemas import RelationshipType, CharacterRelationship
 
 
-class SetRelationshipArgs(BaseModel):
-    source_character_id: str = PydanticField(..., description="ID of the character initiating the relationship")
-    target_character_id: str = PydanticField(..., description="ID of the target character")
-    relationship_type: str = PydanticField(..., description="Name of the relationship type")
-    intensity: Optional[int] = PydanticField(None, description="Intensity of the relationship if applicable")
-
-
 class GetRelationshipDetailsArgs(BaseModel):
     source_character_id: str = PydanticField(..., description="ID of the source character")
     target_character_id: str = PydanticField(..., description="ID of the target character")
@@ -17,6 +10,37 @@ class GetRelationshipDetailsArgs(BaseModel):
 
 class FinalizeSimulationArgs(BaseModel):
     justification: str = PydanticField(..., description="Explanation of why the objective is met")
+
+
+class CreateRelationshipTypeArgs(BaseModel):
+    name: str = PydanticField(..., description="Name of the relationship type")
+    explanation: Optional[str] = PydanticField(
+        default=None,
+        description="Detailed explanation of the relationship type",
+    )
+
+
+class CreateUndirectedRelationshipArgs(BaseModel):
+    character_a_id: str = PydanticField(..., description="ID of the first character")
+    character_b_id: str = PydanticField(..., description="ID of the second character")
+    relationship_type: str = PydanticField(..., description="Name of the relationship type")
+    intensity: Optional[int] = PydanticField(
+        None, description="Intensity of the relationship if applicable"
+    )
+
+
+class CreateDirectedRelationshipArgs(BaseModel):
+    source_character_id: str = PydanticField(..., description="ID of the character initiating the relationship")
+    target_character_id: str = PydanticField(..., description="ID of the target character")
+    relationship_type: str = PydanticField(..., description="Name of the relationship type")
+    intensity: Optional[int] = PydanticField(None, description="Intensity of the relationship if applicable")
+
+
+class ModifyRelationshipIntensityArgs(BaseModel):
+    source_character_id: str = PydanticField(..., description="ID of the source character")
+    target_character_id: str = PydanticField(..., description="ID of the target character")
+    relationship_type: str = PydanticField(..., description="Name of the relationship type")
+    new_intensity: int = PydanticField(..., ge=0, le=10, description="New intensity value")
 
 
 class SimulatedRelationshipsModel(BaseModel):
@@ -38,25 +62,6 @@ class SimulatedRelationshipsModel(BaseModel):
         print(observation)
         return observation
 
-    def set_relationship(self, args_model: SetRelationshipArgs) -> str:
-        r_type = self.relationship_types.get(args_model.relationship_type)
-        if r_type is None:
-            return self._log_and_summarize(
-                "set_relationship",
-                args_model,
-                False,
-                f"Relationship type '{args_model.relationship_type}' not found.",
-            )
-        rel = CharacterRelationship(type=r_type, intensity=args_model.intensity)
-        self.relationships_matrix.setdefault(args_model.source_character_id, {}).setdefault(
-            args_model.target_character_id, {}
-        )[args_model.relationship_type] = rel
-        return self._log_and_summarize(
-            "set_relationship",
-            args_model,
-            True,
-            f"Set {args_model.relationship_type} from {args_model.source_character_id} to {args_model.target_character_id}.",
-        )
 
     def get_relationship_details(self, args_model: GetRelationshipDetailsArgs) -> str:
         rels = self.relationships_matrix.get(args_model.source_character_id, {}).get(
@@ -86,3 +91,4 @@ class SimulatedRelationshipsModel(BaseModel):
             "final_justification": args_model.justification,
             "final_relationships": self.relationships_matrix,
         }
+
