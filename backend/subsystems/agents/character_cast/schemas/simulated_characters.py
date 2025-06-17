@@ -22,25 +22,36 @@ from core_game.character.schemas import (
 
 
 def _format_nested_dict(data: Dict[str, Any], indent: int = 0) -> List[str]:
-    """Convert a nested dictionary to indented bullet lines for readability."""
+    """Pretty-print a nested dictionary with clean indentation and clear structure."""
     lines: List[str] = []
-    prefix = "    " * indent
-    for key, value in data.items():
-        if isinstance(value, dict):
-            lines.append(f"{prefix}{key}:")
-            lines.extend(_format_nested_dict(value, indent + 1))
-        elif isinstance(value, list):
-            lines.append(f"{prefix}{key}:")
-            for item in value:
-                if isinstance(item, dict):
-                    lines.append(f"{prefix}  -")
-                    lines.extend(_format_nested_dict(item, indent + 2))
-                else:
-                    lines.append(f"{prefix}  - {item}")
-        else:
-            lines.append(f"{prefix}{key}: {value}")
-    return lines
+    indent_str = "    " * indent
 
+    for key, value in data.items():
+        display_key = str(key).replace("_", " ").capitalize()
+
+        if isinstance(value, dict):
+            lines.append(f"{indent_str}{display_key}:")
+            lines.extend(_format_nested_dict(value, indent + 1))
+
+        elif isinstance(value, list):
+            lines.append(f"{indent_str}{display_key}:")
+            if not value:
+                lines.append(f"{indent_str}    (None)")
+            else:
+                for item in value:
+                    if isinstance(item, dict):
+                        lines.append(f"{indent_str}    -")
+                        lines.extend(_format_nested_dict(item, indent + 2))
+                    else:
+                        lines.append(f"{indent_str}    - {item}")
+
+        elif value is None or value == "":
+            lines.append(f"{indent_str}{display_key}: (None)")
+
+        else:
+            lines.append(f"{indent_str}{display_key}: {value}")
+
+    return lines
 
 class CreateNPCArgs(BaseModel):
     """Arguments required to create a NPC."""
@@ -256,6 +267,7 @@ class ListCharactersArgs(BaseModel):
     )
     max_results: Optional[int] = PydanticField(
         default=10,
+        le=25,
         description="Maximum number of characters to list when filtering",
     )
     list_identity: bool = PydanticField(
@@ -385,31 +397,39 @@ class SimulatedCharactersModel(BaseModel):
                 if match_val not in str(value).lower():
                     continue
 
-            detail_lines: List[str] = [
-                f"ID: {char.id}",
-                f"Name: {char.identity.full_name}",
-                f"Type: {char.type}",
-            ]
-            role = (
-                char.narrative.narrative_role
-                if isinstance(char, NonPlayerCharacterModel)
-                else "N/A"
-            )
-            detail_lines.append(f"Role: {role}")
-            if args_model.list_identity:
-                detail_lines.append("Identity:\n  " + "\n  ".join(_format_nested_dict(char.identity.model_dump())))
-            if args_model.list_physical:
-                detail_lines.append("Physical:\n  " + "\n  ".join(_format_nested_dict(char.physical.model_dump())))
-            if args_model.list_psychological:
-                detail_lines.append("Psychological:\n  " + "\n  ".join(_format_nested_dict(char.psychological.model_dump())))
-            if args_model.list_knowledge:
-                detail_lines.append("Knowledge:\n  " + "\n  ".join(_format_nested_dict(char.knowledge.model_dump())))
-            if isinstance(char, NonPlayerCharacterModel) and args_model.list_dynamic_state:
-                detail_lines.append("Dynamic State:\n  " + "\n  ".join(_format_nested_dict(char.dynamic_state.model_dump())))
-            if isinstance(char, NonPlayerCharacterModel) and args_model.list_narrative:
-                detail_lines.append("Narrative:\n  " + "\n  ".join(_format_nested_dict(char.narrative.model_dump())))
+            lines: List[str] = []
+            lines.append(f"\n=== Character ID: {char.id} ===")
+            lines.append(f"Name: {char.identity.full_name}")
+            lines.append(f"Type: {char.type}")
+            role = char.narrative.narrative_role if isinstance(char, NonPlayerCharacterModel) else "N/A"
+            lines.append(f"Narrative Role: {role}")
 
-            matches.append("\n  ".join(detail_lines))
+            # Optional sections
+            if args_model.list_identity:
+                lines.append("--- Identity ---")
+                lines.extend(_format_nested_dict(char.identity.model_dump(), indent=1))
+
+            if args_model.list_physical:
+                lines.append("--- Physical ---")
+                lines.extend(_format_nested_dict(char.physical.model_dump(), indent=1))
+
+            if args_model.list_psychological:
+                lines.append("--- Psychological ---")
+                lines.extend(_format_nested_dict(char.psychological.model_dump(), indent=1))
+
+            if args_model.list_knowledge:
+                lines.append("--- Knowledge ---")
+                lines.extend(_format_nested_dict(char.knowledge.model_dump(), indent=1))
+
+            if isinstance(char, NonPlayerCharacterModel) and args_model.list_dynamic_state:
+                lines.append("--- Dynamic State ---")
+                lines.extend(_format_nested_dict(char.dynamic_state.model_dump(), indent=1))
+
+            if isinstance(char, NonPlayerCharacterModel) and args_model.list_narrative:
+                lines.append("--- Narrative ---")
+                lines.extend(_format_nested_dict(char.narrative.model_dump(), indent=1))
+
+            matches.append("\n".join(lines))
             if args_model.max_results and len(matches) >= args_model.max_results:
                 break
 
@@ -483,7 +503,10 @@ class SimulatedCharactersModel(BaseModel):
 
     def get_character_details(self, args_model: GetCharacterDetailsArgs) -> str:
         """(QUERY tool) Returns detailed information for a character."""
-        char = self.simulated_characters.get(args_model.character_id)
+        if self.player_character and self.player_character.id == args_model.character_id:
+            char = self.player_character
+        else:
+            char = self.simulated_characters.get(args_model.character_id)
         if not char:
             return self._log_and_summarize(
                 "get_character_details",

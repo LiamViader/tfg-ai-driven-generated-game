@@ -17,7 +17,8 @@ from subsystems.agents.character_cast.schemas.simulated_characters import (
     CreatePlayerArgs,
 )
 from subsystems.agents.character_cast.tools.character_tools import (
-    create_full_npc,
+    create_npc,
+    get_character_details,
     create_player,
     place_character,
     remove_character_from_scenario,
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     )
 
     print(
-        create_full_npc.invoke(
+        create_npc.invoke(
             {
                 **char1_args.model_dump(),
                 "simulated_characters_state": characters_state,
@@ -117,13 +118,13 @@ if __name__ == "__main__":
             narrative_role="ally",
             current_narrative_importance="secondary",
             narrative_purposes=[
-                NarrativePurposeModel(mission="defend town", is_hidden=False)
+                NarrativePurposeModel(mission="defend town", is_hidden=False), NarrativePurposeModel(mission="investigate bandits", is_hidden=True)
             ],
         ),
     )
 
     print(
-        create_full_npc.invoke(
+        create_npc.invoke(
             {
                 **char2_args.model_dump(),
                 "simulated_characters_state": characters_state,
@@ -158,7 +159,7 @@ if __name__ == "__main__":
             backstory="Left home seeking adventure",
             quirks=["talks to animals"],
         ),
-        present_in_scenario="scene_001",
+        present_in_scenario="scenario_001",
     )
 
     print(
@@ -175,19 +176,19 @@ if __name__ == "__main__":
         place_character.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
-                "new_scene_id": "scene_002",
+                "character_id": "character_003",
+                "new_scenario_id": "scenario_002",
             }
         )
     )
 
-    print_step("Place Lia in Scene")
+    print_step("Place Lia in scenario")
     print(
         place_character.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_001",
-                "new_scene_id": "scene_002",
+                "character_id": "character_001",
+                "new_scenario_id": "scenario_002",
             }
         )
     )
@@ -197,7 +198,7 @@ if __name__ == "__main__":
         remove_character_from_scenario.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_002",
+                "character_id": "character_002",
             }
         )
     )
@@ -236,10 +237,10 @@ if __name__ == "__main__":
 
     print_step("Character Details")
     print(
-        get_player_details.invoke(
+        get_character_details.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_001",  # Get details for Lia
+                "character_id": "character_001",  # Get details for Lia
             }
         )
     )
@@ -249,7 +250,7 @@ if __name__ == "__main__":
         modify_identity.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
+                "character_id": "character_003",
                 "new_full_name": "Arin the Hero",
             }
         )
@@ -260,7 +261,7 @@ if __name__ == "__main__":
         modify_knowledge.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
+                "character_id": "character_003",
                 "new_acquired_knowledge": ["secret treasure location"],
                 "append_acquired_knowledge": True,
             }
@@ -272,7 +273,7 @@ if __name__ == "__main__":
         modify_narrative.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_001",
+                "character_id": "character_001",
                 "new_narrative_purposes": [
                     NarrativePurposeModel(mission="sell goods", is_hidden=False)
                 ],
@@ -286,7 +287,7 @@ if __name__ == "__main__":
         modify_dynamic_state.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
+                "character_id": "character_003",
                 "new_current_emotion": "excited",
             }
         )
@@ -297,7 +298,7 @@ if __name__ == "__main__":
         modify_narrative.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
+                "character_id": "character_003",
                 "new_narrative_role": "protagonist",
             }
         )
@@ -308,7 +309,7 @@ if __name__ == "__main__":
         delete_character.invoke(
             {
                 "simulated_characters_state": characters_state,
-                "character_id": "char_003",
+                "character_id": "character_003",
             }
         )
     )
