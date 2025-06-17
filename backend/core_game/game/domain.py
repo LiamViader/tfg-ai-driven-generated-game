@@ -6,7 +6,7 @@ from core_game.map.domain import GameMap
 from core_game.character.domain import Characters, Relationships
 from core_game.game.schemas import GameStateModel, GameSessionModel
 from core_game.time.domain import GameTime
-
+from core_game.narrative.schemas import NarrativeStateModel
 
 class GameSession:
     """Domain wrapper around :class:`GameSessionModel`."""
@@ -30,7 +30,7 @@ class GameState:
         self.game_map: Optional[GameMap] = None
         self.characters: Optional[Characters] = None
         self.relationships: Optional[Relationships] = None
-        self.narrative_state = None
+        self.narrative_state: Optional[NarrativeStateModel] = None
         self.game_event_log: List = []
 
         if game_state_model is not None:
@@ -45,10 +45,10 @@ class GameState:
         self._data = game_state_model
 
         # Session information
-        self.session: GameSession = GameSession(game_state_model.session)
+        self.session = GameSession(game_state_model.session)
 
         # World map
-        self.game_map: GameMap = GameMap(game_state_model.game_map)
+        self.game_map = GameMap(game_state_model.game_map)
 
         # Characters
         self.characters = Characters(
