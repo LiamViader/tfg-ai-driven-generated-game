@@ -68,7 +68,7 @@ class CreatePlayerArgs(BaseModel):
     identity: IdentityModel = PydanticField(..., description="Full identity information")
     physical: PhysicalAttributesModel = PydanticField(..., description="Full physical description")
     psychological: PsychologicalAttributesModel = PydanticField(..., description="Detailed psychological profile")
-    knowledge: KnowledgeModel = PydanticField(default_factory=KnowledgeModel, description="Initial knowledge state")
+    knowledge: Optional[KnowledgeModel] = PydanticField(default_factory=KnowledgeModel, description="Initial knowledge state")
     present_in_scenario: str = PydanticField(..., description="ID of the scenario where the player starts")
 
 
@@ -476,7 +476,7 @@ class SimulatedCharactersModel(BaseModel):
             "list_characters_by_scenario",
             args_model,
             True,
-            "\n".join(lines).strip(),
+            "\n"+"\n".join(lines).strip(),
         )
 
 
@@ -493,7 +493,7 @@ class SimulatedCharactersModel(BaseModel):
         player = self.player_character
         details = player.model_dump()
         details["present_in_scenario"] = player.present_in_scenario or "None"
-        pretty_details = "\n".join(_format_nested_dict(details))
+        pretty_details = "\n"+"\n".join(_format_nested_dict(details))
         return self._log_and_summarize(
             "get_player_details",
             args_model,
@@ -517,7 +517,7 @@ class SimulatedCharactersModel(BaseModel):
 
         details = char.model_dump()
         details["present_in_scenario"] = char.present_in_scenario or "None"
-        pretty_details = "\n".join(_format_nested_dict(details))
+        pretty_details = "\n"+"\n".join(_format_nested_dict(details))
         return self._log_and_summarize(
             "get_character_details",
             args_model,

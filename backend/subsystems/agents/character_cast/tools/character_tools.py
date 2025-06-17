@@ -152,7 +152,7 @@ def create_player(
     physical: PhysicalAttributesModel,
     psychological: PsychologicalAttributesModel,
     present_in_scenario: str,
-    knowledge: KnowledgeModel = KnowledgeModel(),
+    knowledge: Optional[KnowledgeModel] = KnowledgeModel(),
 ) -> str:
     """(MODIFICATION tool) Create the player character."""
     args_model = CreatePlayerArgs(
@@ -174,6 +174,10 @@ def create_player(
     new_id = SimulatedCharactersModel.generate_sequential_character_id(
         list(simulated_characters_state.simulated_characters.keys())
     )
+    
+    if not knowledge:
+        knowledge = KnowledgeModel()
+
     player = PlayerCharacterModel(
         id=new_id,
         identity=identity,

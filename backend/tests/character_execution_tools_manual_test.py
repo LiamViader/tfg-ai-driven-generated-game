@@ -29,6 +29,7 @@ from subsystems.agents.character_cast.tools.character_tools import (
     modify_knowledge,
     modify_dynamic_state,
     modify_narrative,
+    list_characters_by_scenario
 )
 
 
@@ -310,6 +311,15 @@ if __name__ == "__main__":
             {
                 "simulated_characters_state": characters_state,
                 "character_id": "character_003",
+            }
+        )
+    )
+
+    print_step("List Character by scenario")
+    print(
+        list_characters_by_scenario.invoke(
+            {
+                "simulated_characters_state": characters_state,
             }
         )
     )
