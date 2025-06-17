@@ -8,10 +8,10 @@ _connection_id_counter = 0
 
 
 def _generate_scenario_id() -> str:
-    """Return a sequential id of the form 'scene_001'."""
+    """Return a sequential id of the form 'scenario_001'."""
     global _scenario_id_counter
     _scenario_id_counter += 1
-    return f"scene_{_scenario_id_counter:03d}"
+    return f"scenario_{_scenario_id_counter:03d}"
 
 
 def _generate_connection_id() -> str:

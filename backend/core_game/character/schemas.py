@@ -13,10 +13,10 @@ _character_id_counter = 0
 
 
 def _generate_character_id() -> str:
-    """Return a sequential id of the form 'char_001'."""
+    """Return a sequential id of the form 'character_001'."""
     global _character_id_counter
     _character_id_counter += 1
-    return f"char_{_character_id_counter:03d}"
+    return f"character_{_character_id_counter:03d}"
 
 class IdentityModel(BaseModel):
     """Core identity traits of the character."""
