@@ -323,10 +323,6 @@ class SimulatedCharactersModel(BaseModel):
 
     task_finalized_by_agent: bool = PydanticField(default=False)
     task_finalized_justification: Optional[str] = PydanticField(default=None)
-    agent_validated: bool = PydanticField(default=False)
-    agent_validation_conclusion_flag: bool = PydanticField(default=False)
-    agent_validation_assessment_reasoning: str = PydanticField(default="")
-    agent_validation_suggested_improvements: str = PydanticField(default="")
     executor_or_validator: Literal["executor", "validator"] = PydanticField(default="executor", description="Whether the cast is currently being used by the executor agent or the validator agent.")
 
     @staticmethod
