@@ -209,7 +209,7 @@ if __name__ == "__main__":
                 "simulated_characters_state": characters_state,
                 "list_identity": True,
                 "list_physical": True,
-                "list_psychological": False,
+                "list_narrative": True,
             }
         )
     )
@@ -230,6 +230,16 @@ if __name__ == "__main__":
         get_player_details.invoke(
             {
                 "simulated_characters_state": characters_state,
+            }
+        )
+    )
+
+    print_step("Character Details")
+    print(
+        get_player_details.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "character_id": "char_001",  # Get details for Lia
             }
         )
     )

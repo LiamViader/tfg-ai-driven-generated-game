@@ -190,7 +190,7 @@ def create_player(
         "create_player",
         args_model,
         True,
-        f"Player '{player.identity.full_name}' created with id {new_id} in scene {present_in_scenario}.",
+        f"Player '{player.identity.full_name}' created with id {new_id} in scenario {present_in_scenario}.",
     )
 
 
@@ -639,7 +639,7 @@ def modify_narrative(
 def place_character(
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
     character_id: str,
-    new_scene_id: str,
+    new_scenario_id: str,
 ) -> str:
     """(MODIFICATION tool) Place a character into a scenario.
 
@@ -647,7 +647,7 @@ def place_character(
     provided one. Works on both NPCs and the player.
     """
 
-    args_model = PlaceCharacterArgs(character_id=character_id, new_scene_id=new_scene_id)
+    args_model = PlaceCharacterArgs(character_id=character_id, new_scenario_id=new_scenario_id)
 
     char = simulated_characters_state.simulated_characters.get(character_id)
     if not char:
@@ -658,14 +658,14 @@ def place_character(
             f"Error: Character ID '{character_id}' not found.",
         )
 
-    previous_scene = char.present_in_scenario
-    char.present_in_scenario = new_scene_id
-    action = "moved" if previous_scene and previous_scene != new_scene_id else "placed"
+    previous_scenario = char.present_in_scenario
+    char.present_in_scenario = new_scenario_id
+    action = "moved" if previous_scenario and previous_scenario != new_scenario_id else "placed"
     return simulated_characters_state._log_and_summarize(
         "place_character",
         args_model,
         True,
-        f"Character '{char.identity.full_name}' {action} to scene {new_scene_id}.",
+        f"Character '{char.identity.full_name}' {action} to scenario {new_scenario_id}.",
     )
 
 

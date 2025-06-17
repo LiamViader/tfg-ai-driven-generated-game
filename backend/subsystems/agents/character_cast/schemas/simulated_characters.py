@@ -216,11 +216,10 @@ class PlaceCharacterArgs(BaseModel):
     character_id: str = PydanticField(
         ..., description="ID of the character to place or move"
     )
-    new_scene_id: str = PydanticField(
+    new_scenario_id: str = PydanticField(
         ...,
         description=(
-            "ID of the destination scenario. If the character was already in a"
-            " scene, it will be relocated here"
+            "ID of the destination scenario. If the character was already in a scenario, it will be relocated here"
         ),
     )
 
@@ -449,9 +448,9 @@ class SimulatedCharactersModel(BaseModel):
             )
 
         lines: List[str] = []
-        for scene in sorted(groups.keys()):
-            lines.append(f"Scene '{scene}':")
-            lines.extend(f"  - {name}" for name in sorted(groups[scene]))
+        for scenario in sorted(groups.keys()):
+            lines.append(f"Scenario '{scenario}':")
+            lines.extend(f"  - {name}" for name in sorted(groups[scenario]))
             lines.append("")
         return self._log_and_summarize(
             "list_characters_by_scenario",
