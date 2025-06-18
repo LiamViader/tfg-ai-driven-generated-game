@@ -40,7 +40,7 @@ EMBEDDING_MODEL_CATALOG: Dict[str, EmbeddingModelInfo] = {
         requirements="4 GB VRAM or 6 GB RAM",
         max_tokens=512
     ),
-    "openai_sota_small": EmbeddingModelInfo(
+    "openai_small": EmbeddingModelInfo(
         id="openai_small",
         provider="openai",
         technical_name="text-embedding-3-small",
@@ -52,7 +52,7 @@ EMBEDDING_MODEL_CATALOG: Dict[str, EmbeddingModelInfo] = {
         requirements="None (API)",
         max_tokens=8192
     ),
-    "openai_sota_large": EmbeddingModelInfo(
+    "openai_large": EmbeddingModelInfo(
         id="openai_large",
         provider="openai",
         technical_name="text-embedding-3-large",
