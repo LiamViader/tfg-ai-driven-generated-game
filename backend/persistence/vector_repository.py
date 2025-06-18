@@ -19,7 +19,7 @@ from embedding.interface import IEmbeddingModel
 # 1. The generic interface, now updated to be LangChain-native.
 class IVectorRepository(ABC):
     """
-    Abstract interface for a vector database, designed to be LangChain-native.
+    Abstract interface for a vector database for this system, designed to be LangChain-native.
     It operates on LangChain's 'Document' objects.
     """
 
