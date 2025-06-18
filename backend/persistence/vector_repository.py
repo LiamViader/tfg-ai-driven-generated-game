@@ -1,98 +1,106 @@
+"""
+Implementation of the persistence layer for vector databases.
+
+This module defines a generic interface (IVectorRepository) and provides
+a concrete implementation for ChromaDB (ChromaVectorRepository).
+
+The implementation uses the high-level `langchain_chroma.Chroma` wrapper class
+to align with the LangChain ecosystem and simplify interactions,
+while remaining behind our own interface to ensure system
+scalability and interchangeability.
+"""
+
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Union, Mapping, cast
-from embeddings.interface import IEmbeddingModel
-import chromadb
+from typing import List, Dict, Any, Optional
 import warnings
 
-# 1. Generic Interface for a Vector Repository
+# Import the high-level LangChain classes we will use
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+
+# Import our custom embedding interface
+from embeddings.interface import IEmbeddingModel
+
+
+# 1. Our generic interface remains unchanged. This contract is solid.
 class IVectorRepository(ABC):
     """
-    Abstract interface for a vector database.
-
-    Allows interchangeable use of different vector DB backends (e.g., ChromaDB, FAISS),
-    as long as they follow this contract and accept compatible input formats.
+    Abstract interface for a vector data repository.
+    Ensures that any vector DB backend can be swapped in.
     """
-    
+
     @abstractmethod
     def add(self, texts: List[str], metadatas: List[Dict[str, Any]], ids: List[str]):
-        """
-        Add documents with metadata. Each implementation must handle validation
-        or sanitization of metadata to fit DB-specific requirements.
-        """
+        """Adds documents with their metadata to the vector DB."""
         pass
 
     @abstractmethod
     def search(self, query: str, k: int, filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        Return the top-k most relevant results for a given query.
-        Each result must be a metadata dictionary.
-        """
+        """Searches for the k most relevant documents and returns their metadata."""
         pass
 
-# 2. ChromaDB Implementation
+
+# 2. The Chroma implementation, now using LangChain's tools.
 class ChromaVectorRepository(IVectorRepository):
     """
-    ChromaDB-based implementation.
-
-    - Only JSON-primitive metadata is supported (str, int, float, bool, None).
-    - Metadata is automatically sanitized on insertion.
+    Implementation of IVectorRepository that uses LangChain's 'Chroma' class as its backend.
     """
-
+    
+    # The initializer now creates an instance of 'langchain_chroma.Chroma'.
     def __init__(self, db_path: str, collection_name: str, embedding_model: IEmbeddingModel):
-        self.client = chromadb.PersistentClient(path=db_path)
+        # Get the LangChain-compatible model via the explicit interface method.
+        langchain_embedding_function = embedding_model.get_langchain_compatible_model()
 
-        # Extract compatible LangChain embedding function
-        langchain_embedding_function = getattr(embedding_model, '_model', None)
-        if not langchain_embedding_function:
-            raise TypeError("embedding_model must expose a valid LangChain-compatible '_model'.")
-
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name,
-            embedding_function=langchain_embedding_function
+        # Create the instance of the LangChain vector store. This will be our internal tool.
+        self._vector_store = Chroma(
+            collection_name=collection_name,
+            embedding_function=langchain_embedding_function,
+            persist_directory=db_path
         )
+        print(f"INFO: ChromaVectorRepository initialized and connected to collection '{collection_name}'.")
 
-    def _sanitize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Union[str, int, float, bool, None]]:
-        """
-        Remove metadata keys with unsupported types. Chroma only accepts primitives.
-        A warning is shown if any keys are dropped.
-        """
-        allowed_types = (str, int, float, bool, type(None))
+    # The sanitization function remains as good data hygiene.
+    def _sanitize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         sanitized = {}
-        removed_keys = []
-
         for k, v in metadata.items():
-            if isinstance(v, allowed_types):
+            if isinstance(v, (str, int, float, bool, type(None))):
                 sanitized[k] = v
             else:
-                removed_keys.append(k)
-
-        if removed_keys:
-            warnings.warn(
-                f"Removed metadata keys with unsupported types: {removed_keys}",
-                UserWarning
-            )
-
+                # For other types, convert to string to prevent errors.
+                sanitized[k] = str(v)
+                warnings.warn(
+                    f"Metadata key '{k}' with non-primitive value converted to string.", UserWarning
+                )
         return sanitized
 
+    # The 'add' method is now simpler and more idiomatic within the LangChain ecosystem.
     def add(self, texts: List[str], metadatas: List[Dict[str, Any]], ids: List[str]):
         """
-        Sanitize and add data to ChromaDB.
-        Casting ensures compatibility with Chroma's strict typing.
+        Adds documents to the Chroma vector store.
+        Converts the input data into LangChain 'Document' objects.
         """
-        cleaned = [self._sanitize_metadata(md) for md in metadatas]
-        typed_metadatas = cast(List[Mapping[str, Union[str, int, float, bool, None]]], cleaned)
-        self.collection.add(documents=texts, metadatas=typed_metadatas, ids=ids)
+        # LangChain works with its own 'Document' object.
+        # We create it from the data we receive.
+        docs = [
+            Document(page_content=text, metadata=self._sanitize_metadata(metadata))
+            for text, metadata in zip(texts, metadatas)
+        ]
 
+        # We use the '.add_documents()' method from LangChain's Chroma class.
+        self._vector_store.add_documents(documents=docs, ids=ids)
+
+    # The 'search' method is also simplified.
     def search(self, query: str, k: int, filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
-        Run a similarity search and return metadata for top-k results.
-        Converts ChromaDB mappings to plain dictionaries.
+        Performs a similarity search using LangChain's method.
+        Returns a list of metadata from the found documents.
         """
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=k,
-            where=filter if filter else None
+        # We use the '.similarity_search()' method from LangChain's Chroma class.
+        # This method returns a list of 'Document' objects.
+        result_docs = self._vector_store.similarity_search(
+            query=query, k=k, filter=filter
         )
 
-        metadatas = results['metadatas'][0] if results and results['metadatas'] else []
-        return [dict(md) for md in metadatas]
+        # Our interface dictates that we must return a list of dictionaries (the metadata),
+        # so we extract the 'metadata' property from each 'Document' object.
+        return [doc.metadata for doc in result_docs]

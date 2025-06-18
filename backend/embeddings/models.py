@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 from pydantic import SecretStr
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import OpenAIEmbeddings
@@ -11,24 +11,28 @@ class LocalHuggingFaceEmbedder(IEmbeddingModel):
             model_name=model_name,
             model_kwargs={'device': 'cpu'}
         )
-        print(f"Model d'embedding local '{model_name}' carregat.")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self._model.embed_documents(texts)
 
     def embed_query(self, text: str) -> List[float]:
         return self._model.embed_query(text)
+    
+    def get_langchain_compatible_model(self) -> Any:
+        return self._model
 
 # Implementació per a l'API d'OpenAI
 class OpenAIEmbedder(IEmbeddingModel):
     def __init__(self, model_name: str, api_key: SecretStr):
         if not api_key:
-            raise ValueError("La clau API d'OpenAI no està configurada.")
+            raise ValueError("OpenAi Api key not configured.")
         self._model = OpenAIEmbeddings(model=model_name, api_key=api_key)
-        print(f"Model d'embedding d'OpenAI '{model_name}' configurat.")
         
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self._model.embed_documents(texts)
 
     def embed_query(self, text: str) -> List[float]:
         return self._model.embed_query(text)
+    
+    def get_langchain_compatible_model(self) -> Any:
+        return self._model

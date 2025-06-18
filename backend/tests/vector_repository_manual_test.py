@@ -1,6 +1,6 @@
 import os
 import sys
-
+from dotenv import load_dotenv
 # Ensure project root is on the path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -11,7 +11,7 @@ from pydantic import SecretStr
 
 DOCS = [
     "A small red apple with a shiny skin.",
-    "A ripe yellow banana ready to eat.",
+    "A ripe yellow long shaped ready to eat.",
     "An orange cat sleeping peacefully on the sofa.",
 ]
 METAS = [{"desc": d} for d in DOCS]
@@ -23,7 +23,7 @@ def run_test(model_id: str, api_key: SecretStr | None = None) -> None:
     print(f"\n=== Testing model: {model_id} ===")
     try:
         embedding_model = create_embedding_model(model_id, api_key=api_key)
-    except Exception as e:  # model might not be available
+    except Exception as e: 
         print(f"Could not load model {model_id}: {e}")
         return
 
@@ -43,8 +43,9 @@ if __name__ == "__main__":
     for mid in models:
         run_test(mid)
 
-    openai_key = os.getenv("OPENAI_API_KEY")
-    if openai_key:
-        run_test("openai_sota_small", api_key=SecretStr(openai_key))
+    load_dotenv()
+    api_key = SecretStr(os.getenv("OPENAI_API_KEY", ""))
+    if api_key:
+        run_test("openai_small", api_key=api_key)
     else:
         print("OPENAI_API_KEY not configured; skipping OpenAI model")

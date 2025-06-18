@@ -41,7 +41,7 @@ EMBEDDING_MODEL_CATALOG: Dict[str, EmbeddingModelInfo] = {
         max_tokens=512
     ),
     "openai_sota_small": EmbeddingModelInfo(
-        id="openai_sota_small",
+        id="openai_small",
         provider="openai",
         technical_name="text-embedding-3-small",
         description="OpenAI’s small SOTA multilingual model.",
@@ -53,7 +53,7 @@ EMBEDDING_MODEL_CATALOG: Dict[str, EmbeddingModelInfo] = {
         max_tokens=8192
     ),
     "openai_sota_large": EmbeddingModelInfo(
-        id="openai_sota_large",
+        id="openai_large",
         provider="openai",
         technical_name="text-embedding-3-large",
         description="Best OpenAI embedding model.",
