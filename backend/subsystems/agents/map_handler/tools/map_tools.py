@@ -1,5 +1,5 @@
 from typing import Dict, List, Any, Optional, Literal, Set, Tuple, Annotated
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, Field
 from langchain_core.tools import tool, InjectedToolCallId
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 from langgraph.types import Command
@@ -12,114 +12,100 @@ from langgraph.types import Command
 from simulated.game_state import SimulatedGameStateSingleton
 from subsystems.agents.map_handler.tools.helpers import get_log_item, get_observation
 from langgraph.prebuilt import InjectedState
+from subsystems.agents.utils.schemas import InjectedToolContext
 
 
 # --- Tools Schemas --
-class ToolCreateScenarioArgs(BaseModel):
-    name: str = PydanticField(..., description=SCENARIO_FIELDS["name"])
-    summary_description: str = PydanticField(..., description=SCENARIO_FIELDS["summary_description"])
-    visual_description: str = PydanticField(..., description=SCENARIO_FIELDS["visual_description"])
-    narrative_context: str = PydanticField(..., description=SCENARIO_FIELDS["narrative_context"])
-    indoor_or_outdoor: Literal["indoor", "outdoor"] = PydanticField(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
-    type: str = PydanticField(..., description=SCENARIO_FIELDS["type"])
-    zone: str = PydanticField(..., description=SCENARIO_FIELDS["zone"])
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolCreateScenarioArgs(InjectedToolContext):
+    name: str = Field(..., description=SCENARIO_FIELDS["name"])
+    summary_description: str = Field(..., description=SCENARIO_FIELDS["summary_description"])
+    visual_description: str = Field(..., description=SCENARIO_FIELDS["visual_description"])
+    narrative_context: str = Field(..., description=SCENARIO_FIELDS["narrative_context"])
+    indoor_or_outdoor: Literal["indoor", "outdoor"] = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
+    type: str = Field(..., description=SCENARIO_FIELDS["type"])
+    zone: str = Field(..., description=SCENARIO_FIELDS["zone"])
 
-class ToolModifyScenarioArgs(BaseModel):
-    scenario_id: str = PydanticField(..., description="ID of the scenario to modify.")
-    new_name: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["name"])
-    new_summary_description: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["summary_description"])
-    new_visual_description: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["visual_description"])
-    new_narrative_context: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["narrative_context"])
-    new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = PydanticField(None, description=SCENARIO_FIELDS["indoor_or_outdoor"])
-    new_type: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["type"])
-    new_zone: Optional[str] = PydanticField(None, description=SCENARIO_FIELDS["zone"])
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolModifyScenarioArgs(InjectedToolContext):
+    scenario_id: str = Field(..., description="ID of the scenario to modify.")
+    new_name: Optional[str] = Field(None, description=SCENARIO_FIELDS["name"])
+    new_summary_description: Optional[str] = Field(None, description=SCENARIO_FIELDS["summary_description"])
+    new_visual_description: Optional[str] = Field(None, description=SCENARIO_FIELDS["visual_description"])
+    new_narrative_context: Optional[str] = Field(None, description=SCENARIO_FIELDS["narrative_context"])
+    new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = Field(None, description=SCENARIO_FIELDS["indoor_or_outdoor"])
+    new_type: Optional[str] = Field(None, description=SCENARIO_FIELDS["type"])
+    new_zone: Optional[str] = Field(None, description=SCENARIO_FIELDS["zone"])
 
-class ToolDeleteScenarioArgs(BaseModel):
-    scenario_id: str = PydanticField(..., description="ID of the scenario to delete.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolCreateBidirectionalConnectionArgs(BaseModel):
-    scenario_id_A: str = PydanticField(..., description="ID of scenario A.")
-    direction_from_A: Direction = PydanticField(..., description="Direction of the exit from scenario A.")
-    scenario_id_B: str = PydanticField(..., description="ID of scenario B.")
-    connection_type: str = PydanticField(..., description=EXIT_FIELDS["connection_type"])
-    travel_description: Optional[str] = PydanticField(None, description=EXIT_FIELDS["travel_description"])
-    traversal_conditions: List[str] = PydanticField(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolDeleteScenarioArgs(InjectedToolContext):
+    scenario_id: str = Field(..., description="ID of the scenario to delete.")
 
-class ToolDeleteBidirectionalConnectionArgs(BaseModel):
-    scenario_id_A: str = PydanticField(..., description="ID of one scenario in the connection.")
-    direction_from_A: Direction = PydanticField(..., description="Direction of the exit from scenario A that identifies the connection leg to delete.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolModifyBidirectionalConnectionArgs(BaseModel):
-    scenario_id_A: str = PydanticField(..., description="ID of one scenario in the connection.")
-    direction_from_A: Direction = PydanticField(..., description="Direction of the exit from scenario A that identifies the connection leg to modify.")
-    new_connection_type: Optional[str] = PydanticField(None, description="New type for the connection.")
-    new_travel_description: Optional[str] = PydanticField(None, description="New travel description for the path.")
-    new_traversal_conditions: Optional[List[str]] = PydanticField(None, description="New traversal conditions for the connection.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolCreateBidirectionalConnectionArgs(InjectedToolContext):
+    scenario_id_A: str = Field(..., description="ID of scenario A.")
+    direction_from_A: Direction = Field(..., description="Direction of the exit from scenario A.")
+    scenario_id_B: str = Field(..., description="ID of scenario B.")
+    connection_type: str = Field(..., description=EXIT_FIELDS["connection_type"])
+    travel_description: Optional[str] = Field(None, description=EXIT_FIELDS["travel_description"])
+    traversal_conditions: List[str] = Field(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
 
-class ToolGetScenarioDetailsArgs(BaseModel):
-    scenario_id: str = PydanticField(..., description="ID of the scenario for which to retrieve details.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolGetNeighborsAtDistanceArgs(BaseModel):
-    start_scenario_id: str = PydanticField(..., description="ID of the scenario from which to start the search.")
-    max_distance: int = PydanticField(..., description="Maximum distance (number of hops) to explore. Recommended 2-3.", ge=1, le=4)
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolDeleteBidirectionalConnectionArgs(InjectedToolContext):
+    scenario_id_A: str = Field(..., description="ID of one scenario in the connection.")
+    direction_from_A: Direction = Field(..., description="Direction of the exit from scenario A that identifies the connection leg to delete.")
 
-class ToolListScenariosClusterSummaryArgs(BaseModel):
-    list_all_scenarios_in_each_cluster: bool = PydanticField(
+
+class ToolModifyBidirectionalConnectionArgs(InjectedToolContext):
+    scenario_id_A: str = Field(..., description="ID of one scenario in the connection.")
+    direction_from_A: Direction = Field(..., description="Direction of the exit from scenario A that identifies the connection leg to modify.")
+    new_connection_type: Optional[str] = Field(None, description="New type for the connection.")
+    new_travel_description: Optional[str] = Field(None, description="New travel description for the path.")
+    new_traversal_conditions: Optional[List[str]] = Field(None, description="New traversal conditions for the connection.")
+
+
+class ToolGetScenarioDetailsArgs(InjectedToolContext):
+    scenario_id: str = Field(..., description="ID of the scenario for which to retrieve details.")
+
+
+class ToolGetNeighborsAtDistanceArgs(InjectedToolContext):
+    start_scenario_id: str = Field(..., description="ID of the scenario from which to start the search.")
+    max_distance: int = Field(..., description="Maximum distance (number of hops) to explore. Recommended 2-3.", ge=1, le=4)
+
+
+class ToolListScenariosClusterSummaryArgs(InjectedToolContext):
+    list_all_scenarios_in_each_cluster: bool = Field(
         default=False,  # Default gives a summary
         description="If true, lists all scenarios (ID and name) in each cluster. If false (default), shows a limited preview per cluster. Use true only in limited justified ocasions"
     )
-    max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = PydanticField(
+    max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = Field(
         default=5,
         description="Max number of scenarios to show per cluster when not listing all. Ignored if 'list_all_scenarios_in_each_cluster' is True."
     )
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolFindScenariosArgs(BaseModel):
-    attribute_to_filter: Literal["type", "zone", "name_contains", "indoor_or_outdoor"] = PydanticField(..., description="Attribute to filter by.")
-    value_to_match: str = PydanticField(..., description="Value the attribute should match or contain.")
-    max_results: Optional[int] = PydanticField(5, description="Maximum number of matching scenarios to return.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolGetBidirectionalConnectionDetailsArgs(BaseModel): 
-    from_scenario_id: str = PydanticField(..., description="ID of the scenario from which the exit originates.")
-    direction: Direction = PydanticField(..., description="Direction of the exit whose details are requested.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolFindScenariosArgs(InjectedToolContext):
+    attribute_to_filter: Literal["type", "zone", "name_contains", "indoor_or_outdoor"] = Field(..., description="Attribute to filter by.")
+    value_to_match: str = Field(..., description="Value the attribute should match or contain.")
+    max_results: Optional[int] = Field(5, description="Maximum number of matching scenarios to return.")
 
-class ToolGetAvailableExitsArgs(BaseModel):
-    scenario_id: str = PydanticField(..., description="ID of the scenario to check for available exit directions.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
 
-class ToolFinalizeSimulationArgs(BaseModel):
-    justification: str = PydanticField(..., description="Justification of why the simulated map meets all criteria.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+class ToolGetBidirectionalConnectionDetailsArgs(InjectedToolContext): 
+    from_scenario_id: str = Field(..., description="ID of the scenario from which the exit originates.")
+    direction: Direction = Field(..., description="Direction of the exit whose details are requested.")
 
-class ToolValidateSimulatedMapArgs(BaseModel):
-    does_map_meet_criteria: bool = PydanticField(..., description="Your assessment: set to True if you believe the map successfully meets all current objectives and constraints; False otherwise.")
-    assessment_reasoning: str = PydanticField(..., description="Your concise justification explaining why the map meets (or fails to meet) the objectives and constraints.")
-    suggested_improvements: Optional[str] = PydanticField(default=None, description="If `does_map_meet_criteria` is False, provide specific, actionable suggestions on how the map can be modified or updated to meet the unmet criteria. If True, this field can be omitted.")
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")]
-    tool_call_id: Annotated[str, InjectedToolCallId]
+
+class ToolGetAvailableExitsArgs(InjectedToolContext):
+    scenario_id: str = Field(..., description="ID of the scenario to check for available exit directions.")
+
+
+class ToolFinalizeSimulationArgs(InjectedToolContext):
+    justification: str = Field(..., description="Justification of why the simulated map meets all criteria.")
+
+
+class ToolValidateSimulatedMapArgs(InjectedToolContext):
+    does_map_meet_criteria: bool = Field(..., description="Your assessment: set to True if you believe the map successfully meets all current objectives and constraints; False otherwise.")
+    assessment_reasoning: str = Field(..., description="Your concise justification explaining why the map meets (or fails to meet) the objectives and constraints.")
+    suggested_improvements: Optional[str] = Field(default=None, description="If `does_map_meet_criteria` is False, provide specific, actionable suggestions on how the map can be modified or updated to meet the unmet criteria. If True, this field can be omitted.")
+
 
 # --- Tools ---
 
@@ -133,6 +119,7 @@ def create_scenario(
     type: str,
     zone: str,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command:
     """Creates a new scenario in the simulated map."""
@@ -149,7 +136,7 @@ def create_scenario(
     )
 
     return Command(update={
-        "current_operation_log": [get_log_item("create_scenario", True, f"Scenario '{name}' (ID: {effective_id}) created successfully.")],
+        logs_field_to_update: [get_log_item("create_scenario", True, f"Scenario '{name}' (ID: {effective_id}) created successfully.")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "create_scenario", True, f"Scenario '{name}' (ID: {effective_id}) created successfully."),
@@ -164,6 +151,7 @@ def create_scenario(
 def modify_scenario(
     scenario_id: str,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     new_name: Optional[str] = None,
     new_summary_description: Optional[str] = None,
@@ -197,7 +185,7 @@ def modify_scenario(
 
     if simulated_map.modify_scenario(scenario_id):
         return Command(update={
-            "current_operation_log": [get_log_item("modify_scenario", True, message)],
+            logs_field_to_update: [get_log_item("modify_scenario", True, message)],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_scenario", True, message),
@@ -207,7 +195,7 @@ def modify_scenario(
         })
     else:
         return Command(update={
-            "current_operation_log": [get_log_item("modify_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("modify_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_scenario", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -220,6 +208,7 @@ def modify_scenario(
 def delete_scenario(
     scenario_id: str,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command:
     """Deletes the specified scenario. An scenario should only be deleted if necessary to complete the task"""
@@ -227,7 +216,7 @@ def delete_scenario(
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     if simulated_map.delete_scenario(scenario_id):
         return Command(update={
-            "current_operation_log": [get_log_item("delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully.")],
+            logs_field_to_update: [get_log_item("delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully."),
@@ -237,7 +226,7 @@ def delete_scenario(
         })
     else:
         return Command(update={
-            "current_operation_log": [get_log_item("delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -251,6 +240,7 @@ def delete_scenario(
 def create_bidirectional_connection(
     scenario_id_A: str, 
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     direction_from_A: Direction, 
     scenario_id_B: str, 
@@ -267,7 +257,7 @@ def create_bidirectional_connection(
         simulated_map.create_bidirectional_connection(scenario_id_A,direction_from_A,scenario_id_B,connection_type,travel_description,traversal_conditions)
     except Exception as e:
         return Command(update={
-            "current_operation_log": [get_log_item("create_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("create_bidirectional_connection", False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "create_bidirectional_connection", False, str(e)),
@@ -279,7 +269,7 @@ def create_bidirectional_connection(
     message = f"Connection type'{connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
 
     return Command(update={
-        "current_operation_log": [get_log_item("create_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("create_bidirectional_connection", True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "create_bidirectional_connection", True, message),
@@ -290,7 +280,13 @@ def create_bidirectional_connection(
 
 
 @tool(args_schema=ToolDeleteBidirectionalConnectionArgs)
-def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direction, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def delete_bidirectional_connection(
+    scenario_id_A: str, 
+    direction_from_A: Direction, 
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """Deletes a bidirectional connection starting from scenario_id_A in the specified direction."""
 
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
@@ -299,7 +295,7 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
 
     if not connection_info:
         return Command(update={
-            "current_operation_log": [get_log_item("delete_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
+            logs_field_to_update: [get_log_item("delete_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'."),
@@ -312,7 +308,7 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
         message=simulated_map.delete_bidirectional_connection(scenario_id_A, direction_from_A)
     except Exception as e:
         return Command(update={
-            "current_operation_log": [get_log_item("delete_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("delete_bidirectional_connection", False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", False, str(e)),
@@ -324,7 +320,7 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
     message = f"Bidirectional connection '{scenario_id_A}' ({direction_from_A}) <-> '{connection_info.get_other_scenario_id(scenario_id_A)}' ({connection_info.get_direction_to(direction_from_A)}) deleted."
 
     return Command(update={
-        "current_operation_log": [get_log_item("delete_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("delete_bidirectional_connection", True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", True, message),
@@ -337,6 +333,7 @@ def delete_bidirectional_connection(scenario_id_A: str, direction_from_A: Direct
 def modify_bidirectional_connection( 
     scenario_id_A: str, 
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     direction_from_A: Direction,
     new_connection_type: Optional[str] = None,
@@ -365,7 +362,7 @@ def modify_bidirectional_connection(
         )
     except Exception as e:
         return Command(update={
-            "current_operation_log": [get_log_item("modify_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("modify_bidirectional_connection", False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", False, str(e)),
@@ -378,7 +375,7 @@ def modify_bidirectional_connection(
 
     if not connection_info:
         return Command(update={
-            "current_operation_log": [get_log_item("modify_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
+            logs_field_to_update: [get_log_item("modify_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'."),
@@ -390,7 +387,7 @@ def modify_bidirectional_connection(
     message = f"Bidirectional connection from '{scenario_id_A}' ({direction_from_A}) <-> '{connection_info.get_other_scenario_id(scenario_id_A)}' ({connection_info.get_direction_to(scenario_id_A)}) modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}."
 
     return Command(update={
-        "current_operation_log": [get_log_item("modify_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("modify_bidirectional_connection", True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", True, message),
@@ -398,15 +395,22 @@ def modify_bidirectional_connection(
             )
         ]
     })
+
 @tool(args_schema=ToolGetScenarioDetailsArgs)
-def get_scenario_details(scenario_id: str, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def get_scenario_details(
+    scenario_id: str, 
+    messages_field_to_update: 
+    Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """(QUERY tool) Retrieves and returns all details for a specific scenario in the simulated map."""
 
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(scenario_id)
     if not scenario:
         return Command(update={
-            "current_operation_log": [get_log_item("get_scenario_details", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_scenario_details", False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_scenario_details", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -441,7 +445,7 @@ def get_scenario_details(scenario_id: str, messages_field_to_update: Annotated[s
         details_str += "    (No connections defined)\n"
 
     return Command(update={
-        "current_operation_log": [get_log_item("get_scenario_details", True, details_str)],
+        logs_field_to_update: [get_log_item("get_scenario_details", True, details_str)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_scenario_details", True, details_str),
@@ -450,17 +454,21 @@ def get_scenario_details(scenario_id: str, messages_field_to_update: Annotated[s
         ]
     })
 
-
-
 @tool(args_schema=ToolGetNeighborsAtDistanceArgs)
-def get_neighbors_at_distance(start_scenario_id: str, max_distance: int, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def get_neighbors_at_distance(
+    start_scenario_id: str,
+    max_distance: int, 
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """(QUERY tool) Retrieves scenarios within N hops from a starting scenario, including connection details. Use this to understand spatial composition"""
         
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(start_scenario_id)
     if not scenario:
         return Command(update={
-            "current_operation_log": [get_log_item("get_neighbors_at_distance", False, f"Start scenario with ID '{start_scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_neighbors_at_distance", False, f"Start scenario with ID '{start_scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_neighbors_at_distance", False, f"Start scenario with ID '{start_scenario_id}' does not exist."),
@@ -519,7 +527,7 @@ def get_neighbors_at_distance(start_scenario_id: str, max_distance: int, message
     if not has_results:
         output_lines.append("(No neighbors found within this specified distance via explored paths).")
     return Command(update={
-        "current_operation_log": [get_log_item("get_neighbors_at_distance", True, "\n".join(output_lines))],
+        logs_field_to_update: [get_log_item("get_neighbors_at_distance", True, "\n".join(output_lines))],
         messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_neighbors_at_distance", True, "\n".join(output_lines)),
@@ -532,6 +540,7 @@ def get_neighbors_at_distance(start_scenario_id: str, max_distance: int, message
 def list_scenarios_summary_per_cluster(
     tool_call_id: Annotated[str, InjectedToolCallId],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     list_all_scenarios_in_each_cluster: bool = False,
     max_scenarios_to_list_per_cluster_if_not_all: Optional[int] = 5,
 ) -> Command:
@@ -542,7 +551,7 @@ def list_scenarios_summary_per_cluster(
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     if simulated_map.get_scenario_count()<=0:
         return Command(update={
-            "current_operation_log": [get_log_item("list_scenarios_summary_per_cluster", True, "The simulated map is currently empty. No clusters to display.")],
+            logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", True, "The simulated map is currently empty. No clusters to display.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "list_scenarios_summary_per_cluster", True, "The simulated map is currently empty. No clusters to display."),
@@ -557,7 +566,7 @@ def list_scenarios_summary_per_cluster(
     )
 
     return Command(update={
-        "current_operation_log": [get_log_item("list_scenarios_summary_per_cluster", True, f"Current map connectivity cluster summary:\n{summary_text}")],
+        logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", True, f"Current map connectivity cluster summary:\n{summary_text}")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "list_scenarios_summary_per_cluster", True, f"Current map connectivity cluster summary:\n{summary_text}"),
@@ -571,6 +580,7 @@ def list_scenarios_summary_per_cluster(
 def find_scenarios_by_attribute(
     tool_call_id: Annotated[str, InjectedToolCallId],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     attribute_to_filter: Literal["type", "name_contains", "zone", "indoor_or_outdoor"], 
     value_to_match: str, 
     max_results: Optional[int] = 5,
@@ -594,7 +604,7 @@ def find_scenarios_by_attribute(
     
     if not matches_strings:
         return Command(update={
-            "current_operation_log": [get_log_item("find_scenarios_by_attribute", True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'.")],
+            logs_field_to_update: [get_log_item("find_scenarios_by_attribute", True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "find_scenarios_by_attribute", True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'."),
@@ -604,7 +614,7 @@ def find_scenarios_by_attribute(
         })
     
     return Command(update={
-        "current_operation_log": [get_log_item("find_scenarios_by_attribute", True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings))],
+        logs_field_to_update: [get_log_item("find_scenarios_by_attribute", True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings))],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "find_scenarios_by_attribute", True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings)),
@@ -615,7 +625,13 @@ def find_scenarios_by_attribute(
 
 
 @tool(args_schema=ToolGetBidirectionalConnectionDetailsArgs)
-def get_connection_details(from_scenario_id: str, direction: Direction, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def get_connection_details(
+    from_scenario_id: str, 
+    direction: Direction, 
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """
     (QUERY tool) Retrieves details for a specific exit from a given scenario. This includes connection type, travel description, and traversal conditions.
     """
@@ -623,7 +639,7 @@ def get_connection_details(from_scenario_id: str, direction: Direction, messages
     scenario = simulated_map.find_scenario(from_scenario_id)
     if not scenario:
         return Command(update={
-            "current_operation_log": [get_log_item("get_connection_details", False, f"Scenario with ID '{from_scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_connection_details", False, f"Scenario with ID '{from_scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_connection_details", False, f"Scenario with ID '{from_scenario_id}' does not exist."),
@@ -636,7 +652,7 @@ def get_connection_details(from_scenario_id: str, direction: Direction, messages
 
     if conn is None:
         return Command(update={
-            "current_operation_log": [get_log_item("get_connection_details", False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'.")],
+            logs_field_to_update: [get_log_item("get_connection_details", False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_connection_details", False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'."),
@@ -654,7 +670,7 @@ def get_connection_details(from_scenario_id: str, direction: Direction, messages
         f"  - Traversal Conditions: {', '.join(conn.traversal_conditions) if conn.traversal_conditions else 'None'}"
     )
     return Command(update={
-        "current_operation_log": [get_log_item("get_connection_details", True, details_str)],
+        logs_field_to_update: [get_log_item("get_connection_details", True, details_str)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_connection_details", True, details_str),
@@ -664,7 +680,12 @@ def get_connection_details(from_scenario_id: str, direction: Direction, messages
     })
 
 @tool(args_schema=ToolGetAvailableExitsArgs)
-def get_available_exit_directions(scenario_id: str, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def get_available_exit_directions(
+    scenario_id: str, 
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """
     (QUERY tool) Lists all cardinal directions from a given scenario that do NOT currently have an exit defined. Useful for finding where new connections can be added from this scenario.
     """
@@ -672,7 +693,7 @@ def get_available_exit_directions(scenario_id: str, messages_field_to_update: An
     scenario = simulated_map.find_scenario(scenario_id)
     if not scenario:
         return Command(update={
-            "current_operation_log": [get_log_item("get_available_exit_directions", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_available_exit_directions", False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_available_exit_directions", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -692,7 +713,7 @@ def get_available_exit_directions(scenario_id: str, messages_field_to_update: An
         message = f"Available (empty) directions for scenario '{scenario.name}' (ID: {scenario_id}): {', '.join(available_directions)}."
 
     return Command(update={
-        "current_operation_log": [get_log_item("get_available_exit_directions", True, message)],
+        logs_field_to_update: [get_log_item("get_available_exit_directions", True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_available_exit_directions", True, message),
@@ -702,11 +723,16 @@ def get_available_exit_directions(scenario_id: str, messages_field_to_update: An
     })
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
-def finalize_simulation(justification: str, messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+def finalize_simulation(
+    justification: str, 
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
     return Command(update={
-        "current_operation_log": [get_log_item("finalize_simulation", True, "Simulation finalized.")],
+        logs_field_to_update: [get_log_item("finalize_simulation", True, "Simulation finalized.")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "finalize_simulation", True, "Simulation finalized."),
@@ -718,7 +744,14 @@ def finalize_simulation(justification: str, messages_field_to_update: Annotated[
     })
 
 @tool(args_schema=ToolValidateSimulatedMapArgs)
-def validate_simulated_map(messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], tool_call_id: Annotated[str, InjectedToolCallId], does_map_meet_criteria: bool, assessment_reasoning: str, suggested_improvements: Optional[str] = None) -> Command:
+def validate_simulated_map(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")], 
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId], 
+    does_map_meet_criteria: bool, 
+    assessment_reasoning: str, 
+    suggested_improvements: Optional[str] = None
+) -> Command:
     """Validates the simulated_map_state. Call it when you are sure that the map either meets all criteria, or that it does not"""
 
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
@@ -731,7 +764,7 @@ def validate_simulated_map(messages_field_to_update: Annotated[str, InjectedStat
         message = f"Simulated doesn't meet all criteria. Reason: {assessment_reasoning}. Suggestions: {suggested_improvements}"
 
     return Command(update={
-        "current_operation_log": [get_log_item("validate_simulated_map", True, message)],
+        logs_field_to_update: [get_log_item("validate_simulated_map", True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "validate_simulated_map", True, message),

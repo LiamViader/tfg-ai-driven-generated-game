@@ -26,27 +26,27 @@ class MapGraphState(BaseModel):
     map_executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Executor agent")
     map_current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
     map_max_executor_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
+    map_task_finalized_by_agent: bool = Field(default=False,description="A flag indicating whether the task was finalized by the agent")
+    map_task_finalized_justification: Optional[str] = Field(default=None,description="A string of the justification provided by the agent who finalized the map")
+    map_executor_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'success', 'message'.")
 
     # --- Validation Agent memo ---
     map_max_validation_iterations: int = Field(..., description="Max iterations of the react validation cycle before finishing")
     map_current_validation_iteration: int = Field(default=0, description="Current iteration the react validation cycle is on")
     map_executor_agent_relevant_logs: str = Field(default="",description="Formated string holding the relevant executing agent logs and observation for the validator agent context")
     map_validation_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Validation agent")
-
-
-    map_executor_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'success', 'message'.")
-    map_validator_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'success', 'message'.")
-
-    map_task_finalized_by_agent: bool = Field(default=False,description="A flag indicating whether the task was finalized by the agent")
-    map_task_finalized_justification: Optional[str] = Field(default=None,description="A string of the justification provided by the agent who finalized the map")
-
     map_agent_validation_conclusion_flag: bool = Field(default=False,description="A flag indicating whether the validation agent said the map met all criteria")
     map_agent_validation_assessment_reasoning: str = Field(default="", description="Reasoning from agent of why the validation he gave.")
     map_agent_validation_suggested_improvements: str = Field(default="", description="Suggested improvements if the validation agent said map didnt meet criteria.")
     map_agent_validated: bool = Field(default=False,description="A flag indicating whether the validation agent gave a validation yet")
+    map_validator_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'success', 'message'.")
 
-    #shared with other agents
-    current_operation_log:  Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="Reference to log that wants to be updated, by the agent including 'tool_called', 'success', 'message'.")
+
+
+
+
+    #shared with all other agents
+    logs_field_to_update:  str = Field(default="logs", description="Name of the field in the state where tool-generated logs should be appended")
     messages_field_to_update: str = Field(default="messages", description="Name of the field in the state where tool-generated messages should be appended")
 
     @staticmethod

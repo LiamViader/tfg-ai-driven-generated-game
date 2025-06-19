@@ -22,8 +22,9 @@ def receive_objective_node(state: MapGraphState)->MapGraphState:
     """
 
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
+    state.map_current_try = 0
     state.messages_field_to_update = "map_executor_messages"
-    state.current_operation_log = state.map_executor_applied_operations_log
+    state.logs_field_to_update = "map_executor_applied_operations_log"
     state.map_current_executor_iteration = 0
     state.map_initial_summary=SimulatedGameStateSingleton.get_instance().simulated_map.get_summary_list()
     return state
@@ -35,7 +36,7 @@ def map_executor_reason_node(state: MapGraphState):
     """
 
     print("---ENTERING: REASON EXECUTION NODE---")
-    map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+    map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS)
 
     full_prompt = format_map_react_reason_prompt(
         narrative_context=state.map_global_narrative_context,
@@ -80,11 +81,12 @@ def receive_result_for_validation_node(state: MapGraphState):
     state.map_validation_messages=[RemoveMessage(id=REMOVE_ALL_MESSAGES)]
     state.messages_field_to_update="map_validation_messages"
 
-    
+    state.map_executor_agent_relevant_logs=format_relevant_executing_agent_logs(state.map_executor_applied_operations_log)
+    state.logs_field_to_update="map_validator_applied_operations_log"
+
     state.map_agent_validated=False
     state.map_current_validation_iteration=0
-    state.map_executor_agent_relevant_logs=format_relevant_executing_agent_logs(state.current_operation_log)
-    state.current_operation_log=state.map_validator_applied_operations_log
+
 
     return state
 
@@ -129,19 +131,26 @@ def retry_executor_node(state: MapGraphState):
     feedback_message = HumanMessage(feedback)
     state.map_executor_messages= [feedback_message]
     state.messages_field_to_update="map_executor_messages"
+    state.logs_field_to_update = "map_executor_applied_operations_log"
 
-    state.current_operation_log = state.map_executor_applied_operations_log
+    
     state.map_current_executor_iteration = 0
     state.map_current_try = state.map_current_try+1
-    state.map_current_executor_iteration = 0
 
     return state
 
-def postprocess(state: MapGraphState) -> MapGraphState:
+def last_node_success(state: MapGraphState) -> MapGraphState:
     """
-    Postprocess step. Cleans the map.
+    Last node of agent if succeeded on objective.
     """
-    print("---ENTERING: POSTPROCESS NODE---")
+    print("---ENTERING: LAST NODE OBJECTIVE SUCESS---")
 
     return state
 
+def last_node_failed(state: MapGraphState) -> MapGraphState:
+    """
+    Last node of agent if failed on objective.
+    """
+    print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
+
+    return state
