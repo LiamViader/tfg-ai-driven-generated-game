@@ -532,5 +532,4 @@ class GameMap():
                 summary_lines.append(
                     f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios): (No scenarios found for this cluster - this might indicate an issue)."
                 )
-
         return "\n".join(summary_lines)
