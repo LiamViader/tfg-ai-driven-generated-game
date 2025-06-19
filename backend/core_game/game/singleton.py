@@ -7,5 +7,5 @@ class GameStateSingleton:
     def get_instance(cls) -> GameState:
         if cls._instance is None:
             cls._instance = GameState()
-            cls._instance.load_from_file()
+            #cls._instance.load_from_file()
         return cls._instance

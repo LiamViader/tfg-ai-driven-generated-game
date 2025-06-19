@@ -2,9 +2,19 @@ from typing import Dict, List, Optional, Literal, Any, Set
 from pydantic import BaseModel, Field
 from core_game.time.schemas import GameTimeModel
 from core_game.map.schemas import ScenarioModel, GameMapModel
-from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel, CharacterRelationship, RelationshipType
+from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel, CharactersModel
 from core_game.narrative.schemas import NarrativeStateModel
 from core_game.game_event.schemas import GameEventModel
+from core_game.relationship.schemas import RelationshipsModel
+
+_session_id_counter = 0
+
+
+def generate_session_id() -> str:
+    """Return a sequential id of the form 'scenario_001'."""
+    global _session_id_counter
+    _session_id_counter += 1
+    return f"session_{_session_id_counter:03d}"
 
 class GameSessionModel(BaseModel):
     """Contains global information and configuration for the game session."""
@@ -22,27 +32,11 @@ class GameStateModel(BaseModel):
     """
     session: GameSessionModel = Field(..., description="Global information about the game session.")
 
-    game_map: GameMapModel
-    character_registry: Dict[str, CharacterBaseModel] = Field(
-        default_factory=dict,
-        description="Registry of all characters (player and NPCs), with their ID as the key."
-    )
+    game_map: GameMapModel = Field(..., description="Map model component")
 
-    player_character: PlayerCharacterModel = Field(
-        ...,
-        description="The player character"
-    )
+    characters: CharactersModel = Field(..., description="Characters model component")
     
-    relationship_types: Dict[str, RelationshipType] = Field(
-        default_factory=dict,
-        description=("Available type of relationships in the game, key is relationshiptype.name")
-    )
-
-    # Relationship matrix: Dict[Character_Source_ID, Dict[Character_Target_ID, Dict[relationshiptype.name, CharacterRelationship]]]
-    relationships_matrix: Dict[str, Dict[str, Dict[str, CharacterRelationship]]] = Field(
-        default_factory=dict,
-        description="Models all kind of relationships between 2 characters."
-    )
+    relationships: RelationshipsModel = Field(..., description="Relationships model component")
 
     narrative_state: NarrativeStateModel = Field(
         ...,

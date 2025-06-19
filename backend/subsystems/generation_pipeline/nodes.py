@@ -5,12 +5,12 @@ from typing import cast
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from subsystems.generation.prompts.refine_generation_prompt import format_refining_prompt
-from subsystems.generation.prompts.generate_main_goal import format_main_goal_generation_prompt
-from subsystems.generation.prompts.select_narrative_structure import format_structure_selection_prompt
-from subsystems.generation.schemas.graph_state import GenerationGraphState
-from subsystems.generation.schemas.main_goal import MainGoal
-from subsystems.generation.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
+from subsystems.generation_pipeline.prompts.refine_generation_prompt import format_refining_prompt
+from subsystems.generation_pipeline.prompts.generate_main_goal import format_main_goal_generation_prompt
+from subsystems.generation_pipeline.prompts.select_narrative_structure import format_structure_selection_prompt
+from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
+from subsystems.generation_pipeline.schemas.main_goal import MainGoal
+from subsystems.generation_pipeline.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError, BaseModel, Field

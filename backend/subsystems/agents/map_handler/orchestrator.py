@@ -8,9 +8,9 @@ def iteration_limit_exceeded_or_agent_finalized(state: MapGraphState) -> str:
     Determines whether to continue to the reasoning node or end the process
     based on the iteration count and task completion (agent called finalize_task).
     """
-    current_iteration = state.current_executor_iteration
-    max_iterations = state.max_executor_iterations
-    if state.working_simulated_map.task_finalized_by_agent or current_iteration >= max_iterations:
+    current_iteration = state.map_current_executor_iteration
+    max_iterations = state.map_max_executor_iterations
+    if state.map_task_finalized_by_agent or current_iteration >= max_iterations:
         return "finalize_executor"
     else:
         return "continue_executor"
@@ -20,11 +20,11 @@ def iteration_limit_exceeded_or_agent_validated(state: MapGraphState) -> str:
     Determines whether to continue to the reasoning node or end the process
     based on the iteration count and task completion (agent called finalize_task).
     """
-    current_iteration = state.current_validation_iteration
+    current_iteration = state.map_current_validation_iteration
     tries_to_evaluate_after_max_iterations = 4
-    max_iterations = state.max_validation_iterations + tries_to_evaluate_after_max_iterations
-    if state.working_simulated_map.agent_validated or current_iteration >= max_iterations:
-        if state.current_try <= state.max_retries and not state.working_simulated_map.agent_validation_conclusion_flag:
+    max_iterations = state.map_max_validation_iterations + tries_to_evaluate_after_max_iterations
+    if state.map_agent_validated or current_iteration >= max_iterations:
+        if state.map_current_try <= state.map_max_retries and not state.map_agent_validation_conclusion_flag:
             return "retry_executor"
         else:
             return "finalize"

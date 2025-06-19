@@ -4,7 +4,7 @@ from .constants import (
     NarrativeRole,
     NarrativeImportance,
 )
-from .domain import Characters, Relationships
+from .domain import Characters
 
 __all__ = [
     "Gender",
@@ -12,5 +12,4 @@ __all__ = [
     "NarrativeRole",
     "NarrativeImportance",
     "Characters",
-    "Relationships",
 ]

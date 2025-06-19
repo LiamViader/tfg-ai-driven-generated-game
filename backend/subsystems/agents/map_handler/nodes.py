@@ -10,17 +10,22 @@ from subsystems.agents.map_handler.tools.map_tools import EXECUTORTOOLS, VALIDAT
 from subsystems.agents.map_handler.prompts.reasoning import format_map_react_reason_prompt
 from subsystems.agents.map_handler.prompts.validating import format_map_react_validation_prompt
 from utils.message_window import get_valid_messages_window
-from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
+from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage, AIMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
-def receive_objective_node(state: MapGraphState) -> MapGraphState:
+from simulated.game_state import SimulatedGameStateSingleton
+
+def receive_objective_node(state: MapGraphState)->MapGraphState:
     """
     First node of the graph.
     Entry point, any preprocess will happen here.
     """
 
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    state.reset_working_memory()
+    state.messages_field_to_update = "map_executor_messages"
+    state.current_operation_log = state.map_executor_applied_operations_log
+    state.map_current_executor_iteration = 0
+    state.map_initial_summary=SimulatedGameStateSingleton.get_instance().simulated_map.get_summary_list()
     return state
 
 
@@ -33,24 +38,28 @@ def map_executor_reason_node(state: MapGraphState):
     map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
     full_prompt = format_map_react_reason_prompt(
-        narrative_context=state.global_narrative_context,
+        narrative_context=state.map_global_narrative_context,
         map_rules_and_constraints=state.map_rules_and_constraints,
-        initial_map_summary=state.initial_map_summary,
-        objective=state.current_objective,
-        other_guidelines=state.other_guidelines,
-        messages=get_valid_messages_window(state.executor_messages,30)
+        initial_map_summary=state.map_initial_summary,
+        objective=state.map_current_objective,
+        other_guidelines=state.map_other_guidelines,
+        messages=get_valid_messages_window(state.map_executor_messages,30)
     )
-    state.current_executor_iteration+=1
-    print("CURRENT EXECUTOR ITERATION:", state.current_executor_iteration)
+    state.map_current_executor_iteration+=1
 
+    print("CURRENT EXECUTOR ITERATION:", state.map_current_executor_iteration)
+    
     response = map_reason_llm.invoke(full_prompt)
+    
+
     return {
-        "executor_messages": [response],
-        "current_executor_iteration": state.current_executor_iteration
+        "map_executor_messages": [response],
+        "map_current_executor_iteration": state.map_current_executor_iteration
     }
 
 map_executor_tool_node = ToolNode(EXECUTORTOOLS)
-map_executor_tool_node.messages_key = "executor_messages"
+map_executor_tool_node.messages_key="map_executor_messages"
+
 
 def receive_result_for_validation_node(state: MapGraphState):
     """
@@ -59,7 +68,7 @@ def receive_result_for_validation_node(state: MapGraphState):
 
     print("---ENTERING: RECEIVE RESULT FOR VALIDATION NODE---")
 
-    def format_relevant_executing_agent_logs(operation_logs: List[Dict[str, Any]])->str:
+    def format_relevant_executing_agent_logs(operation_logs: Sequence[Dict[str, Any]])->str:
         final_str = ""
         query_tool_names = [tool_function.name for tool_function in QUERYTOOLS]
         for operation in operation_logs:
@@ -68,15 +77,16 @@ def receive_result_for_validation_node(state: MapGraphState):
                     final_str += f"Result of '{operation['tool_called']}': {operation['message']}.\n"
         return final_str
 
-    state.working_simulated_map.executor_or_validator = "validator"
-    state.working_simulated_map.agent_validated = False
+    state.map_validation_messages=[RemoveMessage(id=REMOVE_ALL_MESSAGES)]
+    state.messages_field_to_update="map_validation_messages"
 
-    return {
-        "working_simulated_map":  state.working_simulated_map,
-        "current_validation_iteration": 0,
-        "executor_agent_relevant_logs": format_relevant_executing_agent_logs(state.working_simulated_map.executor_applied_operations_log),
-        "validation_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)]
-    }
+    
+    state.map_agent_validated=False
+    state.map_current_validation_iteration=0
+    state.map_executor_agent_relevant_logs=format_relevant_executing_agent_logs(state.current_operation_log)
+    state.current_operation_log=state.map_validator_applied_operations_log
+
+    return state
 
 def map_validation_reason_node(state: MapGraphState):
     """
@@ -85,26 +95,26 @@ def map_validation_reason_node(state: MapGraphState):
 
     print("---ENTERING: REASON VALIDATION NODE---")
 
-    state.current_validation_iteration+=1
-    if state.current_validation_iteration <= state.max_validation_iterations:
+    state.map_current_validation_iteration+=1
+    if state.map_current_validation_iteration <= state.map_max_validation_iterations:
         map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools(VALIDATIONTOOLS, tool_choice="any")
     else:
         map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools([validate_simulated_map], tool_choice="any")
     
     full_prompt=format_map_react_validation_prompt(
-        state.current_objective,
-        state.executor_agent_relevant_logs,
-        state.validation_messages
+        state.map_current_objective,
+        state.map_executor_agent_relevant_logs,
+        state.map_validation_messages
     )
-    print("CURRENT VALIDATION ITERATION:", state.current_validation_iteration)
+    print("CURRENT VALIDATION ITERATION:", state.map_current_validation_iteration)
     response = map_validation_llm.invoke(full_prompt)
     return {
-        "validation_messages": [response],
-        "current_validation_iteration": state.current_validation_iteration
+        "map_validation_messages": [response],
+        "map_current_validation_iteration": state.map_current_validation_iteration
     }
 
 map_validation_tool_node = ToolNode(VALIDATIONTOOLS)
-map_validation_tool_node.messages_key = "validation_messages"
+map_validation_tool_node.messages_key="map_validation_messages"
 
 def retry_executor_node(state: MapGraphState):
     """
@@ -113,12 +123,25 @@ def retry_executor_node(state: MapGraphState):
 
     print("---ENTERING: RETRY NODE---")
 
-    feedback = f"Here's some human feedback on how you have done so far on your task:\n You have still not completed your task\n Reason: {state.working_simulated_map.agent_validation_assessment_reasoning}\n Suggestion/s:{state.working_simulated_map.agent_validation_suggested_improvements} "
+
+    feedback = f"Here's some human feedback on how you have done so far on your task:\n You have still not completed your task\n Reason: {state.map_agent_validation_assessment_reasoning}\n Suggestion/s:{state.map_agent_validation_suggested_improvements} "
+    
     feedback_message = HumanMessage(feedback)
-    state.working_simulated_map.executor_or_validator = "executor"
-    return {
-        "executor_messages": [feedback_message],
-        "current_try": state.current_try+1,
-        "current_executor_iteration": 0,
-        "working_simulated_map": state.working_simulated_map
-    }
+    state.map_executor_messages= [feedback_message]
+    state.messages_field_to_update="map_executor_messages"
+
+    state.current_operation_log = state.map_executor_applied_operations_log
+    state.map_current_executor_iteration = 0
+    state.map_current_try = state.map_current_try+1
+    state.map_current_executor_iteration = 0
+
+    return state
+
+def postprocess(state: MapGraphState) -> MapGraphState:
+    """
+    Postprocess step. Cleans the map.
+    """
+    print("---ENTERING: POSTPROCESS NODE---")
+
+    return state
+

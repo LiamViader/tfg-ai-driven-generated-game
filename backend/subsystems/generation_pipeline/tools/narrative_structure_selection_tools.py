@@ -5,7 +5,7 @@ from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
-from subsystems.generation.schemas.graph_state import GenerationGraphState
+from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
 
 # Helper mapping from id to structure
 AVAILABLE_STRUCTURES_BY_ID = {s.id: s for s in AVAILABLE_NARRATIVE_STRUCTURES}
