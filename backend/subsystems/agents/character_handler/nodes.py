@@ -16,6 +16,8 @@ from utils.message_window import get_valid_messages_window
 def receive_objective_node(state: CharacterGraphState) -> CharacterGraphState:
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
     state.reset_working_memory()
+    state.messages_field_to_update = "executor_messages"
+    state.logs_field_to_update = "executor_applied_operations_log"
     return state
 
 
