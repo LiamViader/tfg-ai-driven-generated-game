@@ -2,6 +2,7 @@ from core_game.map.schemas import ScenarioModel, ScenarioSnapshot, ConnectionMod
 from typing import Dict, Optional, List, Set, Literal
 from core_game.map.constants import Direction, OppositeDirections, IndoorOrOutdoor
 from core_game.time.domain import GameTime
+from core_game.character.domain import PlayerCharacter, NPCCharacter
 
 class Scenario:
     def __init__(self, scenario_model: ScenarioModel):
@@ -68,7 +69,7 @@ class Scenario:
         self._data.zone = value
 
     @property
-    def connections(self) -> dict:
+    def connections(self) -> Dict[Direction, Optional[str]]:
         return self._data.connections
 
     @property
@@ -76,8 +77,12 @@ class Scenario:
         return self._data.valid_from
 
     @property
-    def previous_versions(self) -> list:
+    def previous_versions(self) -> list[ScenarioSnapshot]:
         return self._data.previous_versions
+    
+    @property
+    def present_characters_ids(self) -> set[str]:
+        return self._data.present_character_ids
 
     def snapshot_scenario(self, current_time: float):
         snapshot = ScenarioSnapshot(
@@ -248,33 +253,10 @@ class GameMap():
             connections={cid: conn.get_connection_model() for cid, conn in self._connections.items()}
         )
     
-    def create_scenario(self,
-        name: str, 
-        summary_description: str, 
-        visual_description: str,
-        narrative_context: str, 
-        indoor_or_outdoor: IndoorOrOutdoor,
-        type: str, 
-        zone: str
-    ) -> Scenario:
-        """Create a new scenario in map and return it."""
-
-        scenario_model = ScenarioModel(
-            name=name,
-            visual_description=visual_description,
-            narrative_context=narrative_context,
-            summary_description=summary_description,
-            indoor_or_outdoor=indoor_or_outdoor,
-            zone=zone,
-            type=type,
-        )
-        if scenario_model.id in self._scenarios:
-            raise ValueError(f"Internal Error, Scenario with ID {scenario_model.id} already exists.")
-
-        scenario = Scenario(scenario_model)
+    def add_scenario(self, scenario: Scenario) -> Scenario:
+        """Adds Scenario to the map. Does not check anything"""
         self._scenarios[scenario.id] = scenario
         self._island_clusters.append({scenario.id})
-
         return scenario
     
     def modify_scenario(self, 
@@ -332,128 +314,62 @@ class GameMap():
         self._compute_island_clusters()
 
         return True
+
+    def add_connection(self, connection: Connection) -> Optional[Connection]:
+        scenario_a = self.find_scenario(connection.scenario_a_id)
+        scenario_b = self.find_scenario(connection.scenario_a_id)
+        if scenario_a and scenario_b:
+            self._connections[connection.id] = connection
+            scenario_a.connections[connection.get_direction_from(scenario_a.id)] = connection.id
+            scenario_b.connections[connection.get_direction_from(scenario_b.id)] = connection.id
+
+            self._compute_island_clusters()
+            return connection
+        return None
     
-    def create_bidirectional_connection(self, 
-        from_scenario_id: str, 
-        direction_from_origin: Direction, 
-        to_scenario_id: str,  
-        connection_type: str,
-        travel_description: Optional[str] = None,
-        traversal_conditions: Optional[List[str]] = None,
-    ) -> Connection:
-        """Create a bidirectional connection between two scenarios. Returns the connection. Scenarios must have the exits available or it will raise an exception"""
+    def delete_bidirectional_connection(self, connection_id: str)->Optional[Connection]:
+        """Delete a bidirectional connection from scenario A in the specified direction."""
+        connection = self._connections.pop(connection_id, None)
+        if not connection:
+            return None
         
+        scenario_id_B = connection.scenario_b_id
+        scenario_id_A = connection.scenario_a_id
 
-        if from_scenario_id not in self._scenarios:
-            raise KeyError(f"Origin scenario ID '{from_scenario_id}' not found.")
+        scenario_B = self.find_scenario(scenario_id_B)
+        scenario_A = self.find_scenario(scenario_id_A)
 
-        if to_scenario_id not in self._scenarios:
-            raise KeyError(f"Destination scenario ID '{to_scenario_id}' not found.")
+        if scenario_A:
+            scenario_A.connections[connection.direction_from_a] = None
 
-        if from_scenario_id == to_scenario_id:
-            raise ValueError("Cannot connect a scenario to itself.")
-
-        origin_scenario = self._scenarios[from_scenario_id]
-        destination_scenario = self._scenarios[to_scenario_id]
-
-        for existing_direction, conn_id in origin_scenario.connections.items():
-            if conn_id:
-                conn = self._connections.get(conn_id)
-                if conn and ((conn.scenario_a_id == from_scenario_id and conn.scenario_b_id == to_scenario_id) or
-                            (conn.scenario_b_id == from_scenario_id and conn.scenario_a_id == to_scenario_id)):
-                    raise ValueError(
-                        f"Origin '{from_scenario_id}' already has an existing connection via direction '{existing_direction}' to '{to_scenario_id}'. Cannot create another connection between them."
-                    )
-
-
-        direction_to_origin = OppositeDirections[direction_from_origin]
-
-        if origin_scenario.connections.get(direction_from_origin) is not None:
-            raise ValueError(
-                f"Origin scenario '{from_scenario_id}' already has a connection to the '{direction_from_origin}'."
-            )
-
-        if destination_scenario.connections.get(direction_to_origin) is not None:
-            raise ValueError(
-                f"Destination scenario '{to_scenario_id}' already has a connection to its '{direction_to_origin}' (which would be the return path)."
-            )
-
-
-        connection_model = ConnectionModel(
-            scenario_a_id=from_scenario_id,
-            scenario_b_id=to_scenario_id,
-            direction_from_a=direction_from_origin,
-            connection_type=connection_type,
-            travel_description=travel_description,
-            traversal_conditions=traversal_conditions or [],
-        )
-
-        connection = Connection(connection_model)
-
-        self._connections[connection.id] = connection
-        origin_scenario.connections[direction_from_origin] = connection.id
-        destination_scenario.connections[direction_to_origin] = connection.id
-
+        if scenario_B:
+            scenario_B.connections[connection.direction_from_b] = None
         self._compute_island_clusters()
-
         return connection
     
-    def delete_bidirectional_connection(self, scenario_id_A: str, direction_from_A: Direction)->None:
-        """Delete a bidirectional connection from scenario A in the specified direction."""
-        
-        if scenario_id_A not in self._scenarios:
-            raise KeyError(f"Scenario A ID '{scenario_id_A}' not found.")
-
-
-        scenario_A = self._scenarios[scenario_id_A]
-        conn_id_A_to_B = scenario_A.connections.get(direction_from_A)
-        conn = self._connections.get(conn_id_A_to_B) if conn_id_A_to_B else None
-
-        if conn is None:
-            raise KeyError(f"Scenario '{scenario_id_A}' has no connection to the '{direction_from_A}'.")
-
-        scenario_id_B = conn.get_other_scenario_id(scenario_id_A)
-        if scenario_id_B not in self._scenarios:
-            scenario_A.connections[direction_from_A] = None
-            self._connections.pop(conn.id, None)
-            self._compute_island_clusters()
-            return
-
-        scenario_B = self._scenarios[scenario_id_B]
-        direction_from_B = OppositeDirections[direction_from_A]
-
-        scenario_A.connections[direction_from_A] = None
-
-        scenario_B.connections[direction_from_B] = None
-        self._connections.pop(conn.id, None)
-
-        self._compute_island_clusters()
-    
     def modify_bidirectional_connection(self, 
-        from_scenario_id: str, 
-        direction_from_origin: Direction,
+        connection_id: str,
         new_connection_type: Optional[str] = None,
         new_travel_description: Optional[str] = None,
         new_traversal_conditions: Optional[List[str]] = None
-    ) -> None:
+    ) -> bool:
         """Modify an existing bidirectional connection."""
 
-        if from_scenario_id not in self._scenarios:
-            raise KeyError(f"Origin scenario ID '{from_scenario_id}' not found.")
 
-        origin_scenario = self._scenarios[from_scenario_id]
-        conn_id_origin = origin_scenario.connections.get(direction_from_origin)
-        conn_origin = self._connections.get(conn_id_origin) if conn_id_origin else None
-
-        if conn_origin is None:
-            raise KeyError(f"Scenario '{from_scenario_id}' has no connection to the '{direction_from_origin}'.")
-
+        connection = self._connections.get(connection_id)
+        if not connection:
+            return False
+        
         if new_connection_type is not None:
-            conn_origin.connection_type = new_connection_type
+            connection.connection_type = new_connection_type
         if new_travel_description is not None:
-            conn_origin.travel_description = new_travel_description
+            connection.travel_description = new_travel_description
         if new_traversal_conditions is not None:
-            conn_origin.traversal_conditions = new_traversal_conditions
+            connection.traversal_conditions = new_traversal_conditions
+        return True
+
+    def get_connection_by_id(self, conn_id: str) -> Optional[Connection]:
+        return self._connections.get(conn_id)
 
     def get_connection(
         self, scenario_id: str, direction_from: Direction
@@ -533,3 +449,11 @@ class GameMap():
                     f"- Cluster {i} (contains {len(cluster_list_sorted)} scenarios): (No scenarios found for this cluster - this might indicate an issue)."
                 )
         return "\n".join(summary_lines)
+    
+    def place_player(self, player: PlayerCharacter, scenario_id: str) -> Optional[Scenario]:
+        """places player at scenario. doesnt check anything"""
+        scenario = self.find_scenario(scenario_id)
+        if scenario:
+            scenario.present_characters_ids.add(player.id)
+        return scenario
+

@@ -1,6 +1,7 @@
 from core_game.game.singleton import GameStateSingleton
 from core_game.game.domain import GameState
 from simulated.map import SimulatedMap
+from simulated.characters import SimulatedCharacters
 
 class SimulatedGameState:
     """
@@ -13,13 +14,16 @@ class SimulatedGameState:
         Initializes the simulated game state with a the provided game state model.
         :param game_state: The original game state model to simulate.
         """
-        self._simulated_map: SimulatedMap = SimulatedMap(game_state.game_map)
+        self._simulated_map: SimulatedMap = SimulatedMap(game_state.game_map, self)
+        self._simulated_characters: SimulatedCharacters = SimulatedCharacters(game_state.characters, self)
     
     @property
     def simulated_map(self)-> SimulatedMap:
         return self._simulated_map
 
-
+    @property
+    def simulated_characters(self) -> SimulatedCharacters:
+        return self._simulated_characters
 
 class SimulatedGameStateSingleton:
     """ Singleton class to manage the simulated game state.

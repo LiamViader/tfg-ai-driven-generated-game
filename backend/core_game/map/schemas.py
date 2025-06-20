@@ -15,6 +15,9 @@ def generate_scenario_id() -> str:
     _scenario_id_counter += 1
     return f"scenario_{_scenario_id_counter:03d}"
 
+def rollback_scenario_id():
+    global _scenario_id_counter
+    _scenario_id_counter -= 1
 
 def generate_connection_id() -> str:
     """Return a sequential id of the form 'connection_001'."""

@@ -12,11 +12,15 @@ from core_game.character.field_descriptions import *
 _character_id_counter = 0
 
 
-def _generate_character_id() -> str:
+def generate_character_id() -> str:
     """Return a sequential id of the form 'character_001'."""
     global _character_id_counter
     _character_id_counter += 1
     return f"character_{_character_id_counter:03d}"
+
+def rollback_character_id():
+    global _character_id_counter
+    _character_id_counter -= 1
 
 class IdentityModel(BaseModel):
     """Core identity traits of the character."""
@@ -81,7 +85,7 @@ class DynamicStateModel(BaseModel):
 
 class CharacterBaseModel(BaseModel):
     """The base model that all character types inherit from."""
-    id: str = Field(..., description="Unique identifier for the character.")
+    id: str = Field(default_factory=generate_character_id, description="Unique identifier for the character.")
     type: CharacterType = Field(default="player", description="Type of character.")
     identity: IdentityModel
     physical: PhysicalAttributesModel

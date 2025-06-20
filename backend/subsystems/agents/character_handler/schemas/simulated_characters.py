@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Any, Optional, Annotated, Literal
 import json
-from pydantic import BaseModel, Field as PydanticField, model_validator
+from pydantic import BaseModel, Field 
 from core_game.character.constants import Gender, NarrativeRole, NarrativeImportance
 
 
@@ -17,7 +17,7 @@ from core_game.character.schemas import (
     NonPlayerCharacterModel,
     PlayerCharacterModel,
     CharacterBaseModel,
-    _generate_character_id,
+    generate_character_id,
 )
 
 
@@ -55,21 +55,21 @@ def _format_nested_dict(data: Dict[str, Any], indent: int = 0) -> List[str]:
 
 class CreateNPCArgs(BaseModel):
     """Arguments required to create a NPC."""
-    identity: IdentityModel = PydanticField(..., description="Full identity information")
-    physical: PhysicalAttributesModel = PydanticField(..., description="Full physical description")
-    psychological: PsychologicalAttributesModel = PydanticField(..., description="Detailed psychological profile")
-    knowledge: KnowledgeModel = PydanticField(default_factory=KnowledgeModel, description="Initial knowledge state, aquired knowledge should be empty")
-    dynamic_state: DynamicStateModel = PydanticField(default_factory=DynamicStateModel, description="Initial dynamic state")
-    narrative: NarrativeWeightModel = PydanticField(..., description="Narrative role and importance")
+    identity: IdentityModel = Field(..., description="Full identity information")
+    physical: PhysicalAttributesModel = Field(..., description="Full physical description")
+    psychological: PsychologicalAttributesModel = Field(..., description="Detailed psychological profile")
+    knowledge: KnowledgeModel = Field(default_factory=KnowledgeModel, description="Initial knowledge state, aquired knowledge should be empty")
+    dynamic_state: DynamicStateModel = Field(default_factory=DynamicStateModel, description="Initial dynamic state")
+    narrative: NarrativeWeightModel = Field(..., description="Narrative role and importance")
 
 
 class CreatePlayerArgs(BaseModel):
     """Arguments required to create the player character."""
-    identity: IdentityModel = PydanticField(..., description="Full identity information")
-    physical: PhysicalAttributesModel = PydanticField(..., description="Full physical description")
-    psychological: PsychologicalAttributesModel = PydanticField(..., description="Detailed psychological profile")
-    knowledge: Optional[KnowledgeModel] = PydanticField(default_factory=KnowledgeModel, description="Initial knowledge state")
-    present_in_scenario: str = PydanticField(..., description="ID of the scenario where the player starts")
+    identity: IdentityModel = Field(..., description="Full identity information")
+    physical: PhysicalAttributesModel = Field(..., description="Full physical description")
+    psychological: PsychologicalAttributesModel = Field(..., description="Detailed psychological profile")
+    knowledge: Optional[KnowledgeModel] = Field(default_factory=KnowledgeModel, description="Initial knowledge state")
+    present_in_scenario: str = Field(..., description="ID of the scenario where the player starts")
 
 
 
@@ -77,41 +77,41 @@ class CreatePlayerArgs(BaseModel):
 class ModifyIdentityArgs(BaseModel):
     """Arguments for updating identity attributes on NPCs or the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the character (NPC or player) to modify",
     )
-    new_full_name: Optional[str] = PydanticField(None, description="New full name")
-    new_alias: Optional[str] = PydanticField(None, description="New alias")
-    new_age: Optional[int] = PydanticField(None, description="New age")
-    new_gender: Optional[Gender] = PydanticField(
+    new_full_name: Optional[str] = Field(None, description="New full name")
+    new_alias: Optional[str] = Field(None, description="New alias")
+    new_age: Optional[int] = Field(None, description="New age")
+    new_gender: Optional[Gender] = Field(
         None, description="New gender"
     )
-    new_profession: Optional[str] = PydanticField(None, description="New profession")
-    new_species: Optional[str] = PydanticField(None, description="New species")
-    new_alignment: Optional[str] = PydanticField(None, description="New alignment")
+    new_profession: Optional[str] = Field(None, description="New profession")
+    new_species: Optional[str] = Field(None, description="New species")
+    new_alignment: Optional[str] = Field(None, description="New alignment")
 
 
 class ModifyPhysicalArgs(BaseModel):
     """Arguments for updating physical attributes on NPCs or the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the character (NPC or player) to modify",
     )
-    new_appearance: Optional[str] = PydanticField(None, description="New appearance")
-    new_distinctive_features: Optional[List[str]] = PydanticField(
+    new_appearance: Optional[str] = Field(None, description="New appearance")
+    new_distinctive_features: Optional[List[str]] = Field(
         None, description="New distinctive features list"
     )
-    append_distinctive_features: bool = PydanticField(
+    append_distinctive_features: bool = Field(
         default=False,
         description="Append features instead of replacing the list",
     )
-    new_clothing_style: Optional[str] = PydanticField(None, description="New clothing style")
-    new_characteristic_items: Optional[List[str]] = PydanticField(
+    new_clothing_style: Optional[str] = Field(None, description="New clothing style")
+    new_characteristic_items: Optional[List[str]] = Field(
         None, description="New characteristic items list"
     )
-    append_characteristic_items: bool = PydanticField(
+    append_characteristic_items: bool = Field(
         default=False,
         description="Append items instead of replacing the list",
     )
@@ -120,37 +120,37 @@ class ModifyPhysicalArgs(BaseModel):
 class ModifyPsychologicalArgs(BaseModel):
     """Arguments for updating psychological traits on NPCs or the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the character (NPC or player) to modify",
     )
-    new_personality_summary: Optional[str] = PydanticField(None, description="New personality summary")
-    new_personality_tags: Optional[List[str]] = PydanticField(None, description="New personality tags")
-    append_personality_tags: bool = PydanticField(
+    new_personality_summary: Optional[str] = Field(None, description="New personality summary")
+    new_personality_tags: Optional[List[str]] = Field(None, description="New personality tags")
+    append_personality_tags: bool = Field(
         default=False,
         description="Append personality tags instead of replacing the list",
     )
-    new_motivations: Optional[List[str]] = PydanticField(None, description="New motivations")
-    append_motivations: bool = PydanticField(
+    new_motivations: Optional[List[str]] = Field(None, description="New motivations")
+    append_motivations: bool = Field(
         default=False,
         description="Append motivations instead of replacing the list",
     )
-    new_values: Optional[List[str]] = PydanticField(None, description="New values")
-    append_values: bool = PydanticField(
+    new_values: Optional[List[str]] = Field(None, description="New values")
+    append_values: bool = Field(
         default=False,
         description="Append values instead of replacing the list",
     )
-    new_fears_and_weaknesses: Optional[List[str]] = PydanticField(
+    new_fears_and_weaknesses: Optional[List[str]] = Field(
         None, description="New fears and weaknesses"
     )
-    append_fears_and_weaknesses: bool = PydanticField(
+    append_fears_and_weaknesses: bool = Field(
         default=False,
         description="Append fears and weaknesses instead of replacing the list",
     )
-    new_communication_style: Optional[str] = PydanticField(None, description="New communication style")
-    new_backstory: Optional[str] = PydanticField(None, description="New backstory")
-    new_quirks: Optional[List[str]] = PydanticField(None, description="New quirks list")
-    append_quirks: bool = PydanticField(
+    new_communication_style: Optional[str] = Field(None, description="New communication style")
+    new_backstory: Optional[str] = Field(None, description="New backstory")
+    new_quirks: Optional[List[str]] = Field(None, description="New quirks list")
+    append_quirks: bool = Field(
         default=False,
         description="Append quirks instead of replacing the list",
     )
@@ -159,17 +159,17 @@ class ModifyPsychologicalArgs(BaseModel):
 class ModifyKnowledgeArgs(BaseModel):
     """Arguments for updating knowledge on NPCs or the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the character (NPC or player) to modify",
     )
-    new_background_knowledge: Optional[List[str]] = PydanticField(None, description="New background knowledge")
-    append_background_knowledge: bool = PydanticField(
+    new_background_knowledge: Optional[List[str]] = Field(None, description="New background knowledge")
+    append_background_knowledge: bool = Field(
         default=False,
         description="Append background knowledge instead of replacing the list",
     )
-    new_acquired_knowledge: Optional[List[str]] = PydanticField(None, description="New acquired knowledge")
-    append_acquired_knowledge: bool = PydanticField(
+    new_acquired_knowledge: Optional[List[str]] = Field(None, description="New acquired knowledge")
+    append_acquired_knowledge: bool = Field(
         default=False,
         description="Append acquired knowledge instead of replacing the list",
     )
@@ -178,31 +178,31 @@ class ModifyKnowledgeArgs(BaseModel):
 class ModifyDynamicStateArgs(BaseModel):
     """Arguments for updating an NPC's dynamic state. Does not work on the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the NPC to modify; the player cannot be modified",
     )
-    new_current_emotion: Optional[str] = PydanticField(None, description="New current emotion")
-    new_immediate_goal: Optional[str] = PydanticField(None, description="New immediate goal")
+    new_current_emotion: Optional[str] = Field(None, description="New current emotion")
+    new_immediate_goal: Optional[str] = Field(None, description="New immediate goal")
 
 
 class ModifyNarrativeArgs(BaseModel):
     """Arguments for updating an NPC's narrative role. Does not work on the player."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the NPC to modify; the player cannot be modified",
     )
-    new_narrative_role: Optional[NarrativeRole] = PydanticField(
+    new_narrative_role: Optional[NarrativeRole] = Field(
         None, description="New narrative role"
     )
-    new_current_narrative_importance: Optional[NarrativeImportance] = PydanticField(
+    new_current_narrative_importance: Optional[NarrativeImportance] = Field(
         None, description="New narrative importance"
     )
-    new_narrative_purposes: Optional[List[NarrativePurposeModel]] = PydanticField(
+    new_narrative_purposes: Optional[List[NarrativePurposeModel]] = Field(
         None, description="New narrative purposes"
     )
-    append_narrative_purposes: bool = PydanticField(
+    append_narrative_purposes: bool = Field(
         default=False,
         description="Append narrative purposes instead of replacing the list",
     )
@@ -211,7 +211,7 @@ class ModifyNarrativeArgs(BaseModel):
 class DeleteCharacterArgs(BaseModel):
     """Arguments for deleting an NPC. The player cannot be deleted."""
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the NPC to delete. The player character cannot be deleted.",
     )
@@ -224,10 +224,10 @@ class PlaceCharacterArgs(BaseModel):
     specified one. This works for both NPCs and the player.
     """
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ..., description="ID of the character to place or move"
     )
-    new_scenario_id: str = PydanticField(
+    new_scenario_id: str = Field(
         ...,
         description=(
             "ID of the destination scenario. If the character was already in a scenario, it will be relocated here"
@@ -241,7 +241,7 @@ class RemoveCharacterFromScenarioArgs(BaseModel):
     Only NPCs can be unplaced; the player must always belong to a scenario.
     """
 
-    character_id: str = PydanticField(
+    character_id: str = Field(
         ...,
         description="ID of the NPC to unplace; the player cannot be removed from its scenario.",
     )
@@ -257,40 +257,40 @@ class ListCharactersArgs(BaseModel):
         "gender",
         "alias",
         "name_contains",
-    ]] = PydanticField(
+    ]] = Field(
         default=None,
         description="Optional attribute to filter by",
     )
-    value_to_match: Optional[str] = PydanticField(
+    value_to_match: Optional[str] = Field(
         default=None,
         description="Value that the attribute should match",
     )
-    max_results: Optional[int] = PydanticField(
+    max_results: Optional[int] = Field(
         default=10,
         le=25,
         description="Maximum number of characters to list when filtering",
     )
-    list_identity: bool = PydanticField(
+    list_identity: bool = Field(
         default=False,
         description="Include full identity fields when listing",
     )
-    list_physical: bool = PydanticField(
+    list_physical: bool = Field(
         default=False,
         description="Include physical attributes when listing",
     )
-    list_psychological: bool = PydanticField(
+    list_psychological: bool = Field(
         default=False,
         description="Include psychological traits when listing",
     )
-    list_knowledge: bool = PydanticField(
+    list_knowledge: bool = Field(
         default=False,
         description="Include knowledge fields when listing",
     )
-    list_dynamic_state: bool = PydanticField(
+    list_dynamic_state: bool = Field(
         default=False,
         description="Include dynamic state when listing",
     )
-    list_narrative: bool = PydanticField(
+    list_narrative: bool = Field(
         default=False,
         description="Include narrative attributes when listing",
     )
@@ -298,7 +298,7 @@ class ListCharactersArgs(BaseModel):
 
 class GetCharacterDetailsArgs(BaseModel):
     """Arguments for retrieving a character's full details."""
-    character_id: str = PydanticField(..., description="ID of the character")
+    character_id: str = Field(..., description="ID of the character")
 
 
 class GetPlayerDetailsArgs(BaseModel):
@@ -314,16 +314,16 @@ class ListCharactersByScenarioArgs(BaseModel):
 class SimulatedCharactersModel(BaseModel):
     """In-memory representation of characters cast manipulated by the agent."""
 
-    simulated_characters: Dict[str, CharacterBaseModel] = PydanticField(default_factory=dict)
-    deleted_characters: Dict[str, CharacterBaseModel] = PydanticField(default_factory=dict)
-    player_character: Optional[PlayerCharacterModel] = PydanticField(default=None)
-    executor_applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list)
+    simulated_characters: Dict[str, CharacterBaseModel] = Field(default_factory=dict)
+    deleted_characters: Dict[str, CharacterBaseModel] = Field(default_factory=dict)
+    player_character: Optional[PlayerCharacterModel] = Field(default=None)
+    executor_applied_operations_log: List[Dict[str, Any]] = Field(default_factory=list)
 
-    validator_applied_operations_log: List[Dict[str, Any]] = PydanticField(default_factory=list)
+    validator_applied_operations_log: List[Dict[str, Any]] = Field(default_factory=list)
 
-    task_finalized_by_agent: bool = PydanticField(default=False)
-    task_finalized_justification: Optional[str] = PydanticField(default=None)
-    executor_or_validator: Literal["executor", "validator"] = PydanticField(default="executor", description="Whether the cast is currently being used by the executor agent or the validator agent.")
+    task_finalized_by_agent: bool = Field(default=False)
+    task_finalized_justification: Optional[str] = Field(default=None)
+    executor_or_validator: Literal["executor", "validator"] = Field(default="executor", description="Whether the cast is currently being used by the executor agent or the validator agent.")
 
     @staticmethod
     def generate_sequential_character_id(existing_ids: List[str]) -> str:

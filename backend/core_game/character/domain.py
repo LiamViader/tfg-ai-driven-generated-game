@@ -1,7 +1,8 @@
 from typing import Dict, cast, Optional
 
 from .schemas import *
-
+from simulated.game_state import SimulatedGameStateSingleton
+from core_game.map.domain import Scenario
 
 class BaseCharacter:
     def __init__(self, data: CharacterBaseModel):
@@ -87,9 +88,6 @@ class Characters:
             PlayerCharacter(model.player_character) if model.player_character else None
         )
 
-    # ------------------------------------------------------------------
-    # Basic accessors
-    # ------------------------------------------------------------------
 
     def to_model(self) -> CharactersModel:
         """Return the underlying data as a CharactersModel."""
@@ -104,66 +102,18 @@ class Characters:
             return self._player
         return self._registry.get(character_id)
 
-    # ------------------------------------------------------------------
-    # Creation helpers
-    # ------------------------------------------------------------------
+    def has_player(self) -> bool:
+        return self._player is not None
 
-    def create_npc(
-        self,
-        identity: IdentityModel,
-        physical: PhysicalAttributesModel,
-        psychological: PsychologicalAttributesModel,
-        narrative: NarrativeWeightModel,
-        knowledge: Optional[KnowledgeModel] = None,
-        dynamic_state: Optional[DynamicStateModel] = None,
-    ) -> NPCCharacter:
+    def add_npc(self, npc:NPCCharacter) -> NPCCharacter:
         """Create a new NPC and return it."""
-
-        knowledge = knowledge or KnowledgeModel()
-        dynamic_state = dynamic_state or DynamicStateModel()
-
-        new_id = CharactersModel.generate_sequential_character_id(list(self._registry.keys()))  # type: ignore
-        npc_model = NonPlayerCharacterModel(
-            id=new_id,
-            identity=identity,
-            physical=physical,
-            psychological=psychological,
-            knowledge=knowledge,
-            present_in_scenario=None,
-            dynamic_state=dynamic_state,
-            narrative=narrative,
-        )
-        npc = NPCCharacter(npc_model)
-        self._registry[new_id] = npc
+        self._registry[npc.id] = npc
         return npc
 
-    def create_player(
-        self,
-        identity: IdentityModel,
-        physical: PhysicalAttributesModel,
-        psychological: PsychologicalAttributesModel,
-        present_in_scenario: str,
-        knowledge: Optional[KnowledgeModel] = None,
-    ) -> PlayerCharacter:
-        """Create the player character. Raises ValueError if it already exists."""
-
-        if self._player is not None:
-            raise ValueError("Player already exists")
-
-        knowledge = knowledge or KnowledgeModel()
-        new_id = CharactersModel.generate_sequential_character_id(list(self._registry.keys()))  # type: ignore
-        player_model = PlayerCharacterModel(
-            id=new_id,
-            identity=identity,
-            physical=physical,
-            psychological=psychological,
-            knowledge=knowledge,
-            present_in_scenario=present_in_scenario,
-        )
-
-        player = PlayerCharacter(player_model)
+    def add_player(self, player: PlayerCharacter) -> PlayerCharacter:
+        """Adds the player to de character components. it does not check anything"""
         self._player = player
-        self._registry[new_id] = player
+        self._registry[player.id] = player
         return player
 
     # ------------------------------------------------------------------
@@ -365,3 +315,6 @@ class Characters:
             else:
                 n.narrative_purposes = new_narrative_purposes
         return True
+
+    def characters_count(self) -> int:
+        return len(self._registry)

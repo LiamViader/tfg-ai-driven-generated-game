@@ -62,6 +62,10 @@ class GameState:
     @property
     def game_map(self) -> GameMap:
         return self._game_map
+    
+    @property
+    def characters(self) -> Characters:
+        return self._characters
 
 
     def _populate_from_model(self, game_state_model: GameStateModel) -> None:

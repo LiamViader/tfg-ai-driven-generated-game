@@ -1,7 +1,9 @@
 from copy import deepcopy
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, Tuple
 
-from core_game.character.domain import Characters, BaseCharacter
+from simulated.game_state import SimulatedGameState
+from core_game.character.domain import Characters, BaseCharacter, PlayerCharacter, NPCCharacter
+from core_game.character.schemas import PlayerCharacterModel, rollback_character_id, NonPlayerCharacterModel
 from core_game.character.schemas import (
     IdentityModel,
     PhysicalAttributesModel,
@@ -10,18 +12,20 @@ from core_game.character.schemas import (
     KnowledgeModel,
     DynamicStateModel,
 )
-
+from core_game.map.domain import Scenario
 
 class SimulatedCharacters:
     """Lightweight wrapper around :class:`Characters` for isolated modifications."""
 
-    def __init__(self, characters: Characters) -> None:
+    def __init__(self, characters: Characters, simulated_game_state: SimulatedGameState) -> None:
         self._original_state: Characters = characters
         self._copied_state: Optional[Characters] = None
         self._working_state: Characters = self._original_state
-        self.is_modified: bool = False
-        self._deleted: Dict[str, BaseCharacter] = {}
-        self._added: Set[str] = set()
+        self._simulated_game_state: SimulatedGameState = simulated_game_state
+        self._is_modified: bool = False
+        self._deleted_characters: Dict[str, BaseCharacter] = {}
+        self._added_characters: Set[str] = set()
+        self._modified_characters: Set[str] = set()
 
     @property
     def working_state(self) -> Characters:
@@ -32,26 +36,83 @@ class SimulatedCharacters:
     # ------------------------------------------------------------------
 
     def _started_modifying(self) -> None:
-        if not self.is_modified:
+        if not self._is_modified:
             self._copied_state = Characters(self._original_state.to_model())
             self._working_state = self._copied_state
-            self.is_modified = True
+            self._is_modified = True
 
     # ------------------------------------------------------------------
     # Proxy methods
     # ------------------------------------------------------------------
 
-    def create_npc(self, *args, **kwargs) -> str:
+    def create_npc(
+        self, 
+        identity: IdentityModel,
+        physical: PhysicalAttributesModel,
+        psychological: PsychologicalAttributesModel,
+        narrative: NarrativeWeightModel,
+        knowledge: KnowledgeModel,
+        dynamic_state: DynamicStateModel = DynamicStateModel()
+    ) -> NPCCharacter:
+        
         self._started_modifying()
-        npc = self.working_state.create_npc(*args, **kwargs)
-        self._added.add(npc.id)
-        return npc.id
 
-    def create_player(self, *args, **kwargs) -> str:
+        knowledge = knowledge or KnowledgeModel()
+        dynamic_state = dynamic_state or DynamicStateModel()
+
+        npc_model = NonPlayerCharacterModel(
+            identity=identity,
+            physical=physical,
+            psychological=psychological,
+            knowledge=knowledge,
+            present_in_scenario=None,
+            dynamic_state=dynamic_state,
+            narrative=narrative,
+        )
+        npc = NPCCharacter(npc_model)
+
+        #aqui anirien comprovacions i en cas de fallada es faria rollback del id i es retornaria error.
+
+        self._working_state.add_npc(npc)
+
+        self._added_characters.add(npc.id)
+        return npc
+
+    def create_player(
+        self,
+        identity: IdentityModel,
+        physical: PhysicalAttributesModel,
+        psychological: PsychologicalAttributesModel,
+        scenario_id: str,
+        knowledge: Optional[KnowledgeModel] = KnowledgeModel()
+    ) -> Tuple[PlayerCharacter, Scenario]:
+
+        if self.working_state.has_player():
+            raise ValueError("Player already exists")
+
+        knowledge = knowledge or KnowledgeModel()
+
+        player_model = PlayerCharacterModel(
+            identity=identity,
+            physical=physical,
+            psychological=psychological,
+            knowledge=knowledge,
+            present_in_scenario=scenario_id
+        )
+
+        player = PlayerCharacter(player_model)
+
+        success, message= self._simulated_game_state.simulated_map.can_place_player(player,scenario_id)
+        if not success:
+            rollback_character_id()
+            raise ValueError(message)
+        
         self._started_modifying()
-        player = self.working_state.create_player(*args, **kwargs)
-        self._added.add(player.id)
-        return player.id
+        scenario = self._simulated_game_state.simulated_map.place_player(player,scenario_id)
+        player = self.working_state.add_player(player)
+        self._added_characters.add(player.id)
+
+        return player, scenario
 
     def delete_character(self, character_id: str) -> bool:
         self._started_modifying()
@@ -100,5 +161,5 @@ class SimulatedCharacters:
     def get_character(self, cid: str) -> Optional[BaseCharacter]:
         return self.working_state.find_character(cid)
 
-    def get_count(self) -> int:
-        return len(self.working_state._registry)
+    def characters_count(self) -> int:
+        return self.working_state.characters_count()

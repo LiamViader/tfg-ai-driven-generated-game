@@ -125,7 +125,7 @@ def create_scenario(
     """Creates a new scenario in the simulated map."""
 
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
-    effective_id=simulated_map.create_scenario(
+    scenario=simulated_map.create_scenario(
         name=name,
         narrative_context=narrative_context,
         visual_description=visual_description,
@@ -136,10 +136,10 @@ def create_scenario(
     )
 
     return Command(update={
-        logs_field_to_update: [get_log_item("create_scenario", True, f"Scenario '{name}' (ID: {effective_id}) created successfully.")],
+        logs_field_to_update: [get_log_item("create_scenario", True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully.")],
         messages_field_to_update: [
             ToolMessage(
-                get_observation(simulated_map.get_scenario_count(), "create_scenario", True, f"Scenario '{name}' (ID: {effective_id}) created successfully."),
+                get_observation(simulated_map.get_scenario_count(), "create_scenario", True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully."),
                 tool_call_id=tool_call_id
             )
         ]
@@ -254,7 +254,7 @@ def create_bidirectional_connection(
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
 
     try:
-        simulated_map.create_bidirectional_connection(scenario_id_A,direction_from_A,scenario_id_B,connection_type,travel_description,traversal_conditions)
+        connection = simulated_map.create_bidirectional_connection(scenario_id_A,direction_from_A,scenario_id_B,connection_type,travel_description,traversal_conditions)
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("create_bidirectional_connection", False, str(e))],
@@ -266,7 +266,7 @@ def create_bidirectional_connection(
             ]
         })
     
-    message = f"Connection type'{connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
+    message = f"Connection type'{connection.connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
 
     return Command(update={
         logs_field_to_update: [get_log_item("create_bidirectional_connection", True, message)],
