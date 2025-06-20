@@ -25,6 +25,14 @@ class CharacterGraphState(BaseModel):
     current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
     max_executor_iterations: int = Field(..., description="Maximum iterations for the executor to achieve the objective.")
 
+    # Operation logging and message routing
+    logs_field_to_update: str = Field(default="logs", description="Name of the field in the state where tool-generated logs should be appended")
+    messages_field_to_update: str = Field(default="messages", description="Name of the field in the state where tool-generated messages should be appended")
+
+    # Task finalization
+    task_finalized_by_agent: bool = Field(default=False, description="Flag set when the agent finalizes the task")
+    task_finalized_justification: Optional[str] = Field(default=None, description="Justification provided when finalizing the task")
+
     def reset_working_memory(self) -> None:
         self.working_simulated_characters = SimulatedCharactersModel(simulated_characters=self.characters.copy(), player_character=self.player)
         self.executor_messages = []

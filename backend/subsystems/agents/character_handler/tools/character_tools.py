@@ -1,10 +1,17 @@
 """Tool functions used by the character agent."""
 
+"""Tool functions used by the character agent."""
+
 from typing import Annotated, Optional, Literal
 from core_game.character.constants import Gender, NarrativeImportance, NarrativeRole
 from pydantic import BaseModel
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
+from langchain_core.messages import ToolMessage
+
+from subsystems.agents.utils.schemas import InjectedToolContext
+from .helpers import get_log_item, get_observation
 
 from core_game.character.schemas import (
     IdentityModel,
@@ -38,50 +45,54 @@ from ..schemas.simulated_characters import (
 
 
 # --- Tools Schemas -- (adding the injected simulated map)
-class ToolCreateScenarioArgs(CreateNPCArgs):
+class ToolCreateScenarioArgs(CreateNPCArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyIdentityArgs(ModifyIdentityArgs):
+class ToolModifyIdentityArgs(ModifyIdentityArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyPhysicalArgs(ModifyPhysicalArgs):
+class ToolModifyPhysicalArgs(ModifyPhysicalArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyPsychologicalArgs(ModifyPsychologicalArgs):
+class ToolModifyPsychologicalArgs(ModifyPsychologicalArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyKnowledgeArgs(ModifyKnowledgeArgs):
+class ToolModifyKnowledgeArgs(ModifyKnowledgeArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyDynamicStateArgs(ModifyDynamicStateArgs):
+class ToolModifyDynamicStateArgs(ModifyDynamicStateArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolModifyNarrativeArgs(ModifyNarrativeArgs):
+class ToolModifyNarrativeArgs(ModifyNarrativeArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolDeleteCharacterArgs(DeleteCharacterArgs):
+class ToolDeleteCharacterArgs(DeleteCharacterArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolPlaceCharacterArgs(PlaceCharacterArgs):
+class ToolPlaceCharacterArgs(PlaceCharacterArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolRemoveCharacterFromScenarioArgs(RemoveCharacterFromScenarioArgs):
+class ToolRemoveCharacterFromScenarioArgs(RemoveCharacterFromScenarioArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolListCharactersArgs(ListCharactersArgs):
+class ToolListCharactersArgs(ListCharactersArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolGetCharacterDetailsArgs(GetCharacterDetailsArgs):
+class ToolGetCharacterDetailsArgs(GetCharacterDetailsArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolCreatePlayerArgs(CreatePlayerArgs):
+class ToolCreatePlayerArgs(CreatePlayerArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolGetPlayerDetailsArgs(GetPlayerDetailsArgs):
+class ToolGetPlayerDetailsArgs(GetPlayerDetailsArgs, InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
 
-class ToolListCharactersByScenarioArgs(BaseModel):
+class ToolListCharactersByScenarioArgs(InjectedToolContext):
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
+
+class ToolFinalizeSimulationArgs(InjectedToolContext):
+    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
+    justification: str
 
 
 
@@ -92,9 +103,12 @@ def create_npc(
     psychological: PsychologicalAttributesModel,
     narrative: NarrativeWeightModel,
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
     knowledge: KnowledgeModel = KnowledgeModel(),
-    dynamic_state: DynamicStateModel = DynamicStateModel(),
-) -> str:
+    dynamic_state: DynamicStateModel = DynamicStateModel()
+) -> Command:
     """Create a new NPC providing complete attribute information."""
 
     new_id = SimulatedCharactersModel.generate_sequential_character_id(list(simulated_characters_state.simulated_characters.keys()))
@@ -110,7 +124,7 @@ def create_npc(
     )
 
     simulated_characters_state.simulated_characters[new_id] = npc
-    return simulated_characters_state._log_and_summarize(
+    observation = simulated_characters_state._log_and_summarize(
         "create_npc",
         CreateNPCArgs(
             identity=identity,
@@ -124,25 +138,44 @@ def create_npc(
         f"NPC '{identity.full_name}' created with id {new_id}.",
     )
 
+    return Command(update={
+        logs_field_to_update: [get_log_item("create_npc", True, f"NPC '{identity.full_name}' created with id {new_id}.")],
+        messages_field_to_update: [
+            ToolMessage(
+                get_observation(len(simulated_characters_state.simulated_characters), "create_npc", True, f"NPC '{identity.full_name}' created with id {new_id}."),
+                tool_call_id=tool_call_id,
+            )
+        ]
+    })
+
 
 # Backwards compatibility alias
 create_full_npc = create_npc
 
 
-@tool
+@tool(args_schema=ToolFinalizeSimulationArgs)
 def finalize_simulation(
     justification: str,
     simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-) -> str:
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
     """Mark the simulation as completed with a justification."""
     simulated_characters_state.task_finalized_by_agent = True
     simulated_characters_state.task_finalized_justification = justification
-    return simulated_characters_state._log_and_summarize(
+    observation = simulated_characters_state._log_and_summarize(
         "finalize_simulation",
         BaseModel(),
         True,
         justification,
     )
+    return Command(update={
+        logs_field_to_update: [get_log_item("finalize_simulation", True, justification)],
+        messages_field_to_update: [ToolMessage(get_observation(len(simulated_characters_state.simulated_characters), "finalize_simulation", True, justification), tool_call_id=tool_call_id)],
+        "task_finalized_by_agent": True,
+        "task_finalized_justification": justification,
+    })
 
 
 @tool(args_schema=ToolCreatePlayerArgs)
@@ -152,8 +185,11 @@ def create_player(
     physical: PhysicalAttributesModel,
     psychological: PsychologicalAttributesModel,
     present_in_scenario: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
     knowledge: Optional[KnowledgeModel] = KnowledgeModel(),
-) -> str:
+) -> Command:
     """(MODIFICATION tool) Create the player character."""
     args_model = CreatePlayerArgs(
         identity=identity,
@@ -164,12 +200,16 @@ def create_player(
     )
 
     if simulated_characters_state.player_character is not None:
-        return simulated_characters_state._log_and_summarize(
+        observation = simulated_characters_state._log_and_summarize(
             "create_player",
             args_model,
             False,
             "Error: A Player already exists.",
         )
+        return Command(update={
+            logs_field_to_update: [get_log_item("create_player", False, "Error: A Player already exists.")],
+            messages_field_to_update: [ToolMessage(get_observation(len(simulated_characters_state.simulated_characters), "create_player", False, "Error: A Player already exists."), tool_call_id=tool_call_id)]
+        })
 
     new_id = SimulatedCharactersModel.generate_sequential_character_id(
         list(simulated_characters_state.simulated_characters.keys())
@@ -190,20 +230,31 @@ def create_player(
     simulated_characters_state.player_character = player
     simulated_characters_state.simulated_characters[new_id] = player
 
-    return simulated_characters_state._log_and_summarize(
+    observation = simulated_characters_state._log_and_summarize(
         "create_player",
         args_model,
         True,
         f"Player '{player.identity.full_name}' created with id {new_id} in scenario {present_in_scenario}.",
     )
+    return Command(update={
+        logs_field_to_update: [get_log_item("create_player", True, f"Player '{player.identity.full_name}' created with id {new_id} in scenario {present_in_scenario}.")],
+        messages_field_to_update: [ToolMessage(get_observation(len(simulated_characters_state.simulated_characters), "create_player", True, f"Player '{player.identity.full_name}' created with id {new_id} in scenario {present_in_scenario}."), tool_call_id=tool_call_id)]
+    })
 
 
 @tool(args_schema=ToolGetPlayerDetailsArgs)
 def get_player_details(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
-) -> str:
+    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """(QUERY tool) Get details of the player character."""
-    return simulated_characters_state.get_player_details(args_model=GetPlayerDetailsArgs())
+    observation = simulated_characters_state.get_player_details(args_model=GetPlayerDetailsArgs())
+    return Command(update={
+        logs_field_to_update: [get_log_item("get_player_details", True, "Player details retrieved")],
+        messages_field_to_update: [ToolMessage(observation, tool_call_id=tool_call_id)]
+    })
 
 
 @tool(args_schema=ToolListCharactersArgs)
