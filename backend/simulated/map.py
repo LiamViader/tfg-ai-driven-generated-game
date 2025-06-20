@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Set, Literal, Tuple
+from typing import List, Dict, Any, Optional, Set, Literal, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from simulated.game_state import SimulatedGameState
 from copy import deepcopy
 from core_game.map.domain import GameMap, Scenario, Connection
 from core_game.map.schemas import ScenarioModel, rollback_scenario_id, ConnectionModel
 from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirections
-from simulated.game_state import SimulatedGameState
+
 from core_game.character.domain import BaseCharacter, PlayerCharacter
 
 class SimulatedMap:
-    def __init__(self, game_map_model: GameMap, simulated_game_state:SimulatedGameState) -> None:
+    def __init__(self, game_map_model: GameMap, simulated_game_state:'SimulatedGameState') -> None:
         self._original_state: GameMap = game_map_model
         self._copied_state: GameMap | None = None
         self._working_state: GameMap = self._original_state
-        self._simulated_game_state: SimulatedGameState = simulated_game_state
+        self._simulated_game_state: 'SimulatedGameState' = simulated_game_state
         self.__is_modified: bool = False
         self._deleted_scenarios: Dict[str, Scenario] = {}
         self._modified_scenarios: Set[str] = set() 
@@ -250,6 +252,13 @@ class SimulatedMap:
         else:
             return (True, "")
 
+    def can_place_character(self, character: BaseCharacter, scenario_id: str) -> Tuple[bool,str]:
+        """Checks if it can place the player to a certain scenario. Returns result and message in case of negative result"""
+        if not self._working_state.find_scenario(scenario_id=scenario_id):
+            return (False, f"Scenario with ID '{scenario_id}' does not exist.")
+        else:
+            return (True, "")
+
     def place_player(self, player: PlayerCharacter, scenario_id: str)->Scenario:
         success, message = self.can_place_player(player, scenario_id)
         if not success:
@@ -257,8 +266,24 @@ class SimulatedMap:
                 
         self._started_modifying()
 
-        if scenario_id not in self._added_scenarios: self._modified_scenarios.add(scenario_id)
+        if scenario_id not in self._added_scenarios: 
+            self._modified_scenarios.add(scenario_id)
         scenario=self.working_state.place_player(player, scenario_id)
+        if not scenario:
+            raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
+        
+        return scenario
+    
+    def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:
+        success, message = self.can_place_character(character, scenario_id)
+        if not success:
+            raise KeyError(message)
+                
+        self._started_modifying()
+
+        if scenario_id not in self._added_scenarios: 
+            self._modified_scenarios.add(scenario_id)
+        scenario=self.working_state.place_character(character, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         

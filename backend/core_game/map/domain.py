@@ -1,8 +1,7 @@
 from core_game.map.schemas import ScenarioModel, ScenarioSnapshot, ConnectionModel, GameMapModel
 from typing import Dict, Optional, List, Set, Literal
 from core_game.map.constants import Direction, OppositeDirections, IndoorOrOutdoor
-from core_game.time.domain import GameTime
-from core_game.character.domain import PlayerCharacter, NPCCharacter
+from core_game.character.domain import PlayerCharacter, BaseCharacter
 
 class Scenario:
     def __init__(self, scenario_model: ScenarioModel):
@@ -455,5 +454,12 @@ class GameMap():
         scenario = self.find_scenario(scenario_id)
         if scenario:
             scenario.present_characters_ids.add(player.id)
+        return scenario
+    
+    def place_character(self, character: BaseCharacter, scenario_id: str) -> Optional[Scenario]:
+        """places player at scenario. doesnt check anything"""
+        scenario = self.find_scenario(scenario_id)
+        if scenario:
+            scenario.present_characters_ids.add(character.id)
         return scenario
 

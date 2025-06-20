@@ -14,7 +14,7 @@ def get_observation(n_characters: int, tool_name: str, success: bool, message: s
     """Generate a standardized observation string."""
     result = "" if success else "Error,"
     observation = (
-        f"Result of '{tool_name}': {result} {message} \nCast has {n_characters} characters."
+        f"Result of '{tool_name}': {result} {message} \nCast has {n_characters} characters now."
     )
     print(observation)
     return observation

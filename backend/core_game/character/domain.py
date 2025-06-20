@@ -1,8 +1,6 @@
 from typing import Dict, cast, Optional
 
 from .schemas import *
-from simulated.game_state import SimulatedGameStateSingleton
-from core_game.map.domain import Scenario
 
 class BaseCharacter:
     def __init__(self, data: CharacterBaseModel):
@@ -35,6 +33,10 @@ class BaseCharacter:
     @property
     def present_in_scenario(self) -> Optional[str]:
         return self._data.present_in_scenario
+    
+    @present_in_scenario.setter
+    def present_in_scenario(self, value: str) -> Optional[str]:
+        self._data.present_in_scenario = value
 
     def get_model(self) -> CharacterBaseModel:
         return self._data
@@ -120,27 +122,7 @@ class Characters:
     # Modification helpers
     # ------------------------------------------------------------------
 
-    def delete_character(self, character_id: str) -> bool:
-        """Delete an NPC from the registry."""
-        if character_id == (self._player.id if self._player else None):
-            return False
-        return self._registry.pop(character_id, None) is not None
-
-    def place_character(self, character_id: str, new_scenario_id: str) -> bool:
-        char = self.find_character(character_id)
-        if not char:
-            return False
-        char.get_model().present_in_scenario = new_scenario_id
-        return True
-
-    def remove_character_from_scenario(self, character_id: str) -> bool:
-        char = self.find_character(character_id)
-        if not char or isinstance(char, PlayerCharacter):
-            return False
-        char.get_model().present_in_scenario = None
-        return True
-
-    def modify_identity(
+    def modify_character_identity(
         self,
         character_id: str,
         new_full_name: Optional[str] = None,
@@ -171,14 +153,14 @@ class Characters:
             char.identity.alignment = new_alignment
         return True
 
-    def modify_physical(
+    def modify_character_physical(
         self,
         character_id: str,
         new_appearance: Optional[str] = None,
-        new_distinctive_features: Optional[list] = None,
+        new_distinctive_features: Optional[List[str]] = None,
         append_distinctive_features: bool = False,
         new_clothing_style: Optional[str] = None,
-        new_characteristic_items: Optional[list] = None,
+        new_characteristic_items: Optional[List[str]] = None,
         append_characteristic_items: bool = False,
     ) -> bool:
         char = self.find_character(character_id)
@@ -200,21 +182,21 @@ class Characters:
                 char.physical.characteristic_items = new_characteristic_items
         return True
 
-    def modify_psychological(
+    def modify_character_psychological(
         self,
         character_id: str,
         new_personality_summary: Optional[str] = None,
-        new_personality_tags: Optional[list] = None,
+        new_personality_tags: Optional[List[str]] = None,
         append_personality_tags: bool = False,
-        new_motivations: Optional[list] = None,
+        new_motivations: Optional[List[str]] = None,
         append_motivations: bool = False,
-        new_values: Optional[list] = None,
+        new_values: Optional[List[str]] = None,
         append_values: bool = False,
-        new_fears_and_weaknesses: Optional[list] = None,
+        new_fears_and_weaknesses: Optional[List[str]] = None,
         append_fears_and_weaknesses: bool = False,
         new_communication_style: Optional[str] = None,
         new_backstory: Optional[str] = None,
-        new_quirks: Optional[list] = None,
+        new_quirks: Optional[List[str]] = None,
         append_quirks: bool = False,
     ) -> bool:
         char = self.find_character(character_id)
@@ -254,12 +236,12 @@ class Characters:
                 p.quirks = new_quirks
         return True
 
-    def modify_knowledge(
+    def modify_character_knowledge(
         self,
         character_id: str,
-        new_background_knowledge: Optional[list] = None,
+        new_background_knowledge: Optional[List[str]] = None,
         append_background_knowledge: bool = False,
-        new_acquired_knowledge: Optional[list] = None,
+        new_acquired_knowledge: Optional[List[str]] = None,
         append_acquired_knowledge: bool = False,
     ) -> bool:
         char = self.find_character(character_id)
@@ -278,7 +260,7 @@ class Characters:
                 k.acquired_knowledge = new_acquired_knowledge
         return True
 
-    def modify_dynamic_state(
+    def modify_character_npc_dynamic_state(
         self,
         character_id: str,
         new_current_emotion: Optional[str] = None,
@@ -293,12 +275,12 @@ class Characters:
             char.dynamic_state.immediate_goal = new_immediate_goal
         return True
 
-    def modify_narrative(
+    def modify_character_npc_narrative(
         self,
         character_id: str,
         new_narrative_role: Optional[NarrativeRole] = None,
         new_current_narrative_importance: Optional[NarrativeImportance] = None,
-        new_narrative_purposes: Optional[list] = None,
+        new_narrative_purposes: Optional[List[NarrativePurposeModel]] = None,
         append_narrative_purposes: bool = False,
     ) -> bool:
         char = self.find_character(character_id)
@@ -318,3 +300,22 @@ class Characters:
 
     def characters_count(self) -> int:
         return len(self._registry)
+    
+    def delete_character(self, character_id: str) -> Optional[BaseCharacter]:
+        """Delete an NPC from the registry."""
+        if character_id == (self._player.id if self._player else None):
+            return None
+        return self._registry.pop(character_id, None)
+
+    def place_character(self, character_id: str, new_scenario_id: str) -> Optional[BaseCharacter]:
+        char = self.find_character(character_id)
+        if char:
+            char.present_in_scenario = new_scenario_id
+        return char
+
+    def remove_character_from_scenario(self, character_id: str) -> bool:
+        char = self.find_character(character_id)
+        if not char or isinstance(char, PlayerCharacter):
+            return False
+        char.get_model().present_in_scenario = None
+        return True
