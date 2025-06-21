@@ -458,7 +458,7 @@ class SimulatedCharactersModel(BaseModel):
 
         groups: Dict[str, List[str]] = {}
         for char in self.simulated_characters.values():
-            scenario = char.present_in_scenario or "NO_SCENARIO"
+            scenario = char.present_in_scenario or "OUT_OF_ANY_SCENARIO"
             groups.setdefault(scenario, []).append(
                 f"{char.identity.full_name} ({char.id})"
             )
