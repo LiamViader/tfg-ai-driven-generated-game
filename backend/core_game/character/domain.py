@@ -1,4 +1,4 @@
-from typing import Dict, cast, Optional
+from typing import Dict, cast, Optional, Tuple
 
 from .schemas import *
 
@@ -35,7 +35,7 @@ class BaseCharacter:
         return self._data.present_in_scenario
     
     @present_in_scenario.setter
-    def present_in_scenario(self, value: str) -> Optional[str]:
+    def present_in_scenario(self, value: Optional[str]) -> None:
         self._data.present_in_scenario = value
 
     def get_model(self) -> CharacterBaseModel:
@@ -313,9 +313,11 @@ class Characters:
             char.present_in_scenario = new_scenario_id
         return char
 
-    def remove_character_from_scenario(self, character_id: str) -> bool:
+    def remove_character_from_scenario(self, character_id: str) -> Tuple[Optional[str], Optional[BaseCharacter]]:
+        """Removes character from scenario and returns its scenario id"""
         char = self.find_character(character_id)
         if not char or isinstance(char, PlayerCharacter):
-            return False
-        char.get_model().present_in_scenario = None
-        return True
+            return None, None
+        scenario_id = char.present_in_scenario
+        char.present_in_scenario = None
+        return scenario_id, char

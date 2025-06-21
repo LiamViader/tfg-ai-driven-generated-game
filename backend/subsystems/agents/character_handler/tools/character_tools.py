@@ -127,7 +127,7 @@ class ToolPlaceCharacterArgs(InjectedToolContext):
 class ToolRemoveCharacterFromScenarioArgs(InjectedToolContext):
     character_id: str = Field(..., description="ID of the NPC to unplace; the player cannot be removed from its scenario.")
 
-    
+
 class ToolListCharactersArgs(InjectedToolContext):
 
 class ToolGetCharacterDetailsArgs(InjectedToolContext):
@@ -560,8 +560,7 @@ def place_character(
     new_scenario_id: str,
 ) -> Command:
     """Place a character into a scenario.
-    If the character is already in another scenario, it will be moved to the
-    provided one. Works on both NPCs and the player.
+    If the character is already in another scenario, it will be moved to the provided one. Works on both NPCs and the player.
     """
 
     simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
@@ -591,37 +590,27 @@ def remove_character_from_scenario(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     character_id: str,
-) -> str:
-    """(MODIFICATION tool) Remove an NPC from its current scenario.
+) -> Command:
     """
-
-    args_model = RemoveCharacterFromScenarioArgs(character_id=character_id)
-
-    char = simulated_characters_state.simulated_characters.get(character_id)
-    if not char:
-        return simulated_characters_state._log_and_summarize(
-            "remove_character_from_scenario",
-            args_model,
-            False,
-            f"Error: Character ID '{character_id}' not found.",
-        )
-
-    if isinstance(char, PlayerCharacterModel):
-        return simulated_characters_state._log_and_summarize(
-            "remove_character_from_scenario",
-            args_model,
-            False,
-            "Error: Cannot remove the player from a scenario.",
-        )
-
-    char.present_in_scenario = None
-    return simulated_characters_state._log_and_summarize(
-        "remove_character_from_scenario",
-        args_model,
-        True,
-        f"Character '{char.identity.full_name}' removed from its scenario.",
-    )
-
+    Removes an NPC from their current scenario. This means they are no longer present in any location and are considered temporarly inactive or absent from the game world. Player cannot be removed from a scenario, if you want to move it use the place_character.
+    """
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    try:
+        character, scenario = simulated_characters.remove_character_from_scenario(character_id)
+    except Exception as e:
+        return Command(update={
+            logs_field_to_update: [get_log_item("remove_character_from_scenario", False, str(e))],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "remove_character_from_scenario", False, str(e)), tool_call_id=tool_call_id)
+            ]
+        })
+    message = f"Character {character.id}, {character.identity.full_name} removed from scenario {scenario.id}, {scenario.name}."
+    return Command(update={
+        logs_field_to_update: [get_log_item("remove_character_from_scenario", True, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_characters.characters_count(), "remove_character_from_scenario", True, message), tool_call_id=tool_call_id)
+        ]
+    })
 
 @tool(args_schema=ToolGetPlayerDetailsArgs)
 def get_player_details(

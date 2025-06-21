@@ -463,3 +463,8 @@ class GameMap():
             scenario.present_characters_ids.add(character.id)
         return scenario
 
+    def remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str) -> Optional[Scenario]:
+        scenario = self.find_scenario(scenario_id)
+        if scenario:
+            scenario.present_characters_ids.discard(character.id)
+        return scenario

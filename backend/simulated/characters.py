@@ -297,7 +297,7 @@ class SimulatedCharacters:
         
         self._started_modifying()
         
-        character=self.working_state.delete_character(character_id):
+        character=self.working_state.delete_character(character_id)
         if character:
             if character_id not in self._added_characters:
                 self._deleted_characters[character_id] = character
@@ -326,9 +326,19 @@ class SimulatedCharacters:
         
         return character, self._simulated_game_state.simulated_map.place_character(character,scenario_id)
 
-    def remove_character_from_scenario(self, *args, **kwargs) -> bool:
+    def remove_character_from_scenario(self, character_id: str) -> Tuple[BaseCharacter,Scenario]:
+        character = self.working_state.find_character(character_id)
+        if not character:
+            raise KeyError(f"Character with ID '{character_id}' not found.")
+        if isinstance(character, PlayerCharacterModel):
+            raise ValueError("Cannot remove the player from a scenario.")
         self._started_modifying()
-        return self.working_state.remove_character_from_scenario(*args, **kwargs)
+        scenario_id, character = self.working_state.remove_character_from_scenario(character_id)
+        if not scenario_id or not character:
+            raise ValueError("Character is already not present in any scenario.")
+        
+        scenario = self._simulated_game_state.simulated_map.remove_character_from_scenario(character, scenario_id)
+        return character, scenario
 
     def get_character(self, cid: str) -> Optional[BaseCharacter]:
         return self.working_state.find_character(cid)

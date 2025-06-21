@@ -288,3 +288,12 @@ class SimulatedMap:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         
         return scenario
+    
+    def remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str)->Scenario:
+        scenario = self.working_state.find_scenario(scenario_id)
+        if not scenario:
+            raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
+        scenario = self.working_state.remove_character_from_scenario(character, scenario_id)
+        if not scenario:
+            raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
+        return scenario
