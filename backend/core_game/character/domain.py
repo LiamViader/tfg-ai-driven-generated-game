@@ -1,4 +1,4 @@
-from typing import Dict, cast, Optional, Tuple
+from typing import Dict, cast, Optional, Tuple, Literal
 
 from .schemas import *
 
@@ -103,6 +103,9 @@ class Characters:
         if self._player and self._player.id == character_id:
             return self._player
         return self._registry.get(character_id)
+    
+    def get_player(self) -> Optional[PlayerCharacter]:
+        return self._player
 
     def has_player(self) -> bool:
         return self._player is not None
@@ -321,3 +324,50 @@ class Characters:
         scenario_id = char.present_in_scenario
         char.present_in_scenario = None
         return scenario_id, char
+    
+    def filter_characters(
+        self, 
+        attribute_to_filter: Optional[Literal[ "narrative_role","current_narrative_importance", "species","profession","gender","alias","name_contains"]] = None, 
+        value_to_match: Optional[str] = None
+    ) -> Dict[str, BaseCharacter]:
+        
+        result: Dict[str, BaseCharacter] = {}
+        match_val = (value_to_match or "").lower()
+
+        for char_id, char in self._registry.items():
+            if attribute_to_filter is None or value_to_match is None:
+                result[char_id] = char
+                continue
+
+            value = ""
+
+            if attribute_to_filter == "narrative_role":
+                if isinstance(char, NPCCharacter):
+                    value = char.narrative.narrative_role
+            elif attribute_to_filter == "current_narrative_importance":
+                if isinstance(char, NPCCharacter):
+                    value = char.narrative.current_narrative_importance
+            elif attribute_to_filter == "species":
+                value = char.identity.species
+            elif attribute_to_filter == "profession":
+                value = char.identity.profession
+            elif attribute_to_filter == "gender":
+                value = char.identity.gender
+            elif attribute_to_filter == "alias":
+                value = char.identity.alias or ""
+            elif attribute_to_filter == "name_contains":
+                value = char.identity.full_name
+
+            if match_val in str(value).lower():
+                result[char_id] = char
+
+        return result
+    
+    def group_by_scenario(self) -> Dict[str,List[BaseCharacter]]:
+        groups: Dict[str, List[BaseCharacter]] = {}
+        for char in self._registry.values():
+            scenario = char.present_in_scenario or "OUT_OF_ANY_SCENARIO"
+            groups.setdefault(scenario, []).append(
+                char
+            )
+        return groups

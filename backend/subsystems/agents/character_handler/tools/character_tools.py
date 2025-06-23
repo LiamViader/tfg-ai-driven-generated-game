@@ -11,10 +11,10 @@ from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 from pydantic import Field
 from subsystems.agents.utils.schemas import InjectedToolContext
-from .helpers import get_log_item, get_observation
+from .helpers import get_log_item, get_observation, _format_nested_dict
 from simulated.game_state import SimulatedGameStateSingleton
 from core_game.character.schemas import NarrativePurposeModel
-
+import json
 
 from core_game.character.schemas import (
     IdentityModel,
@@ -127,16 +127,36 @@ class ToolPlaceCharacterArgs(InjectedToolContext):
 class ToolRemoveCharacterFromScenarioArgs(InjectedToolContext):
     character_id: str = Field(..., description="ID of the NPC to unplace; the player cannot be removed from its scenario.")
 
-
-class ToolListCharactersArgs(InjectedToolContext):
+class ToolGetPlayerDetailsArgs(InjectedToolContext):
+    pass
 
 class ToolGetCharacterDetailsArgs(InjectedToolContext):
+    character_id: str = Field(..., description="ID of the character")
 
-
-
-class ToolGetPlayerDetailsArgs(InjectedToolContext):
+class ToolListCharactersArgs(InjectedToolContext):
+    attribute_to_filter: Optional[Literal[
+        "narrative_role",
+        "current_narrative_importance",
+        "species",
+        "profession",
+        "gender",
+        "alias",
+        "name_contains",
+    ]] = Field(
+        default=None,
+        description="Optional attribute to filter by",
+    )
+    value_to_match: Optional[str] = Field(default=None, description="Value that the attribute should match")
+    max_results: Optional[int] = Field(default=10, le=25, description="Maximum number of characters to list when filtering")
+    list_identity: bool = Field(default=False, description="Include full identity fields when listing")
+    list_physical: bool = Field(default=False, description="Include physical attributes when listing")
+    list_psychological: bool = Field(default=False, description="Include psychological traits when listing")
+    list_knowledge: bool = Field(default=False, description="Include knowledge fields when listing")
+    list_dynamic_state: bool = Field(default=False, description="Include dynamic state when listing")
+    list_narrative: bool = Field(default=False, description="Include narrative attributes when listing")
 
 class ToolListCharactersByScenarioArgs(InjectedToolContext):
+    pass
 
 class ToolFinalizeSimulationArgs(InjectedToolContext):
     justification: str
@@ -614,22 +634,65 @@ def remove_character_from_scenario(
 
 @tool(args_schema=ToolGetPlayerDetailsArgs)
 def get_player_details(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command:
     """(QUERY tool) Get details of the player character."""
-    observation = simulated_characters_state.get_player_details(args_model=GetPlayerDetailsArgs())
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    player = simulated_characters.get_player()
+    if player is None:
+        return Command(update={
+            logs_field_to_update: [get_log_item("get_player_details", False, "Player character does not exist.")],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "get_player_details", False, "Player character does not exist."), tool_call_id=tool_call_id)
+            ]
+        })
+
+    details = player.get_model().model_dump()
+    details["present_in_scenario"] = player.present_in_scenario or "None"
+    pretty_details = "\n"+"\n".join(_format_nested_dict(details))
     return Command(update={
-        logs_field_to_update: [get_log_item("get_player_details", True, "Player details retrieved")],
-        messages_field_to_update: [ToolMessage(observation, tool_call_id=tool_call_id)]
+        logs_field_to_update: [get_log_item("get_player_details", True, pretty_details)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_characters.characters_count(), "get_player_details", True, pretty_details), tool_call_id=tool_call_id)
+        ]
+    })
+
+@tool(args_schema=ToolGetCharacterDetailsArgs)
+def get_character_details(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    character_id: str,
+) -> Command:
+    """(QUERY tool) Get full details of a character."""
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    character = simulated_characters.get_character(character_id)
+    if not character:
+        return Command(update={
+            logs_field_to_update: [get_log_item("get_character_details", False, f"Character with ID '{character_id}' not found.")],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "get_character_details", False, f"Character with ID '{character_id}' not found."), tool_call_id=tool_call_id)
+            ]
+        })
+    
+    details = character.get_model().model_dump()
+    details["present_in_scenario"] = character.present_in_scenario or "None"
+    pretty_details = "\n"+"\n".join(_format_nested_dict(details))
+    return Command(update={
+        logs_field_to_update: [get_log_item("get_character_details", True, pretty_details)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_characters.characters_count(), "get_character_details", True, pretty_details), tool_call_id=tool_call_id)
+        ]
     })
 
 
 @tool(args_schema=ToolListCharactersArgs)
 def list_characters(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
     attribute_to_filter: Optional[Literal[ "narrative_role","current_narrative_importance", "species","profession","gender","alias","name_contains"]] = None,
     value_to_match: Optional[str] = None,
     max_results: Optional[int] = 10,
@@ -639,64 +702,124 @@ def list_characters(
     list_knowledge: bool = False,
     list_dynamic_state: bool = False,
     list_narrative: bool = False,
-) -> str:
+) -> Command:
     """(QUERY tool) List characters optionally filtered by an attribute."""
-    args_model = ListCharactersArgs(
-        attribute_to_filter=attribute_to_filter,
-        value_to_match=value_to_match,
-        max_results=max_results,
-        list_identity=list_identity,
-        list_physical=list_physical,
-        list_psychological=list_psychological,
-        list_knowledge=list_knowledge,
-        list_dynamic_state=list_dynamic_state,
-        list_narrative=list_narrative,
-    )
-    return simulated_characters_state.list_characters(args_model=args_model)
+    
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    
+    if simulated_characters.characters_count()<=0:
+        return Command(update={
+            logs_field_to_update: [get_log_item("list_characters", True, "The cast is currently empty.")],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "The cast is currently empty."), tool_call_id=tool_call_id)
+            ]
+        })
 
+    filtered_characters = simulated_characters.filter_characters(attribute_to_filter,value_to_match)
+
+    if len(filtered_characters)<=0:
+        return Command(update={
+            logs_field_to_update: [get_log_item("list_characters", True, "No characters found matching the criteria.")],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "No characters found matching the criteria."), tool_call_id=tool_call_id)
+            ]
+        })
+
+    matches: List[str] = []
+
+    for char in filtered_characters.values():
+        lines: List[str] = []
+        lines.append(f"\n=== Character ID: {char.id} ===")
+        lines.append(f"Name: {char.identity.full_name}")
+        lines.append(f"Type: {char.type}")
+        role = char.narrative.narrative_role if isinstance(char, NonPlayerCharacterModel) else "N/A"
+        lines.append(f"Narrative Role: {role}")
+
+        # Optional sections
+        if list_identity:
+            lines.append("--- Identity ---")
+            lines.extend(_format_nested_dict(char.identity.model_dump(), indent=1))
+
+        if list_physical:
+            lines.append("--- Physical ---")
+            lines.extend(_format_nested_dict(char.physical.model_dump(), indent=1))
+
+        if list_psychological:
+            lines.append("--- Psychological ---")
+            lines.extend(_format_nested_dict(char.psychological.model_dump(), indent=1))
+
+        if list_knowledge:
+            lines.append("--- Knowledge ---")
+            lines.extend(_format_nested_dict(char.knowledge.model_dump(), indent=1))
+
+        if isinstance(char, NonPlayerCharacterModel) and list_dynamic_state:
+            lines.append("--- Dynamic State ---")
+            lines.extend(_format_nested_dict(char.dynamic_state.model_dump(), indent=1))
+
+        if isinstance(char, NonPlayerCharacterModel) and list_narrative:
+            lines.append("--- Narrative ---")
+            lines.extend(_format_nested_dict(char.narrative.model_dump(), indent=1))
+
+        matches.append("\n".join(lines))
+        if max_results and len(matches) >= max_results:
+            break
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("list_characters", True, "\n".join(matches))],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "\n".join(matches)), tool_call_id=tool_call_id)
+        ]
+    })
 
 @tool(args_schema=ToolListCharactersByScenarioArgs)
 def list_characters_by_scenario(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")]
-) -> str:
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
     """(QUERY tool) List characters grouped by scenario."""
-    args_model = ListCharactersByScenarioArgs()
-    return simulated_characters_state.list_characters_by_scenario(args_model=args_model)
 
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    if simulated_characters.characters_count()<=0:
+        return Command(update={
+            logs_field_to_update: [get_log_item("list_characters_by_scenario", True, "The cast is currently empty.")],
+            messages_field_to_update: [
+                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters_by_scenario", True, "The cast is currently empty."), tool_call_id=tool_call_id)
+            ]
+        })
 
-@tool(args_schema=ToolGetCharacterDetailsArgs)
-def get_character_details(
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
-    character_id: str,
-) -> str:
-    """(QUERY tool) Get full details of a character."""
-    args_model = GetCharacterDetailsArgs(character_id=character_id)
-    return simulated_characters_state.get_character_details(args_model=args_model)
+    groups = simulated_characters.group_by_scenario()
+
+    lines: List[str] = []
+    for scenario in sorted(groups.keys()):
+        lines.append(f"Scenario '{scenario}':")
+        lines.extend(f"  - {character.identity.full_name} ({character.id})" for character in groups[scenario])
+        lines.append("")
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("list_characters_by_scenario", True, "\n"+"\n".join(lines).strip())],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters_by_scenario", True, "\n"+"\n".join(lines).strip()), tool_call_id=tool_call_id)
+        ]
+    })
+
 
 
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
 def finalize_simulation(
     justification: str,
-    simulated_characters_state: Annotated[SimulatedCharactersModel, InjectedState("working_simulated_characters")],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
     """Mark the simulation as completed with a justification."""
-    simulated_characters_state.task_finalized_by_agent = True
-    simulated_characters_state.task_finalized_justification = justification
-    observation = simulated_characters_state._log_and_summarize(
-        "finalize_simulation",
-        BaseModel(),
-        True,
-        justification,
-    )
+    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
     return Command(update={
         logs_field_to_update: [get_log_item("finalize_simulation", True, justification)],
-        messages_field_to_update: [ToolMessage(get_observation(len(simulated_characters_state.simulated_characters), "finalize_simulation", True, justification), tool_call_id=tool_call_id)],
-        "task_finalized_by_agent": True,
-        "task_finalized_justification": justification,
+        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "finalize_simulation", True, justification), tool_call_id=tool_call_id)],
+        "characters_task_finalized_by_agent": True,
+        "characters_task_finalized_justification": justification,
     })
 
 

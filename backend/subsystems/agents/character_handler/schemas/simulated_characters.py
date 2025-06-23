@@ -17,7 +17,6 @@ from core_game.character.schemas import (
     NonPlayerCharacterModel,
     PlayerCharacterModel,
     CharacterBaseModel,
-    generate_character_id,
 )
 
 

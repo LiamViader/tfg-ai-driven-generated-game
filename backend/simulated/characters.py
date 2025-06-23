@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, Dict, Set, Tuple, List, TYPE_CHECKING
+from typing import Optional, Dict, Set, Tuple, List, TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from simulated.game_state import SimulatedGameState
@@ -342,6 +342,25 @@ class SimulatedCharacters:
 
     def get_character(self, cid: str) -> Optional[BaseCharacter]:
         return self.working_state.find_character(cid)
+    
+    def get_player(self) -> Optional[PlayerCharacter]:
+        return self.working_state.get_player()
 
     def characters_count(self) -> int:
         return self.working_state.characters_count()
+    
+    def filter_characters(
+            self, 
+            attribute_to_filter: Optional[Literal[ "narrative_role","current_narrative_importance", "species","profession","gender","alias","name_contains"]] = None, 
+            value_to_match: Optional[str] = None
+        ) -> Dict[str, BaseCharacter]:
+        return self.working_state.filter_characters(attribute_to_filter,value_to_match)
+
+    def group_by_scenario(self) -> Dict[str,List[BaseCharacter]]:
+        return self.working_state.group_by_scenario()
+
+    def get_initial_summary(self) -> str:
+        characters = self.filter_characters(None, None)
+        if not characters:
+            return "No characters created yet."
+        return f"Cast has {self.characters_count()} Characters{", and no player character yet" if not self.working_state.has_player() else ""}: " + ", ".join(f"{c.identity.full_name}({cid})" for cid, c in characters.items())

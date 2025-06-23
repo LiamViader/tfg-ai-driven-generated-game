@@ -12,7 +12,7 @@ from .nodes import (
 
 
 def iteration_limit_exceeded(state: CharacterGraphState) -> str:
-    if state.current_executor_iteration >= state.max_executor_iterations or state.working_simulated_characters.task_finalized_by_agent:
+    if state.characters_current_executor_iteration >= state.characters_max_executor_iterations or state.characters_task_finalized_by_agent:
         return "finalize"
     return "continue"
 
