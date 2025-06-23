@@ -578,6 +578,7 @@ def place_character(
     """Place a character into a scenario.
     If the character is already in another scenario, it will be moved to the provided one. Works on both NPCs and the player.
     """
+    args = extract_tool_args(locals())
 
     simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
     try:

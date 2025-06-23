@@ -19,7 +19,7 @@ from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 from langgraph.types import Command
 
 from simulated.game_state import SimulatedGameStateSingleton
-from subsystems.agents.map_handler.tools.helpers import get_log_item, get_observation
+from subsystems.agents.map_handler.tools.helpers import  get_observation
 
 from subsystems.agents.map_handler.tools.map_tools import create_scenario
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState

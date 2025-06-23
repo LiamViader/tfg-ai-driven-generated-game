@@ -15,6 +15,8 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from simulated.game_state import SimulatedGameStateSingleton
 
+from subsystems.agents.utils.logs import ToolLog
+
 def receive_objective_node(state: MapGraphState):
     """
     First node of the graph.
@@ -70,13 +72,12 @@ def receive_result_for_validation_node(state: MapGraphState):
 
     print("---ENTERING: RECEIVE RESULT FOR VALIDATION NODE---")
 
-    def format_relevant_executing_agent_logs(operation_logs: Sequence[Dict[str, Any]])->str:
+    def format_relevant_executing_agent_logs(operation_logs: Sequence[ToolLog])->str:
         final_str = ""
-        query_tool_names = [tool_function.name for tool_function in QUERYTOOLS]
         for operation in operation_logs:
-            if operation["success"]:
-                if operation["tool_called"] not in query_tool_names:
-                    final_str += f"Result of '{operation['tool_called']}': {operation['message']}\n"
+            if operation.success:
+                if not operation.is_query:
+                    final_str += f"Result of '{operation.tool_called}': {operation.message}\n"
         return final_str
 
 
