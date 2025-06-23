@@ -215,10 +215,12 @@ def delete_scenario(
 ) -> Command:
     """Deletes the specified scenario. An scenario should only be deleted if necessary to complete the task"""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     if simulated_map.delete_scenario(scenario_id):
         return Command(update={
-            logs_field_to_update: [get_log_item("delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully.")],
+            logs_field_to_update: [get_log_item("delete_scenario", args, False, True, f"Scenario '{scenario_id}' deleted successfully.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully."),
@@ -228,7 +230,7 @@ def delete_scenario(
         })
     else:
         return Command(update={
-            logs_field_to_update: [get_log_item("delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("delete_scenario", args, False, False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -253,13 +255,15 @@ def create_bidirectional_connection(
     """Creates a bidirectional connection from the origin scenario to the destination in the specified direction, and from the destination back to the origin in the opposite direction. Both directions must be unoccupied (i.e., no existing exits); otherwise, the connection will not be created and an error observation will be returned."""
 
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
 
     try:
         connection = simulated_map.create_bidirectional_connection(scenario_id_A,direction_from_A,scenario_id_B,connection_type,travel_description,traversal_conditions)
     except Exception as e:
         return Command(update={
-            logs_field_to_update: [get_log_item("create_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("create_bidirectional_connection", args, False, False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "create_bidirectional_connection", False, str(e)),
@@ -271,7 +275,7 @@ def create_bidirectional_connection(
     message = f"Connection '{connection.connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
 
     return Command(update={
-        logs_field_to_update: [get_log_item("create_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("create_bidirectional_connection", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "create_bidirectional_connection", True, message),
@@ -291,13 +295,15 @@ def delete_bidirectional_connection(
 ) -> Command:
     """Deletes a bidirectional connection starting from scenario_id_A in the specified direction."""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     
     connection_info = simulated_map.get_connection(scenario_id_A, direction_from_A)
 
     if not connection_info:
         return Command(update={
-            logs_field_to_update: [get_log_item("delete_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
+            logs_field_to_update: [get_log_item("delete_bidirectional_connection", args, False, False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'."),
@@ -310,7 +316,7 @@ def delete_bidirectional_connection(
         message=simulated_map.delete_bidirectional_connection(scenario_id_A, direction_from_A)
     except Exception as e:
         return Command(update={
-            logs_field_to_update: [get_log_item("delete_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("delete_bidirectional_connection", args, False, False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", False, str(e)),
@@ -322,7 +328,7 @@ def delete_bidirectional_connection(
     message = f"Bidirectional connection '{scenario_id_A}' ({direction_from_A}) <-> '{connection_info.get_other_scenario_id(scenario_id_A)}' ({connection_info.get_direction_to(direction_from_A)}) deleted."
 
     return Command(update={
-        logs_field_to_update: [get_log_item("delete_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("delete_bidirectional_connection", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "delete_bidirectional_connection", True, message),
@@ -332,7 +338,7 @@ def delete_bidirectional_connection(
     })
 
 @tool(args_schema=ToolModifyBidirectionalConnectionArgs)
-def modify_bidirectional_connection( 
+def modify_bidirectional_connection(
     scenario_id_A: str, 
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
@@ -344,6 +350,8 @@ def modify_bidirectional_connection(
 ) -> Command:
     """Modifies attributes of an existing bidirectional connection. Only provided attributes are changed."""
     
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
 
     updated_fields = []
@@ -364,7 +372,7 @@ def modify_bidirectional_connection(
         )
     except Exception as e:
         return Command(update={
-            logs_field_to_update: [get_log_item("modify_bidirectional_connection", False, str(e))],
+            logs_field_to_update: [get_log_item("modify_bidirectional_connection", args, False, False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", False, str(e)),
@@ -377,7 +385,7 @@ def modify_bidirectional_connection(
 
     if not connection_info:
         return Command(update={
-            logs_field_to_update: [get_log_item("modify_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
+            logs_field_to_update: [get_log_item("modify_bidirectional_connection", args, False, False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", False, f"No connection found from '{scenario_id_A}' in direction '{direction_from_A}'."),
@@ -389,7 +397,7 @@ def modify_bidirectional_connection(
     message = f"Bidirectional connection from '{scenario_id_A}' ({direction_from_A}) <-> '{connection_info.get_other_scenario_id(scenario_id_A)}' ({connection_info.get_direction_to(scenario_id_A)}) modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}."
 
     return Command(update={
-        logs_field_to_update: [get_log_item("modify_bidirectional_connection", True, message)],
+        logs_field_to_update: [get_log_item("modify_bidirectional_connection", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "modify_bidirectional_connection", True, message),
@@ -408,11 +416,13 @@ def get_scenario_details(
 ) -> Command:
     """(QUERY tool) Retrieves and returns all details for a specific scenario in the simulated map."""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(scenario_id)
     if not scenario:
         return Command(update={
-            logs_field_to_update: [get_log_item("get_scenario_details", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_scenario_details", args, True, False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_scenario_details", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -447,7 +457,7 @@ def get_scenario_details(
         details_str += "    (No connections defined)\n"
 
     return Command(update={
-        logs_field_to_update: [get_log_item("get_scenario_details", True, details_str)],
+        logs_field_to_update: [get_log_item("get_scenario_details", args, True, True, details_str)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_scenario_details", True, details_str),
@@ -466,11 +476,13 @@ def get_neighbors_at_distance(
 ) -> Command:
     """(QUERY tool) Retrieves scenarios within N hops from a starting scenario, including connection details. Use this to understand spatial composition"""
         
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(start_scenario_id)
     if not scenario:
         return Command(update={
-            logs_field_to_update: [get_log_item("get_neighbors_at_distance", False, f"Start scenario with ID '{start_scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_neighbors_at_distance", args, True, False, f"Start scenario with ID '{start_scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_neighbors_at_distance", False, f"Start scenario with ID '{start_scenario_id}' does not exist."),
@@ -529,7 +541,7 @@ def get_neighbors_at_distance(
     if not has_results:
         output_lines.append("(No neighbors found within this specified distance via explored paths).")
     return Command(update={
-        logs_field_to_update: [get_log_item("get_neighbors_at_distance", True, "\n".join(output_lines))],
+        logs_field_to_update: [get_log_item("get_neighbors_at_distance", args, True, True, "\n".join(output_lines))],
         messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_neighbors_at_distance", True, "\n".join(output_lines)),
@@ -550,10 +562,12 @@ def list_scenarios_summary_per_cluster(
     (QUERY tool) Summarizes scenario connectivity clusters in the map. A cluster is a group of interconnected scenarios. Lists scenario IDs and names per cluster, either all or a limited sample. Use this tool to list scenarios.
     """
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     if simulated_map.get_scenario_count()<=0:
         return Command(update={
-            logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", True, "The simulated map is currently empty. No clusters to display.")],
+            logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", args, True, True, "The simulated map is currently empty. No clusters to display.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "list_scenarios_summary_per_cluster", True, "The simulated map is currently empty. No clusters to display."),
@@ -568,7 +582,7 @@ def list_scenarios_summary_per_cluster(
     )
 
     return Command(update={
-        logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", True, f"Current map connectivity cluster summary:\n{summary_text}")],
+        logs_field_to_update: [get_log_item("list_scenarios_summary_per_cluster", args, True, True, f"Current map connectivity cluster summary:\n{summary_text}")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "list_scenarios_summary_per_cluster", True, f"Current map connectivity cluster summary:\n{summary_text}"),
@@ -589,6 +603,8 @@ def find_scenarios_by_attribute(
 ) -> Command:
     """(QUERY tool) Finds scenarios matching a given attribute and value. Case-insensitive for 'name_contains'."""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     matches = simulated_map.find_scenarios_by_attribute(attribute_to_filter,value_to_match)
     matches_strings = []
@@ -606,7 +622,7 @@ def find_scenarios_by_attribute(
     
     if not matches_strings:
         return Command(update={
-            logs_field_to_update: [get_log_item("find_scenarios_by_attribute", True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'.")],
+            logs_field_to_update: [get_log_item("find_scenarios_by_attribute", args, True, True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "find_scenarios_by_attribute", True, f"No scenarios found matching '{attribute_to_filter}' with value '{value_to_match}'."),
@@ -616,7 +632,7 @@ def find_scenarios_by_attribute(
         })
     
     return Command(update={
-        logs_field_to_update: [get_log_item("find_scenarios_by_attribute", True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings))],
+        logs_field_to_update: [get_log_item("find_scenarios_by_attribute", args, True, True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings))],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "find_scenarios_by_attribute", True, f"Scenarios matching '{attribute_to_filter}' with value '{value_to_match}':\n" + "\n".join(matches_strings)),
@@ -637,11 +653,13 @@ def get_connection_details(
     """
     (QUERY tool) Retrieves details for a specific exit from a given scenario. This includes connection type, travel description, and traversal conditions.
     """
+    args = extract_tool_args(locals())
+
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(from_scenario_id)
     if not scenario:
         return Command(update={
-            logs_field_to_update: [get_log_item("get_connection_details", False, f"Scenario with ID '{from_scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_connection_details", args, True, False, f"Scenario with ID '{from_scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_connection_details", False, f"Scenario with ID '{from_scenario_id}' does not exist."),
@@ -654,7 +672,7 @@ def get_connection_details(
 
     if conn is None:
         return Command(update={
-            logs_field_to_update: [get_log_item("get_connection_details", False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'.")],
+            logs_field_to_update: [get_log_item("get_connection_details", args, True, False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_connection_details", False, f"Scenario '{from_scenario_id}' has no connection defined in the direction '{direction}'."),
@@ -672,7 +690,7 @@ def get_connection_details(
         f"  - Traversal Conditions: {', '.join(conn.traversal_conditions) if conn.traversal_conditions else 'None'}"
     )
     return Command(update={
-        logs_field_to_update: [get_log_item("get_connection_details", True, details_str)],
+        logs_field_to_update: [get_log_item("get_connection_details", args, True, True, details_str)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_connection_details", True, details_str),
@@ -691,11 +709,13 @@ def get_available_exit_directions(
     """
     (QUERY tool) Lists all cardinal directions from a given scenario that do NOT currently have an exit defined. Useful for finding where new connections can be added from this scenario.
     """
+    args = extract_tool_args(locals())
+
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
     scenario = simulated_map.find_scenario(scenario_id)
     if not scenario:
         return Command(update={
-            logs_field_to_update: [get_log_item("get_available_exit_directions", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("get_available_exit_directions", args, True, False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "get_available_exit_directions", False, f"Scenario with ID '{scenario_id}' does not exist."),
@@ -715,7 +735,7 @@ def get_available_exit_directions(
         message = f"Available (empty) directions for scenario '{scenario.name}' (ID: {scenario_id}): {', '.join(available_directions)}."
 
     return Command(update={
-        logs_field_to_update: [get_log_item("get_available_exit_directions", True, message)],
+        logs_field_to_update: [get_log_item("get_available_exit_directions", args, True, True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "get_available_exit_directions", True, message),
@@ -732,9 +752,11 @@ def finalize_simulation(
     tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command:
     """Call this tool ONLY when the simulated map fulfills the objective and all operations are done."""
+    args = extract_tool_args(locals())
+
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
     return Command(update={
-        logs_field_to_update: [get_log_item("finalize_simulation", True, "Simulation finalized.")],
+        logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, "Simulation finalized.")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "finalize_simulation", True, "Simulation finalized."),
@@ -756,6 +778,8 @@ def validate_simulated_map(
 ) -> Command:
     """Validates the simulated_map_state. Call it when you are sure that the map either meets all criteria, or that it does not"""
 
+    args = extract_tool_args(locals())
+
     simulated_map=SimulatedGameStateSingleton.get_instance().simulated_map
     if not suggested_improvements:
         suggested_improvements=""
@@ -766,7 +790,7 @@ def validate_simulated_map(
         message = f"Simulated doesn't meet all criteria. Reason: {assessment_reasoning}. Suggestions: {suggested_improvements}"
 
     return Command(update={
-        logs_field_to_update: [get_log_item("validate_simulated_map", True, message)],
+        logs_field_to_update: [get_log_item("validate_simulated_map", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "validate_simulated_map", True, message),
