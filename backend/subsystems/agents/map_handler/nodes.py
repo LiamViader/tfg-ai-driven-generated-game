@@ -15,19 +15,21 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from simulated.game_state import SimulatedGameStateSingleton
 
-def receive_objective_node(state: MapGraphState)->MapGraphState:
+def receive_objective_node(state: MapGraphState):
     """
     First node of the graph.
     Entry point, any preprocess will happen here.
     """
 
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    state.map_current_try = 0
-    state.messages_field_to_update = "map_executor_messages"
-    state.logs_field_to_update = "map_executor_applied_operations_log"
-    state.map_current_executor_iteration = 0
-    state.map_initial_summary=SimulatedGameStateSingleton.get_instance().simulated_map.get_summary_list()
-    return state
+    initial_summary=SimulatedGameStateSingleton.get_instance().simulated_map.get_summary_list()
+    return {
+        "map_current_try": 0,
+        "messages_field_to_update": "map_executor_messages",
+        "logs_field_to_update": "map_executor_applied_operations_log",
+        "map_current_executor_iteration": 0,
+        "map_initial_summary": initial_summary
+    }
 
 
 def map_executor_reason_node(state: MapGraphState):
@@ -51,7 +53,6 @@ def map_executor_reason_node(state: MapGraphState):
     print("CURRENT EXECUTOR ITERATION:", state.map_current_executor_iteration)
     
     response = map_reason_llm.invoke(full_prompt)
-    
 
     return {
         "map_executor_messages": [response],
@@ -75,26 +76,23 @@ def receive_result_for_validation_node(state: MapGraphState):
         for operation in operation_logs:
             if operation["success"]:
                 if operation["tool_called"] not in query_tool_names:
-                    final_str += f"Result of '{operation['tool_called']}': {operation['message']}.\n"
+                    final_str += f"Result of '{operation['tool_called']}': {operation['message']}\n"
         return final_str
 
-    state.map_validation_messages=[RemoveMessage(id=REMOVE_ALL_MESSAGES)]
-    state.messages_field_to_update="map_validation_messages"
 
-    state.map_executor_agent_relevant_logs=format_relevant_executing_agent_logs(state.map_executor_applied_operations_log)
-    state.logs_field_to_update="map_validator_applied_operations_log"
-
-    state.map_agent_validated=False
-    state.map_current_validation_iteration=0
-
-
-    return state
+    return {
+        "map_validation_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)],
+        "messages_field_to_update": "map_validation_messages",
+        "map_executor_agent_relevant_logs": format_relevant_executing_agent_logs(state.map_executor_applied_operations_log),
+        "logs_field_to_update": "map_validator_applied_operations_log",
+        "map_agent_validated": False,
+        "map_current_validation_iteration": 0
+    }
 
 def map_validation_reason_node(state: MapGraphState):
     """
     Reasoning validation node. The llm requests the tool querys and validates when has enought information or maxvalidation iteration is exceeded
     """
-
     print("---ENTERING: REASON VALIDATION NODE---")
 
     state.map_current_validation_iteration+=1
@@ -129,15 +127,14 @@ def retry_executor_node(state: MapGraphState):
     feedback = f"Here's some human feedback on how you have done so far on your task:\n You have still not completed your task\n Reason: {state.map_agent_validation_assessment_reasoning}\n Suggestion/s:{state.map_agent_validation_suggested_improvements} "
     
     feedback_message = HumanMessage(feedback)
-    state.map_executor_messages= [feedback_message]
-    state.messages_field_to_update="map_executor_messages"
-    state.logs_field_to_update = "map_executor_applied_operations_log"
 
-    
-    state.map_current_executor_iteration = 0
-    state.map_current_try = state.map_current_try+1
-
-    return state
+    return {
+        "map_executor_messages": [feedback_message],
+        "messages_field_to_update": "map_executor_messages",
+        "logs_field_to_update": "map_executor_applied_operations_log",
+        "map_current_executor_iteration": 0,
+        "map_current_try": state.map_current_try+1
+    }
 
 def last_node_success(state: MapGraphState) -> MapGraphState:
     """
