@@ -6,7 +6,7 @@ from langgraph.graph.message import add_messages
 import operator
 # El '.' significa "desde el directori actual (schemas)"
 from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections
-from core_game.map.schemas import GameMapModel
+from subsystems.agents.utils.schemas import ToolLog
 
 
 class MapGraphState(BaseModel):
@@ -28,7 +28,7 @@ class MapGraphState(BaseModel):
     map_max_executor_iterations: int = Field(..., description="Max iterations of the react cycle before finishing")
     map_task_finalized_by_agent: bool = Field(default=False,description="A flag indicating whether the task was finalized by the agent")
     map_task_finalized_justification: Optional[str] = Field(default=None,description="A string of the justification provided by the agent who finalized the map")
-    map_executor_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'success', 'message'.")
+    map_executor_applied_operations_log: Annotated[Sequence[ToolLog], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'success', 'message'.")
 
     # --- Validation Agent memo ---
     map_max_validation_iterations: int = Field(..., description="Max iterations of the react validation cycle before finishing")
@@ -39,7 +39,7 @@ class MapGraphState(BaseModel):
     map_agent_validation_assessment_reasoning: str = Field(default="", description="Reasoning from agent of why the validation he gave.")
     map_agent_validation_suggested_improvements: str = Field(default="", description="Suggested improvements if the validation agent said map didnt meet criteria.")
     map_agent_validated: bool = Field(default=False,description="A flag indicating whether the validation agent gave a validation yet")
-    map_validator_applied_operations_log: Annotated[Sequence[Dict[str, Any]], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'success', 'message'.")
+    map_validator_applied_operations_log: Annotated[Sequence[ToolLog], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'success', 'message'.")
 
 
 

@@ -9,10 +9,10 @@ from core_game.map.schemas import Direction, OppositeDirections
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 
 from simulated.game_state import SimulatedGameStateSingleton
-from subsystems.agents.map_handler.tools.helpers import get_log_item, get_observation
+from subsystems.agents.map_handler.tools.helpers import get_observation
 from langgraph.prebuilt import InjectedState
 from subsystems.agents.utils.schemas import InjectedToolContext
-
+from subsystems.agents.utils.logs import get_log_item
 
 # --- Tools Schemas --
 class ToolCreateScenarioArgs(InjectedToolContext):
@@ -46,7 +46,6 @@ class ToolCreateBidirectionalConnectionArgs(InjectedToolContext):
     connection_type: str = Field(..., description=EXIT_FIELDS["connection_type"])
     travel_description: Optional[str] = Field(None, description=EXIT_FIELDS["travel_description"])
     traversal_conditions: List[str] = Field(default_factory=list, description=EXIT_FIELDS["traversal_conditions"])
-
 
 class ToolDeleteBidirectionalConnectionArgs(InjectedToolContext):
     scenario_id_A: str = Field(..., description="ID of one scenario in the connection.")
@@ -134,8 +133,18 @@ def create_scenario(
         zone=zone
     )
 
+    args = {
+        name: name,
+        narrative_context: narrative_context,
+        visual_description: visual_description,
+        summary_description: summary_description,
+        indoor_or_outdoor: indoor_or_outdoor,
+        type: type,
+        zone: zone
+    }
+
     return Command(update={
-        logs_field_to_update: [get_log_item("create_scenario", True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully.")],
+        logs_field_to_update: [get_log_item("create_scenario", args, False, True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully.")],
         messages_field_to_update: [
             ToolMessage(
                 get_observation(simulated_map.get_scenario_count(), "create_scenario", True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully."),
@@ -182,9 +191,20 @@ def modify_scenario(
 
     message = f"Scenario '{scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}."
 
+    args = {
+        scenario_id: scenario_id,
+        new_name: new_name,
+        new_summary_description: new_summary_description,
+        new_visual_description: new_visual_description,
+        new_narrative_context: new_narrative_context,
+        new_indoor_or_outdoor: new_indoor_or_outdoor,
+        new_type: new_type,
+        new_zone: new_zone
+    }
+
     if simulated_map.modify_scenario(scenario_id):
         return Command(update={
-            logs_field_to_update: [get_log_item("modify_scenario", True, message)],
+            logs_field_to_update: [get_log_item("modify_scenario", args, False, True, message)],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_scenario", True, message),
@@ -194,7 +214,7 @@ def modify_scenario(
         })
     else:
         return Command(update={
-            logs_field_to_update: [get_log_item("modify_scenario", False, f"Scenario with ID '{scenario_id}' does not exist.")],
+            logs_field_to_update: [get_log_item("modify_scenario", args, False, False, f"Scenario with ID '{scenario_id}' does not exist.")],
             messages_field_to_update: [
                 ToolMessage(
                     get_observation(simulated_map.get_scenario_count(), "modify_scenario", False, f"Scenario with ID '{scenario_id}' does not exist."),

@@ -3,9 +3,9 @@ from typing import Dict, List, Optional, Sequence, Annotated
 from pydantic import BaseModel, Field
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
+import operator
 
-from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel
-
+from subsystems.agents.utils.schemas import ToolLog
 
 class CharacterGraphState(BaseModel):
     """Holds context and working memory for the character agent."""
@@ -19,6 +19,7 @@ class CharacterGraphState(BaseModel):
     characters_executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list, description="Messages holding intermediate steps. For the Executor agent")
     characters_current_executor_iteration: int = Field(default=0, description="Current iteration the react cycle is on")
     characters_max_executor_iterations: int = Field(..., description="Maximum iterations for the executor to achieve the objective.")
+    characters_executor_applied_operations_log: Annotated[Sequence[ToolLog], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the executor agent including 'tool_called', 'success', 'message'.")
 
     characters_task_finalized_by_agent: bool = Field(default=False, description="Flag set when the agent finalizes the task")
     characters_task_finalized_justification: Optional[str] = Field(default=None, description="Justification provided when finalizing the task")

@@ -11,13 +11,16 @@ from .tools.character_tools import EXECUTORTOOLS
 from utils.message_window import get_valid_messages_window
 from simulated.game_state import SimulatedGameStateSingleton
 
-def receive_objective_node(state: CharacterGraphState) -> CharacterGraphState:
+def receive_objective_node(state: CharacterGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    state.messages_field_to_update = "characters_executor_messages"
-    state.logs_field_to_update = "characters_executor_applied_operations_log"
-    state.characters_current_executor_iteration = 0
-    state.characters_initial_summary = SimulatedGameStateSingleton.get_instance().simulated_characters.get_initial_summary()
-    return state
+
+    initial_summary = SimulatedGameStateSingleton.get_instance().simulated_characters.get_initial_summary()
+    return {
+        "messages_field_to_update": "characters_executor_messages",
+        "logs_field_to_update": "characters_executor_applied_operations_log",
+        "characters_current_executor_iteration": 0,
+        "characters_initial_summary": initial_summary
+    }
 
 
 def character_executor_reason_node(state: CharacterGraphState):

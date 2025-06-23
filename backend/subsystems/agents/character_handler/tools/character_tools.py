@@ -11,7 +11,7 @@ from langgraph.types import Command
 from langchain_core.messages import ToolMessage
 from pydantic import Field
 from subsystems.agents.utils.schemas import InjectedToolContext
-from .helpers import get_log_item, get_observation, _format_nested_dict
+from .helpers import get_observation, _format_nested_dict
 from simulated.game_state import SimulatedGameStateSingleton
 from core_game.character.schemas import NarrativePurposeModel
 import json

@@ -1,15 +1,6 @@
 from typing import Dict, Any, List
 
 
-def get_log_item(tool_name: str, success: bool, message: str) -> Dict[str, Any]:
-    """Create a log entry for an operation."""
-    return {
-        "tool_called": tool_name,
-        "success": success,
-        "message": message,
-    }
-
-
 def get_observation(n_characters: int, tool_name: str, success: bool, message: str) -> str:
     """Generate a standardized observation string."""
     result = "" if success else "Error,"
