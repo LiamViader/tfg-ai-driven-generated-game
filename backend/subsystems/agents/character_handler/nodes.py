@@ -4,8 +4,6 @@ load_dotenv()
 
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
-from typing import Sequence
-from langchain_core.messages import BaseMessage
 
 from .schemas.graph_state import CharacterGraphState
 from .prompts.reasoning import format_character_reason_prompt

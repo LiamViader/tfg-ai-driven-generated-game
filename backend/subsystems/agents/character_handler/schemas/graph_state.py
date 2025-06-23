@@ -5,7 +5,6 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
 from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel
-from .simulated_characters import SimulatedCharactersModel
 
 
 class CharacterGraphState(BaseModel):

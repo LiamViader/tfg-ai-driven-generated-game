@@ -27,25 +27,6 @@ from core_game.character.schemas import (
     PlayerCharacterModel,
 )
 
-from ..schemas.simulated_characters import (
-    SimulatedCharactersModel,
-    CreateNPCArgs,
-    ModifyIdentityArgs,
-    ModifyPhysicalArgs,
-    ModifyPsychologicalArgs,
-    ModifyKnowledgeArgs,
-    ModifyDynamicStateArgs,
-    ModifyNarrativeArgs,
-    DeleteCharacterArgs,
-    PlaceCharacterArgs,
-    RemoveCharacterFromScenarioArgs,
-    ListCharactersArgs,
-    GetCharacterDetailsArgs,
-    CreatePlayerArgs,
-    GetPlayerDetailsArgs,
-    ListCharactersByScenarioArgs,
-)
-
 
 # --- Tools Schemas -- (adding the injected simulated map)
 class ToolCreateNPCArgs(InjectedToolContext):
@@ -61,7 +42,7 @@ class ToolCreatePlayerArgs(InjectedToolContext):
     physical: PhysicalAttributesModel = Field(..., description="Full physical description")
     psychological: PsychologicalAttributesModel = Field(..., description="Detailed psychological profile")
     knowledge: Optional[KnowledgeModel] = Field(default_factory=KnowledgeModel, description="Initial knowledge state")
-    scenario_id: str = Field(..., description="ID of the scenario where the player starts")
+    scenario_id: str = Field(..., description="ID of the scenario where the player starts. The scenario must exist")
 
 class ToolModifyIdentityArgs(InjectedToolContext):
     character_id: str = Field(...,description="ID of the character (NPC or player) to modify",)
@@ -173,13 +154,13 @@ def create_npc(
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
-    dynamic_state: DynamicStateModel = DynamicStateModel()
+    dynamic_state: DynamicStateModel
 ) -> Command:
     """Create a new NPC providing its detailed information information."""
 
     simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
 
-    effective_id = simulated_characters.create_npc(
+    npc = simulated_characters.create_npc(
         identity=identity,
         physical=physical,
         psychological=psychological,
@@ -189,10 +170,10 @@ def create_npc(
     )
 
     return Command(update={
-        logs_field_to_update: [get_log_item("create_npc", True, f"NPC '{identity.full_name}' created with id {effective_id}.")],
+        logs_field_to_update: [get_log_item("create_npc", True, f"NPC '{identity.full_name}' created with id {npc.id}.")],
         messages_field_to_update: [
             ToolMessage(
-                get_observation(simulated_characters.characters_count(), "create_npc", True, f"NPC '{identity.full_name}' created with id {effective_id}."),
+                get_observation(simulated_characters.characters_count(), "create_npc", True, f"NPC '{identity.full_name}' created with id {npc.id}."),
                 tool_call_id=tool_call_id,
             )
         ]
