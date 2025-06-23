@@ -12,7 +12,7 @@ from simulated.game_state import SimulatedGameStateSingleton
 from subsystems.agents.map_handler.tools.helpers import get_observation
 from langgraph.prebuilt import InjectedState
 from subsystems.agents.utils.schemas import InjectedToolContext
-from subsystems.agents.utils.logs import get_log_item
+from subsystems.agents.utils.logs import get_log_item, extract_tool_args
 
 # --- Tools Schemas --
 class ToolCreateScenarioArgs(InjectedToolContext):
@@ -122,6 +122,8 @@ def create_scenario(
 ) -> Command:
     """Creates a new scenario in the simulated map."""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
     scenario=simulated_map.create_scenario(
         name=name,
@@ -132,16 +134,6 @@ def create_scenario(
         type=type,
         zone=zone
     )
-
-    args = {
-        name: name,
-        narrative_context: narrative_context,
-        visual_description: visual_description,
-        summary_description: summary_description,
-        indoor_or_outdoor: indoor_or_outdoor,
-        type: type,
-        zone: zone
-    }
 
     return Command(update={
         logs_field_to_update: [get_log_item("create_scenario", args, False, True, f"Scenario '{scenario.name}' (ID: {scenario.id}) created successfully.")],
@@ -171,6 +163,8 @@ def modify_scenario(
 ) -> Command:
     """Modifies the specified scenario. Only the provided fields will be updated."""
 
+    args = extract_tool_args(locals())
+
     simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
 
     updated_fields = []
@@ -190,17 +184,6 @@ def modify_scenario(
         updated_fields.append("zone")
 
     message = f"Scenario '{scenario_id}' modified. Updated fields: {', '.join(updated_fields) if updated_fields else 'None'}."
-
-    args = {
-        scenario_id: scenario_id,
-        new_name: new_name,
-        new_summary_description: new_summary_description,
-        new_visual_description: new_visual_description,
-        new_narrative_context: new_narrative_context,
-        new_indoor_or_outdoor: new_indoor_or_outdoor,
-        new_type: new_type,
-        new_zone: new_zone
-    }
 
     if simulated_map.modify_scenario(scenario_id):
         return Command(update={
