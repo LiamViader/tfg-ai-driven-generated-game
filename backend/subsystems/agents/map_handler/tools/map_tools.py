@@ -265,7 +265,7 @@ def create_bidirectional_connection(
             ]
         })
     
-    message = f"Connection type'{connection.connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
+    message = f"Connection '{connection.connection_type}' created: '{scenario_id_A}' ({direction_from_A}) <-> '{scenario_id_B}' ({OppositeDirections[direction_from_A]})."
 
     return Command(update={
         logs_field_to_update: [get_log_item("create_bidirectional_connection", True, message)],

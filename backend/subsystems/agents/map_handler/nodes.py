@@ -36,7 +36,7 @@ def map_executor_reason_node(state: MapGraphState):
     """
 
     print("---ENTERING: REASON EXECUTION NODE---")
-    map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS)
+    map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
     full_prompt = format_map_react_reason_prompt(
         narrative_context=state.map_global_narrative_context,

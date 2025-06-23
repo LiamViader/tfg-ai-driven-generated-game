@@ -316,12 +316,11 @@ class GameMap():
 
     def add_connection(self, connection: Connection) -> Optional[Connection]:
         scenario_a = self.find_scenario(connection.scenario_a_id)
-        scenario_b = self.find_scenario(connection.scenario_a_id)
+        scenario_b = self.find_scenario(connection.scenario_b_id)
         if scenario_a and scenario_b:
             self._connections[connection.id] = connection
             scenario_a.connections[connection.get_direction_from(scenario_a.id)] = connection.id
             scenario_b.connections[connection.get_direction_from(scenario_b.id)] = connection.id
-
             self._compute_island_clusters()
             return connection
         return None
