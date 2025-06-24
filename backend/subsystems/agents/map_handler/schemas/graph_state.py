@@ -11,7 +11,11 @@ from subsystems.agents.utils.schemas import ToolLog
 
 class MapGraphState(BaseModel):
     # Context and objectives
-    map_global_narrative_context: str = Field(..., description="Narrative background and context of the world—its lore, themes, key story elements, etc—that must be considered while solving the objective.")
+    map_foundational_lore_document: str = Field(default="", description="Narrative background and context of the world—its lore, themes, key story elements, etc— it is the seed used to create the world.")
+    map_recent_operations_summary: str = Field(default="", description="Operations applied to the world by other agents before map agent")
+    map_relevant_entity_details: str = Field(default="", description="Relevant entity details that could be usefull for the agent to achieve its task")
+    map_additional_information: str = Field(default="", description="Additional context for the agent to achieve its objective")
+    
     map_rules_and_constraints: List[str] = Field(..., description="Explicit world-building rules or design constraints that must be respected when constructing or validating the map. These can include logical requirements (e.g., 'an exterior scenario connected to an interior one must feature a visible transition like a door or gate') or aesthetic guidelines that ensure internal consistency and visual coherence across the world.")
     map_current_objective: str = Field(..., description="The high-level textual goal for the current map generation/modification task. Would be used for the validation agent too.")
     map_other_guidelines: str = Field(..., description="Other guidelines for the map generation that should be met. Less strict than current objective. Will not be used by validation agent")
@@ -40,9 +44,6 @@ class MapGraphState(BaseModel):
     map_agent_validation_suggested_improvements: str = Field(default="", description="Suggested improvements if the validation agent said map didnt meet criteria.")
     map_agent_validated: bool = Field(default=False,description="A flag indicating whether the validation agent gave a validation yet")
     map_validator_applied_operations_log: Annotated[Sequence[ToolLog], operator.add] = Field(default_factory=list, description="A chronological log of all tool-based operations applied to the simulated map, by the validator agent including 'tool_called', 'success', 'message'.")
-
-
-
 
 
     #shared with all other agents

@@ -45,7 +45,25 @@ Below is all the information you need to complete your objective. Act accordingl
 ## 1. The World Context
 This is your **single initial source of truth** for the world's lore, tone, and context. ALL your actions and map designs must be deeply rooted in and consistent with this text. You must treat it as the project's "creative bible."
 
-{narrative_context}
+### Foundational World Lore
+**This is the core creative document describing the world.** It represents the foundational seed used to generate everything. Your work must always be consistent with this lore.
+
+{foundational_lore_document}
+
+### Recent Operations Summary
+**This is a log of the most recent actions taken by other agents in the world, just before your turn.** It tells you what has just changed in the world, providing immediate, unfolding context. **It is critical that you use this summary as a direct reference for your task to ensure your actions are coherent with the most recent world evolutions.**
+
+{recent_operations_summary}
+
+### Relevant Entity Information
+**Below are details of specific entities (characters, locations, items, etc.) that may or not be relevant to your current task.** You can use this information directly to make informed decisions and to avoid making unnecessary queries with your tools. This section may be empty if no specific entities are deemed relevant.
+
+{relevant_entity_details}
+
+### Additional Information (Optional)
+**This section contains any other specific context, or data for this particular task.** This section may be empty.
+
+{additional_information}
 
 
 ## 2. Supporting Information & Constraints
@@ -65,7 +83,7 @@ This is your most important guiding principle: The Rule of 'Zero Assumed Context
 ## 3. Your Primary Objective
 **{objective}**
 
-You must achieve this objective in a way that honors and/or expands upon the world detailed in the Foundational Document above.
+You must achieve this objective in a way that honors and/or expands upon the world detailed in the context above.
 
 Begin your reasoning process now.
 """
@@ -84,9 +102,12 @@ chat_prompt_template = ChatPromptTemplate([
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-def format_map_react_reason_prompt(narrative_context: str, map_rules_and_constraints: List[str], initial_map_summary: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
+def format_map_react_reason_prompt(foundational_lore_document: str, recent_operations_summary: str, relevant_entity_details: str, additional_information: str, map_rules_and_constraints: List[str], initial_map_summary: str, objective: str, other_guidelines: str, messages: Sequence[BaseMessage])->List[BaseMessage]:
     prompt_input_values = {
-        "narrative_context": narrative_context,
+        "foundational_lore_document": foundational_lore_document,
+        "recent_operations_summary": recent_operations_summary,
+        "relevant_entity_details": relevant_entity_details,
+        "additional_information": additional_information,
         "map_rules_and_constraints": "; ".join(map_rules_and_constraints),
         "initial_map_summary": initial_map_summary,
         "objective": objective,

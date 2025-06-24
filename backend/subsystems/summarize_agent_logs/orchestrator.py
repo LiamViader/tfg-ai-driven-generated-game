@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END, START
-from subsystems.summarize.schemas.graph_state import SummarizeGraphState
-from subsystems.summarize.nodes import receive_operations_log_node, summarize_operations_node
+from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
+from subsystems.summarize_agent_logs.nodes import receive_operations_log_node, summarize_operations_node
 
 
 def get_summarize_graph_app():
@@ -9,7 +9,7 @@ def get_summarize_graph_app():
     It summarizes a set of world-modifying operations into a narrative description.
     """
 
-    workflow = StateGraph(SummarizeGraphState)
+    workflow = StateGraph(SummarizeLogsGraphState)
 
     workflow.add_node("receive_operations_log", receive_operations_log_node)
     workflow.add_node("summarize_operations", summarize_operations_node)

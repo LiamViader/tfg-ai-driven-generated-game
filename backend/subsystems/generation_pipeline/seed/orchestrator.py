@@ -1,9 +1,9 @@
 from langgraph.graph import StateGraph, END, START
-from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
-from subsystems.generation_pipeline.nodes import *
+from subsystems.generation_pipeline.seed.schemas.graph_state import SeedGenerationGraphState
+from subsystems.generation_pipeline.seed.nodes import *
 from langchain_core.messages import ToolMessage
 
-def validate_refined_prompt(state: GenerationGraphState) -> str:
+def validate_refined_prompt(state: SeedGenerationGraphState) -> str:
     """
     Determines whether to continue to the next node or end/retry based on the refined prompt validation.
     """
@@ -17,7 +17,7 @@ def validate_refined_prompt(state: GenerationGraphState) -> str:
         else:
             return "end_by_error"
 
-def validate_main_goal(state: GenerationGraphState) -> str:
+def validate_main_goal(state: SeedGenerationGraphState) -> str:
     """
     Determines whether to continue to the reasoning node, retry or end the process
     based on the iteration count and task completion (agent called finalize_task).
@@ -33,7 +33,7 @@ def validate_main_goal(state: GenerationGraphState) -> str:
         else:
             return "end_by_error"
 
-def structure_selected_or_reason_again(state: GenerationGraphState) -> str:
+def structure_selected_or_reason_again(state: SeedGenerationGraphState) -> str:
     """Check if a narrative structure has been selected."""
     print(state.selected_structure)
     if state.selected_structure is not None:
@@ -45,11 +45,11 @@ def structure_selected_or_reason_again(state: GenerationGraphState) -> str:
 
 
 
-def get_generator_graph_app():
+def get_seed_generator_graph_app():
     """
     Builds and compiles the map generation graph.
     """
-    workflow = StateGraph(GenerationGraphState)
+    workflow = StateGraph(SeedGenerationGraphState)
 
     workflow.add_node("receive_generation_prompt", receive_generation_prompt)
     workflow.add_node("refine_generation_prompt", refine_generation_prompt)

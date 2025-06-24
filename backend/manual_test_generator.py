@@ -1,4 +1,4 @@
-from subsystems.generation_pipeline.orchestrator import get_generator_graph_app
+from subsystems.generation_pipeline.seed.orchestrator import get_generator_graph_app
 from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
 
 

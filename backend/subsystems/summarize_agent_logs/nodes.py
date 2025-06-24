@@ -5,12 +5,12 @@ from langchain_openai import ChatOpenAI
 import json
 from langgraph.prebuilt import ToolNode
 from typing import Sequence, Dict, Any, List
-from subsystems.summarize.schemas.graph_state import SummarizeGraphState
+from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
 
 from subsystems.agents.utils.logs import ToolLog
-from subsystems.summarize.prompts.summarize_operations import format_summarize_log_operations_prompt
+from subsystems.summarize_agent_logs.prompts.summarize_operations import format_summarize_log_operations_prompt
 
-def receive_operations_log_node(state: SummarizeGraphState):
+def receive_operations_log_node(state: SummarizeLogsGraphState):
     """
     First node of the graph.
     Entry point, any preprocess will happen here.
@@ -20,7 +20,7 @@ def receive_operations_log_node(state: SummarizeGraphState):
 
     return {}
 
-def summarize_operations_node(state: SummarizeGraphState):
+def summarize_operations_node(state: SummarizeLogsGraphState):
 
     def format_operation_logs(operation_logs: Sequence[ToolLog]):
         successful_operations = []
@@ -49,5 +49,6 @@ def summarize_operations_node(state: SummarizeGraphState):
     #falta fer validacio i tal del output del llm
 
     return {
-        "sumarized_operations_result": summary
+        "sumarized_operations_result": summary,
+        "refinement_pass_changelog": [summary]
     }

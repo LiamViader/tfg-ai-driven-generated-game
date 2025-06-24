@@ -5,26 +5,26 @@ from typing import cast
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from subsystems.generation_pipeline.prompts.refine_generation_prompt import format_refining_prompt
-from subsystems.generation_pipeline.prompts.generate_main_goal import format_main_goal_generation_prompt
-from subsystems.generation_pipeline.prompts.select_narrative_structure import format_structure_selection_prompt
-from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
-from subsystems.generation_pipeline.schemas.main_goal import MainGoal
-from subsystems.generation_pipeline.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
+from subsystems.generation_pipeline.seed.prompts.refine_generation_prompt import format_refining_prompt
+from subsystems.generation_pipeline.seed.prompts.generate_main_goal import format_main_goal_generation_prompt
+from subsystems.generation_pipeline.seed.prompts.select_narrative_structure import format_structure_selection_prompt
+from subsystems.generation_pipeline.seed.schemas.graph_state import SeedGenerationGraphState
+from subsystems.generation_pipeline.seed.schemas.main_goal import MainGoal
+from subsystems.generation_pipeline.seed.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError, BaseModel, Field
 
-def receive_generation_prompt(state: GenerationGraphState) -> GenerationGraphState:
+def receive_generation_prompt(state: SeedGenerationGraphState):
     """
     First node of the graph.
     Entry point, any preprocess will happen here.
     """
 
     print("---ENTERING: RECEIVE GENERATION PROMPT NODE---")
-    return state
+    return {}
 
-def refine_generation_prompt(state: GenerationGraphState):
+def refine_generation_prompt(state: SeedGenerationGraphState):
     """
     This node calls an llm to refine the user promp and validates the result.
     """
@@ -119,7 +119,7 @@ def refine_generation_prompt(state: GenerationGraphState):
         "refine_generation_prompt_attempts": state.refine_generation_prompt_attempts
     }
 
-def generate_main_goal(state: GenerationGraphState):
+def generate_main_goal(state: SeedGenerationGraphState):
     """
     This node uses an llm to generate a narrative main goal from the refined user prompt. 
     This goal purpose is to give direction to the player on the narrative.
@@ -190,7 +190,7 @@ def generate_main_goal(state: GenerationGraphState):
     }
 
 
-def narrative_structure_reason_node(state: GenerationGraphState):
+def narrative_structure_reason_node(state: SeedGenerationGraphState):
     """Reasoning step for selecting a narrative structure."""
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
 
