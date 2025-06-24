@@ -4,7 +4,7 @@ import operator
 from  subsystems.agents.utils.logs import ToolLog
 
 class SummarizeGraphState(BaseModel):
-    operations_to_summarize: Sequence[ToolLog] = Field(default_factory=list, description="list of the operations the sumarize agent has to summarize")
+    operations_log_to_summarize: Sequence[ToolLog] = Field(default_factory=list, description="list of the operations the sumarize agent has to summarize")
     sumarized_operations_result: str = Field(default="", description="Output summary of the operations to summarize")
 
 
