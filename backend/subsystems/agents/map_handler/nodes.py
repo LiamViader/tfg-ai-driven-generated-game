@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from typing import Sequence, Dict, Any, List
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
-from subsystems.agents.map_handler.tools.map_tools import EXECUTORTOOLS, VALIDATIONTOOLS, QUERYTOOLS, validate_simulated_map
+from subsystems.agents.map_handler.tools.map_tools import EXECUTORTOOLS, VALIDATIONTOOLS, validate_simulated_map
 from subsystems.agents.map_handler.prompts.reasoning import format_map_react_reason_prompt
 from subsystems.agents.map_handler.prompts.validating import format_map_react_validation_prompt
 from utils.message_window import get_valid_messages_window
@@ -87,6 +87,9 @@ def receive_result_for_validation_node(state: MapGraphState):
         "map_executor_agent_relevant_logs": format_relevant_executing_agent_logs(state.map_executor_applied_operations_log),
         "logs_field_to_update": "map_validator_applied_operations_log",
         "map_agent_validated": False,
+        "map_agent_validation_conclusion_flag": False,
+        "map_agent_validation_assessment_reasoning": "",
+        "map_agent_validation_suggested_improvements": "",
         "map_current_validation_iteration": 0
     }
 
@@ -137,18 +140,24 @@ def retry_executor_node(state: MapGraphState):
         "map_current_try": state.map_current_try+1
     }
 
-def last_node_success(state: MapGraphState) -> MapGraphState:
+def final_node_success(state: MapGraphState):
     """
     Last node of agent if succeeded on objective.
     """
     print("---ENTERING: LAST NODE OBJECTIVE SUCESS---")
+    
+    return {
+        "map_task_succeeded_final": True,
+    }
 
-    return state
-
-def last_node_failed(state: MapGraphState) -> MapGraphState:
+def final_node_failure(state: MapGraphState):
     """
     Last node of agent if failed on objective.
     """
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
 
-    return state
+    # SimulatedGameStateSingleton.reset_instance() AIXO S'HA DE PENSAR COM FERHO, ARA NO TE SENTIT COM ESTA
+
+    return {
+        "map_task_succeeded_final": False,
+    }

@@ -1,12 +1,12 @@
 from typing import List
 from pydantic import BaseModel, Field
-
+from subsystems.generation_pipeline.refinement_loop.constants import AgentName
 class PipelineStep(BaseModel):
     """Represents a single step in the generation pipeline."""
 
     step_name: str = Field(..., description="A descriptive name for the step, e.g., 'Initial Character Creation'.")
-    agent_name: str = Field(..., description="The name of the agent to be executed for this step, e.g., 'CharacterArchitectAI'.")
-    objective_prompt: str = Field(..., description="A prompt template for the agent's objective. It can contain placeholders like {scenario_list} that will be formatted at runtime.")
+    agent_name: AgentName = Field(..., description="The name of the agent to be executed for this step.")
+    objective_prompt: str = Field(..., description="A prompt template for the agent's objective.")
     rules_and_constraints: List[str] = Field(default_factory=list, description="Any rules or constraints to apply to the agent for current step")
     other_guidelines: str = Field(default="", description="Any other guidelines for the agent to follow")
     max_executor_iterations: int = Field(..., description="Max executor iterations to achieve the objective")

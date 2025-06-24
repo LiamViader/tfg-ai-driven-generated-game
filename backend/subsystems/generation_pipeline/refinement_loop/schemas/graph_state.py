@@ -22,15 +22,16 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, SummarizeLogs
         default=0,
         description="A counter for the current enrichment pass. It starts at 0 and should be incremented by the graph's control logic before starting a new loop."
     )
-    
-    refinement_pass_changelog: Annotated[Sequence[str], operator.add] = Field(
-        default_factory=list,
-        description="A log that accumulates the summary or outcome of each agent's operation in every pass. The 'operator.add' ensures that new log entries are appended, creating a complete history of the generation process."
-    )
 
     changelog_old_operations_summary: str = Field(default="", description="Old operations that are out of the window summarized")
+
+    last_step_succeeded: bool = Field(default=False, description="Whether the las step succeeded")
 
     #Shared with other agents
     refined_prompt: str = Field(default="", description="User's refined prompt.")
 
+    refinement_pass_changelog: Annotated[Sequence[str], operator.add] = Field(
+        default_factory=list,
+        description="A log that accumulates the summary or outcome of each agent's operation in every pass. The 'operator.add' ensures that new log entries are appended, creating a complete history of the generation process."
+    )
 

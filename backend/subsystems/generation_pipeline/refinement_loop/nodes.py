@@ -17,7 +17,7 @@ def prepare_next_step(state: RefinementLoopGraphState):
     """
     Node that prepares for the next step. This node is executed after every step
     """
-
+    #AQUI S'HAURIA DE FER EL RESUM DE LES OPERACIONS MES VELLES EN CAS QUE CALGUI
     return {
         "refinement_current_pass": state.refinement_current_pass+1
     }
@@ -49,6 +49,14 @@ def map_step_finish(state: RefinementLoopGraphState):
     Postprocesses the finished map step.
     """
     return {
-        state.operations_log_to_summarize: state.map_executor_applied_operations_log
+        "operations_log_to_summarize": state.map_executor_applied_operations_log,
+        "last_step_succeeded": state.map_task_succeeded_final
     }
 
+def finalize_step(state: RefinementLoopGraphState):
+    """
+    Aux node after any component finished
+    """
+    return {
+        
+    }
