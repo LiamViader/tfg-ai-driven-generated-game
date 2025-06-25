@@ -90,6 +90,12 @@ class GameState:
         model = GameStateModel(**data)
         self._populate_from_model(model)
 
+    def update_characters(self, characters: Characters) -> None:
+        self._characters = characters
+    
+    def update_map(self, map: GameMap) -> None:
+        self._game_map = map
+
 
 
 

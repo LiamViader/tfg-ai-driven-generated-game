@@ -23,6 +23,9 @@ class SimulatedMap:
         )
         return new_copy
 
+    def get_state(self) -> GameMap:
+        return self._working_state
+
     @requires_modification
     def create_scenario(self,
         name: str, 

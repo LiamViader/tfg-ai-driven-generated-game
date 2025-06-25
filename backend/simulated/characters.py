@@ -33,6 +33,8 @@ class SimulatedCharacters:
         )
         return new_copy
 
+    def get_state(self) -> Characters:
+        return self._working_state
 
     @requires_modification
     def create_npc(

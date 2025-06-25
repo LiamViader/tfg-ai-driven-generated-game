@@ -36,23 +36,22 @@ class SimulationLayer:
             return self._base_state.base_characters
         
     def modify_map(self) -> SimulatedMap:
-        if not self.map:
+        if self._map is None:
             self._map = deepcopy(self.map)
             self.modified_components.add("map")
-        return self.map
+        return self._map
 
     def modify_characters(self) -> SimulatedCharacters:
-        if not self.characters:
+        if self._characters is None:
             self._characters = deepcopy(self.characters)
             self.modified_components.add("characters")
-        return self.characters
+        return self._characters
     
     def has_modified_map(self) -> bool:
         return self._map is not None
 
     def get_modified_map(self) -> SimulatedMap:
-        assert self._map is not None, "get_modified_map() called without modification"
-        return self._map
+        return self._map or self.map
 
     def set_modified_map(self, new_map: SimulatedMap):
         self._map = new_map
@@ -61,8 +60,7 @@ class SimulationLayer:
         return self._characters is not None
 
     def get_modified_characters(self) -> SimulatedCharacters:
-        assert self._characters is not None, "get_modified_characters() called without modification"
-        return self._characters
+        return self._characters or self.characters
 
     def set_modified_characters(self, new_characters: SimulatedCharacters):
         self._characters = new_characters

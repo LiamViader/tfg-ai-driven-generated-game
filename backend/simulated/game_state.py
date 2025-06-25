@@ -21,6 +21,7 @@ class SimulatedGameState:
         self._map = SimulatedMap(game_state.game_map)
         self._characters = SimulatedCharacters(game_state.characters)
         self._layers: List[SimulationLayer] = []
+        self.begin_layer()
 
     #CONTROL DE VERSIONS
 
@@ -29,8 +30,6 @@ class SimulatedGameState:
         self._layers.append(SimulationLayer(parent=parent, base_state=self))
 
     def current_layer(self) -> SimulationLayer:
-        if not self._layers:
-            self.begin_layer()
         return self._layers[-1]
 
     @property
@@ -48,6 +47,9 @@ class SimulatedGameState:
         return self.current_layer().modify_characters()
 
     def commit(self):
+        if not self._layers:
+            raise RuntimeError("No simulation layer to commit.")
+        
         layer = self._layers.pop()
         parent = self._layers[-1] if self._layers else None
 
@@ -56,15 +58,38 @@ class SimulatedGameState:
                 parent.set_modified_map(layer.get_modified_map())
             else:
                 self._map = layer.get_modified_map()
+                self._sync_map_to_domain()
 
         if layer.has_modified_characters():
             if parent:
                 parent.set_modified_characters(layer.get_modified_characters())
             else:
                 self._characters = layer.get_modified_characters()
+                self._sync_characters_to_domain()
+
+        if not self._layers:
+            self.begin_layer()
+
+    def _sync_map_to_domain(self):
+        game_state = GameStateSingleton.get_instance()
+        game_state.update_map(self._map.get_state())
+
+    def _sync_characters_to_domain(self):
+        game_state = GameStateSingleton.get_instance()
+        game_state.update_characters(self._characters.get_state())
 
     def rollback(self):
+        if not self._layers:
+            raise RuntimeError("No active simulation layers to rollback.")
+
         self._layers.pop()
+
+        if not self._layers:
+            game_state = GameStateSingleton.get_instance()
+            self._map = SimulatedMap(game_state.game_map)
+            self._characters = SimulatedCharacters(game_state.characters)
+            self.begin_layer()
+            print("[SimulatedGameState] Rolled back to base domain state. New empty layer created.")
 
     # ---- MAP METHODS ------
 

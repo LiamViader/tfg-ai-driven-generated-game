@@ -161,9 +161,9 @@ def create_npc(
 
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
 
-    npc = simulated_characters.create_npc(
+    npc = simulated_state.create_npc(
         identity=identity,
         physical=physical,
         psychological=psychological,
@@ -176,7 +176,7 @@ def create_npc(
         logs_field_to_update: [get_log_item("create_npc", args, False, True, f"NPC '{identity.full_name}' created with id {npc.id}.")],
         messages_field_to_update: [
             ToolMessage(
-                get_observation(simulated_characters.characters_count(), "create_npc", True, f"NPC '{identity.full_name}' created with id {npc.id}."),
+                get_observation(simulated_state.characters_count(), "create_npc", True, f"NPC '{identity.full_name}' created with id {npc.id}."),
                 tool_call_id=tool_call_id,
             )
         ]
@@ -197,10 +197,10 @@ def create_player(
 
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     
     try:
-        player, scenario = simulated_characters.create_player(
+        player, scenario = simulated_state.create_player(
             identity=identity,
             physical=physical,
             psychological=psychological,
@@ -210,12 +210,12 @@ def create_player(
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("create_player", args, False, False, str(e))],
-            messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "create_player", False, str(e)), tool_call_id=tool_call_id)]
+            messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "create_player", False, str(e)), tool_call_id=tool_call_id)]
         })
     
     return Command(update={
         logs_field_to_update: [get_log_item("create_player", args, False, True, f"Player '{player.identity.full_name}' created with id {player.id} in scenario {scenario.name} with id {scenario.id}.")],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "create_player", True, f"Player '{player.identity.full_name}' created with id {player.id} in scenario {scenario.name} with id {scenario.id}."), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "create_player", True, f"Player '{player.identity.full_name}' created with id {player.id} in scenario {scenario.name} with id {scenario.id}."), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolModifyIdentityArgs)
@@ -235,9 +235,9 @@ def modify_identity(
     """Update identity attributes of a character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_identity(
+        simulated_state.modify_character_identity(
             character_id=character_id,
             new_full_name=new_full_name,
             new_alias=new_alias,
@@ -250,7 +250,7 @@ def modify_identity(
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("modify_identity", args, False, False, str(e))],
-            messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_identity", False, str(e)), tool_call_id=tool_call_id)]
+            messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_identity", False, str(e)), tool_call_id=tool_call_id)]
         })
     
     updated_fields = []
@@ -273,7 +273,7 @@ def modify_identity(
 
     return Command(update={
         logs_field_to_update: [get_log_item("modify_identity", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_identity", True, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_identity", True, message), tool_call_id=tool_call_id)]
     })
 
 
@@ -293,9 +293,9 @@ def modify_physical(
     """Update physical traits of a character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_physical(
+        simulated_state.modify_character_physical(
             character_id=character_id,
             new_appearance=new_appearance,
             new_distinctive_features=new_distinctive_features,
@@ -307,7 +307,7 @@ def modify_physical(
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("modify_physical", args, False, False, str(e))],
-            messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_physical", False, str(e)), tool_call_id=tool_call_id)]
+            messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_physical", False, str(e)), tool_call_id=tool_call_id)]
         })
 
     updated_fields = []
@@ -324,7 +324,7 @@ def modify_physical(
 
     return Command(update={
         logs_field_to_update: [get_log_item("modify_physical", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_physical", True, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_physical", True, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolModifyPsychologicalArgs)
@@ -350,9 +350,9 @@ def modify_psychological(
     """Update psychological traits of a character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_psychological(
+        simulated_state.modify_character_psychological(
             character_id=character_id,
             new_personality_summary=new_personality_summary,
             new_personality_tags=new_personality_tags,
@@ -371,7 +371,7 @@ def modify_psychological(
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("modify_psychological", args, False, False, str(e))],
-            messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_psychological", False, str(e)), tool_call_id=tool_call_id)]
+            messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_psychological", False, str(e)), tool_call_id=tool_call_id)]
         })
 
     updated_fields = []
@@ -388,7 +388,7 @@ def modify_psychological(
 
     return Command(update={
         logs_field_to_update: [get_log_item("modify_psychological", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "modify_psychological", True, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "modify_psychological", True, message), tool_call_id=tool_call_id)]
     })
 
 
@@ -406,9 +406,9 @@ def modify_knowledge(
     """Update a character's knowledge."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_knowledge(
+        simulated_state.modify_character_knowledge(
             character_id=character_id,
             new_background_knowledge=new_background_knowledge,
             append_background_knowledge=append_background_knowledge,
@@ -420,7 +420,7 @@ def modify_knowledge(
             logs_field_to_update: [get_log_item("modify_knowledge", args, False, False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
-                    get_observation(simulated_characters.characters_count(), "modify_knowledge", False, str(e)),
+                    get_observation(simulated_state.characters_count(), "modify_knowledge", False, str(e)),
                     tool_call_id=tool_call_id
                 )
             ]
@@ -438,7 +438,7 @@ def modify_knowledge(
         logs_field_to_update: [get_log_item("modify_knowledge", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
-                get_observation(simulated_characters.characters_count(), "modify_knowledge", True, message),
+                get_observation(simulated_state.characters_count(), "modify_knowledge", True, message),
                 tool_call_id=tool_call_id
             )
         ]
@@ -456,9 +456,9 @@ def modify_dynamic_state(
     """Update an NPC's dynamic state. This tool does NOT work on the player character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_dynamic_state(
+        simulated_state.modify_character_dynamic_state(
             character_id=character_id,
             new_current_emotion=new_current_emotion,
             new_immediate_goal=new_immediate_goal
@@ -467,7 +467,7 @@ def modify_dynamic_state(
         return Command(update={
             logs_field_to_update: [get_log_item("modify_dynamic_state", args, False, False, str(e))],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "modify_dynamic_state", False, str(e)), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "modify_dynamic_state", False, str(e)), tool_call_id=tool_call_id)
             ]
         })
 
@@ -482,7 +482,7 @@ def modify_dynamic_state(
     return Command(update={
         logs_field_to_update: [get_log_item("modify_dynamic_state", args, False, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "modify_dynamic_state", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "modify_dynamic_state", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -501,9 +501,9 @@ def modify_narrative(
     """Update an NPC's narrative attributes. This tool does NOT work on the player character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_characters.modify_character_narrative(
+        simulated_state.modify_character_narrative(
             character_id=character_id,
             new_narrative_role=new_narrative_role,
             new_current_narrative_importance=new_current_narrative_importance,
@@ -515,7 +515,7 @@ def modify_narrative(
         return Command(update={
             logs_field_to_update: [get_log_item("modify_narrative", args, False, False, str(e))],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "modify_narrative", False, str(e)), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "modify_narrative", False, str(e)), tool_call_id=tool_call_id)
             ]
         })
 
@@ -532,7 +532,7 @@ def modify_narrative(
     return Command(update={
         logs_field_to_update: [get_log_item("modify_narrative", args, False, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "modify_narrative", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "modify_narrative", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -547,23 +547,23 @@ def delete_character(
     """Delete an NPC from the cast. The player cannot be deleted. This tool should only be must to remove characters created by error or in exceptional ocasions. If you want to disable a character temporarly o permanetly remove_character_from_scenario tool instead"""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
 
     try:
-        character=simulated_characters.delete_character(character_id)
+        character=simulated_state.delete_character(character_id)
 
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("delete_character", args, False, False, str(e))],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "delete_character", False, str(e)), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "delete_character", False, str(e)), tool_call_id=tool_call_id)
             ]
         })
     
     return Command(update={
         logs_field_to_update: [get_log_item("delete_character", args, False, True, f"Character {character.id} '{character.identity.full_name}' deleted.")],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "delete_character", True, f"Character {character.id} '{character.identity.full_name}' deleted."), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "delete_character", True, f"Character {character.id} '{character.identity.full_name}' deleted."), tool_call_id=tool_call_id)
         ]
     })
 
@@ -580,14 +580,14 @@ def place_character(
     """
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        character, scenario = simulated_characters.place_character(character_id, new_scenario_id)
+        character, scenario = simulated_state.place_character(character_id, new_scenario_id)
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("place_character", args, False, False, str(e))],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "place_character", False, str(e)), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "place_character", False, str(e)), tool_call_id=tool_call_id)
             ]
         })
 
@@ -596,7 +596,7 @@ def place_character(
     return Command(update={
         logs_field_to_update: [get_log_item("place_character", args, False, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "place_character", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "place_character", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -613,21 +613,21 @@ def remove_character_from_scenario(
     """
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        character, scenario = simulated_characters.remove_character_from_scenario(character_id)
+        character, scenario = simulated_state.remove_character_from_scenario(character_id)
     except Exception as e:
         return Command(update={
             logs_field_to_update: [get_log_item("remove_character_from_scenario", args, False, False, str(e))],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "remove_character_from_scenario", False, str(e)), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "remove_character_from_scenario", False, str(e)), tool_call_id=tool_call_id)
             ]
         })
     message = f"Character {character.id}, {character.identity.full_name} removed from scenario {scenario.id}, {scenario.name}."
     return Command(update={
         logs_field_to_update: [get_log_item("remove_character_from_scenario", args, False, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "remove_character_from_scenario", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "remove_character_from_scenario", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -640,13 +640,13 @@ def get_player_details(
     """(QUERY tool) Get details of the player character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
-    player = simulated_characters.get_player()
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    player = simulated_state.get_player()
     if player is None:
         return Command(update={
             logs_field_to_update: [get_log_item("get_player_details", args, True, False, "Player character does not exist.")],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "get_player_details", False, "Player character does not exist."), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "get_player_details", False, "Player character does not exist."), tool_call_id=tool_call_id)
             ]
         })
 
@@ -656,7 +656,7 @@ def get_player_details(
     return Command(update={
         logs_field_to_update: [get_log_item("get_player_details", args, True, True, pretty_details)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "get_player_details", True, pretty_details), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "get_player_details", True, pretty_details), tool_call_id=tool_call_id)
         ]
     })
 
@@ -670,13 +670,13 @@ def get_character_details(
     """(QUERY tool) Get full details of a character."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
-    character = simulated_characters.get_character(character_id)
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    character = simulated_state.get_character(character_id)
     if not character:
         return Command(update={
             logs_field_to_update: [get_log_item("get_character_details", args, True, False, f"Character with ID '{character_id}' not found.")],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "get_character_details", False, f"Character with ID '{character_id}' not found."), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "get_character_details", False, f"Character with ID '{character_id}' not found."), tool_call_id=tool_call_id)
             ]
         })
     
@@ -686,7 +686,7 @@ def get_character_details(
     return Command(update={
         logs_field_to_update: [get_log_item("get_character_details", args, True, True, pretty_details)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "get_character_details", True, pretty_details), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "get_character_details", True, pretty_details), tool_call_id=tool_call_id)
         ]
     })
 
@@ -710,23 +710,23 @@ def list_characters(
 
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     
-    if simulated_characters.characters_count()<=0:
+    if simulated_state.characters_count()<=0:
         return Command(update={
             logs_field_to_update: [get_log_item("list_characters", args, True, True, "The cast is currently empty.")],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "The cast is currently empty."), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "list_characters", True, "The cast is currently empty."), tool_call_id=tool_call_id)
             ]
         })
 
-    filtered_characters = simulated_characters.filter_characters(attribute_to_filter,value_to_match)
+    filtered_characters = simulated_state.filter_characters(attribute_to_filter,value_to_match)
 
     if len(filtered_characters)<=0:
         return Command(update={
             logs_field_to_update: [get_log_item("list_characters", args, True, True, "No characters found matching the criteria.")],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "No characters found matching the criteria."), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "list_characters", True, "No characters found matching the criteria."), tool_call_id=tool_call_id)
             ]
         })
 
@@ -772,7 +772,7 @@ def list_characters(
     return Command(update={
         logs_field_to_update: [get_log_item("list_characters", args, True, True, "\n".join(matches))],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters", True, "\n".join(matches)), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "list_characters", True, "\n".join(matches)), tool_call_id=tool_call_id)
         ]
     })
 
@@ -786,16 +786,16 @@ def list_characters_by_scenario(
 
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
-    if simulated_characters.characters_count()<=0:
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    if simulated_state.characters_count()<=0:
         return Command(update={
             logs_field_to_update: [get_log_item("list_characters_by_scenario", args, True, True, "The cast is currently empty.")],
             messages_field_to_update: [
-                ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters_by_scenario", True, "The cast is currently empty."), tool_call_id=tool_call_id)
+                ToolMessage(get_observation(simulated_state.characters_count(), "list_characters_by_scenario", True, "The cast is currently empty."), tool_call_id=tool_call_id)
             ]
         })
 
-    groups = simulated_characters.group_by_scenario()
+    groups = simulated_state.group_by_scenario()
 
     lines: List[str] = []
     for scenario in sorted(groups.keys()):
@@ -806,7 +806,7 @@ def list_characters_by_scenario(
     return Command(update={
         logs_field_to_update: [get_log_item("list_characters_by_scenario", args, True, True, "\n"+"\n".join(lines).strip())],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_characters.characters_count(), "list_characters_by_scenario", True, "\n"+"\n".join(lines).strip()), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.characters_count(), "list_characters_by_scenario", True, "\n"+"\n".join(lines).strip()), tool_call_id=tool_call_id)
         ]
     })
 
@@ -823,10 +823,10 @@ def finalize_simulation(
     """Mark the simulation as completed with a justification."""
     args = extract_tool_args(locals())
 
-    simulated_characters = SimulatedGameStateSingleton.get_instance().simulated_characters
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     return Command(update={
         logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, justification)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_characters.characters_count(), "finalize_simulation", True, justification), tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.characters_count(), "finalize_simulation", True, justification), tool_call_id=tool_call_id)],
         "characters_task_finalized_by_agent": True,
         "characters_task_finalized_justification": justification,
     })
