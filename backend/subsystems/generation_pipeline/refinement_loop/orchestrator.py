@@ -52,7 +52,7 @@ def get_refinement_loop_graph_app():
         go_to_next_agent_or_finish,
         {
             AgentName.MAP: "map_step_start",
-            "FINALIZE": END,
+            "finalize": END,
         }
     )
 
@@ -61,7 +61,7 @@ def get_refinement_loop_graph_app():
         go_to_next_agent_or_finish,
         {
             AgentName.MAP: "map_step_start",
-            "FINALIZE": END,
+            "finalize": END,
         }
     )
 

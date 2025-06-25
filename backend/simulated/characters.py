@@ -18,38 +18,27 @@ from core_game.character.schemas import (
     DynamicStateModel,
 )
 from core_game.map.domain import Scenario
+from simulated.decorators import requires_modification
 
 class SimulatedCharacters:
     """Lightweight wrapper around :class:`Characters` for isolated modifications."""
 
-    def __init__(self, characters: Characters, simulated_game_state: 'SimulatedGameState') -> None:
-        self._original_state: Characters = characters
-        self._copied_state: Optional[Characters] = None
-        self._working_state: Characters = self._original_state
+    def __init__(self, characters: Characters, simulated_game_state: 'SimulatedGameState', is_modifiable: bool = False) -> None:
+        self._working_state: Characters = characters
         self._simulated_game_state: 'SimulatedGameState' = simulated_game_state
-        self._is_modified: bool = False
-        self._deleted_characters: Dict[str, BaseCharacter] = {}
-        self._added_characters: Set[str] = set()
-        self._modified_characters: Set[str] = set()
+        self._is_modifiable: bool = is_modifiable
 
-    @property
-    def working_state(self) -> Characters:
-        return self._working_state
+    def __deepcopy__(self, memo):
+        copied_characters = Characters(model=deepcopy(self._working_state.to_model()))
+        new_copy = SimulatedCharacters(
+            characters=copied_characters,
+            simulated_game_state=self._simulated_game_state,
+            is_modifiable=True 
+        )
+        return new_copy
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
-    def _started_modifying(self) -> None:
-        if not self._is_modified:
-            self._copied_state = Characters(self._original_state.to_model())
-            self._working_state = self._copied_state
-            self._is_modified = True
-
-    # ------------------------------------------------------------------
-    # Proxy methods
-    # ------------------------------------------------------------------
-
+    @requires_modification
     def create_npc(
         self, 
         identity: IdentityModel,
@@ -60,7 +49,6 @@ class SimulatedCharacters:
         dynamic_state: DynamicStateModel = DynamicStateModel()
     ) -> NPCCharacter:
         
-        self._started_modifying()
 
         knowledge = knowledge or KnowledgeModel()
         dynamic_state = dynamic_state or DynamicStateModel()
@@ -80,7 +68,6 @@ class SimulatedCharacters:
 
         self._working_state.add_npc(npc)
 
-        self._added_characters.add(npc.id)
         return npc
 
     def create_player(
@@ -92,7 +79,7 @@ class SimulatedCharacters:
         knowledge: Optional[KnowledgeModel] = KnowledgeModel()
     ) -> Tuple[PlayerCharacter, Scenario]:
 
-        if self.working_state.has_player():
+        if self._working_state.has_player():
             raise ValueError("Player already exists")
 
         knowledge = knowledge or KnowledgeModel()
@@ -112,10 +99,8 @@ class SimulatedCharacters:
             rollback_character_id()
             raise ValueError(message)
         
-        self._started_modifying()
         scenario = self._simulated_game_state.simulated_map.place_player(player,scenario_id)
-        player = self.working_state.add_player(player)
-        self._added_characters.add(player.id)
+        player = self._working_state.add_player(player)
 
         return player, scenario
 
@@ -130,11 +115,10 @@ class SimulatedCharacters:
         new_species: Optional[str] = None,
         new_alignment: Optional[str] = None,
     ) -> None:
-        if not self.working_state.find_character(character_id):
+        if not self._working_state.find_character(character_id):
             raise KeyError(f"Character with ID '{character_id}' not found.")
 
-        self._started_modifying()
-        self.working_state.modify_character_identity(
+        self._working_state.modify_character_identity(
             character_id=character_id,
             new_full_name=new_full_name,
             new_alias=new_alias,
@@ -144,9 +128,6 @@ class SimulatedCharacters:
             new_species=new_species,
             new_alignment=new_alignment
         )
-        
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def modify_character_physical(
         self,
@@ -159,11 +140,10 @@ class SimulatedCharacters:
         append_characteristic_items: bool = False
     ) -> None:
         
-        if not self.working_state.find_character(character_id):
+        if not self._working_state.find_character(character_id):
             raise KeyError(f"Character with ID '{character_id}' not found.")
 
-        self._started_modifying()
-        self.working_state.modify_character_physical(
+        self._working_state.modify_character_physical(
             character_id=character_id,
             new_appearance=new_appearance,
             new_distinctive_features=new_distinctive_features,
@@ -172,9 +152,6 @@ class SimulatedCharacters:
             new_characteristic_items=new_characteristic_items,
             append_characteristic_items=append_characteristic_items,
         )
-        
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def modify_character_psychological(
         self,
@@ -193,11 +170,10 @@ class SimulatedCharacters:
         new_quirks: Optional[List[str]] = None,
         append_quirks: bool = False
     ) -> None:
-        if not self.working_state.find_character(character_id):
+        if not self._working_state.find_character(character_id):
             raise KeyError(f"Character with ID '{character_id}' not found.")
         
-        self._started_modifying()
-        self.working_state.modify_character_psychological(
+        self._working_state.modify_character_psychological(
             character_id=character_id,
             new_personality_summary=new_personality_summary,
             new_personality_tags=new_personality_tags,
@@ -214,8 +190,6 @@ class SimulatedCharacters:
             append_quirks=append_quirks
         )
 
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def modify_character_knowledge(
         self,
@@ -225,20 +199,16 @@ class SimulatedCharacters:
         new_acquired_knowledge: Optional[List[str]] = None,
         append_acquired_knowledge: bool = False
     ) -> None:
-        if not self.working_state.find_character(character_id):
+        if not self._working_state.find_character(character_id):
             raise KeyError(f"Character with ID '{character_id}' not found.")
 
-        self._started_modifying()
-        self.working_state.modify_character_knowledge(
+        self._working_state.modify_character_knowledge(
             character_id=character_id,
             new_background_knowledge=new_background_knowledge,
             append_background_knowledge=append_background_knowledge,
             new_acquired_knowledge=new_acquired_knowledge,
             append_acquired_knowledge=append_acquired_knowledge
         )
-
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def modify_character_dynamic_state(
         self,
@@ -247,20 +217,18 @@ class SimulatedCharacters:
         new_immediate_goal: Optional[str] = None
     ) -> None:
         
-        character = self.working_state.find_character(character_id)
+        character = self._working_state.find_character(character_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         if isinstance(character, PlayerCharacterModel):
             raise ValueError("Cannot modify the player's dynamic state. Character must be an npc")
-        self._started_modifying()
-        self.working_state.modify_character_npc_dynamic_state(
+
+        self._working_state.modify_character_npc_dynamic_state(
             character_id=character_id,
             new_current_emotion=new_current_emotion,
             new_immediate_goal=new_immediate_goal
         )
 
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def modify_character_narrative(
         self,
@@ -270,14 +238,13 @@ class SimulatedCharacters:
         new_narrative_purposes: Optional[List[NarrativePurposeModel]] = None,
         append_narrative_purposes: bool = False
     ) -> None:
-        character = self.working_state.find_character(character_id)
+        character = self._working_state.find_character(character_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         if isinstance(character, PlayerCharacterModel):
             raise ValueError("Cannot modify the player's narrative attributes. Character must be an npc")
 
-        self._started_modifying()
-        self.working_state.modify_character_npc_narrative(
+        self._working_state.modify_character_npc_narrative(
             character_id=character_id,
             new_narrative_role=new_narrative_role,
             new_current_narrative_importance=new_current_narrative_importance,
@@ -285,29 +252,23 @@ class SimulatedCharacters:
             append_narrative_purposes=append_narrative_purposes
         )
 
-        if character_id not in self._added_characters:
-            self._modified_characters.add(character_id)
 
     def delete_character(self, character_id: str) -> BaseCharacter:
-        character = self.working_state.find_character(character_id)
+        character = self._working_state.find_character(character_id)
         if not character:
             raise KeyError(f"Character ID '{character_id}' not found.")
         if isinstance(character, PlayerCharacterModel):
             raise ValueError("Cannot delete the player character.")
         
-        self._started_modifying()
-        
-        character=self.working_state.delete_character(character_id)
+        character=self._working_state.delete_character(character_id)
         if character:
-            if character_id not in self._added_characters:
-                self._deleted_characters[character_id] = character
             return character
         else:
             raise KeyError(f"Character ID '{character_id}' not found.")
 
     def place_character(self, character_id: str, scenario_id: str) -> Tuple[BaseCharacter,Scenario]:
         
-        character = self.working_state.find_character(character_id)
+        character = self._working_state.find_character(character_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         
@@ -318,22 +279,21 @@ class SimulatedCharacters:
         if not success:
             raise ValueError(message)
 
-        self._started_modifying()
 
-        character = self.working_state.place_character(character_id,scenario_id)
+        character = self._working_state.place_character(character_id,scenario_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         
         return character, self._simulated_game_state.simulated_map.place_character(character,scenario_id)
 
     def remove_character_from_scenario(self, character_id: str) -> Tuple[BaseCharacter,Scenario]:
-        character = self.working_state.find_character(character_id)
+        character = self._working_state.find_character(character_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         if isinstance(character, PlayerCharacterModel):
             raise ValueError("Cannot remove the player from a scenario.")
-        self._started_modifying()
-        scenario_id, character = self.working_state.remove_character_from_scenario(character_id)
+
+        scenario_id, character = self._working_state.remove_character_from_scenario(character_id)
         if not scenario_id or not character:
             raise ValueError("Character is already not present in any scenario.")
         
@@ -341,26 +301,26 @@ class SimulatedCharacters:
         return character, scenario
 
     def get_character(self, cid: str) -> Optional[BaseCharacter]:
-        return self.working_state.find_character(cid)
+        return self._working_state.find_character(cid)
     
     def get_player(self) -> Optional[PlayerCharacter]:
-        return self.working_state.get_player()
+        return self._working_state.get_player()
 
     def characters_count(self) -> int:
-        return self.working_state.characters_count()
+        return self._working_state.characters_count()
     
     def filter_characters(
             self, 
             attribute_to_filter: Optional[Literal[ "narrative_role","current_narrative_importance", "species","profession","gender","alias","name_contains"]] = None, 
             value_to_match: Optional[str] = None
         ) -> Dict[str, BaseCharacter]:
-        return self.working_state.filter_characters(attribute_to_filter,value_to_match)
+        return self._working_state.filter_characters(attribute_to_filter,value_to_match)
 
     def group_by_scenario(self) -> Dict[str,List[BaseCharacter]]:
-        return self.working_state.group_by_scenario()
+        return self._working_state.group_by_scenario()
 
     def get_initial_summary(self) -> str:
         characters = self.filter_characters(None, None)
         if not characters:
             return "No characters created yet."
-        return f"Cast has {self.characters_count()} Characters{", and no player character yet" if not self.working_state.has_player() else ""}: " + ", ".join(f"{c.identity.full_name}({cid})" for cid, c in characters.items())
+        return f"Cast has {self.characters_count()} Characters{", and no player character yet" if not self._working_state.has_player() else ""}: " + ", ".join(f"{c.identity.full_name}({cid})" for cid, c in characters.items())

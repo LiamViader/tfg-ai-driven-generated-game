@@ -1,36 +1,34 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Set, Literal, Tuple, TYPE_CHECKING
-if TYPE_CHECKING:
-    from simulated.game_state import SimulatedGameState
+
 from copy import deepcopy
 from core_game.map.domain import GameMap, Scenario, Connection
-from core_game.map.schemas import ScenarioModel, rollback_scenario_id, ConnectionModel
+from core_game.map.schemas import ScenarioModel, ConnectionModel
 from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirections
 
 from core_game.character.domain import BaseCharacter, PlayerCharacter
 
+if TYPE_CHECKING:
+    from simulated.game_state import SimulatedGameState
+
+from simulated.decorators import requires_modification
+
 class SimulatedMap:
-    def __init__(self, game_map_model: GameMap, simulated_game_state:'SimulatedGameState') -> None:
-        self._original_state: GameMap = game_map_model
-        self._copied_state: GameMap | None = None
-        self._working_state: GameMap = self._original_state
+    def __init__(self, game_map: GameMap, simulated_game_state: 'SimulatedGameState', is_modifiable: bool = False) -> None:
+        self._working_state: GameMap = game_map
         self._simulated_game_state: 'SimulatedGameState' = simulated_game_state
-        self.__is_modified: bool = False
-        self._deleted_scenarios: Dict[str, Scenario] = {}
-        self._modified_scenarios: Set[str] = set() 
-        self._added_scenarios: Set[str] = set()
+        self._is_modifiable: bool = is_modifiable
 
-    @property
-    def working_state(self) -> GameMap:
-        return self._working_state
-    
-    def _started_modifying(self) -> None:
-        """Mark the map as modified and create a copy if not already done."""
-        if not self.__is_modified:
-            self._copied_state = GameMap(map_model=deepcopy(self._original_state.to_model()))
-            self.__is_modified = True
-            self._working_state = self._copied_state
+    def __deepcopy__(self, memo):
+        copied_game_map = GameMap(map_model=deepcopy(self._working_state.to_model()))
+        new_copy = SimulatedMap(
+            game_map=copied_game_map,
+            simulated_game_state=self._simulated_game_state,
+            is_modifiable=True 
+        )
+        return new_copy
 
+    @requires_modification
     def create_scenario(self,
         name: str, 
         summary_description: str, 
@@ -53,17 +51,14 @@ class SimulatedMap:
         )
         scenario = Scenario(scenario_model)
 
-        if self.working_state.find_scenario(scenario.id):
+        if self._working_state.find_scenario(scenario.id):
             raise ValueError(f"Internal Error, Scenario with ID {scenario.id} already exists.")
-        
-        self._started_modifying()
 
-        self.working_state.add_scenario(scenario)
-
-        self._added_scenarios.add(scenario.id)
+        self._working_state.add_scenario(scenario)
 
         return scenario
 
+    @requires_modification
     def modify_scenario(self, 
         scenario_id: str, new_name: Optional[str] = None,
         new_summary_description: Optional[str] = None,
@@ -74,10 +69,8 @@ class SimulatedMap:
         new_zone: Optional[str] = None,
     ) -> bool:
         """Modify an existing scenario in the simulated map. Returns True if modified, False if it does not exist."""
-        
-        self._started_modifying()
 
-        result = self.working_state.modify_scenario(
+        result = self._working_state.modify_scenario(
             scenario_id,
             new_name,
             new_summary_description,
@@ -88,30 +81,20 @@ class SimulatedMap:
             new_zone,
         )
 
-        if result and scenario_id not in self._added_scenarios:
-            self._modified_scenarios.add(scenario_id)
-
         return result
 
     def find_scenario(self, scenario_id: str) -> Optional[Scenario]:
         """Return the scenario if it exists, or None otherwise."""
-        return self.working_state.find_scenario(scenario_id)
+        return self._working_state.find_scenario(scenario_id)
     
-
+    @requires_modification
     def delete_scenario(self, scenario_id: str) -> bool:
         """Delete a scenario from the simulated map. Returns True if deleted, False if it does not exist."""
-        
-        self._started_modifying()
-
-        result = self.working_state.delete_scenario(scenario_id)
-
-        if result and scenario_id not in self._added_scenarios:
-            scenario = self.working_state.find_scenario(scenario_id)
-            if scenario and scenario not in self._added_scenarios:
-                self._deleted_scenarios[scenario_id] = scenario
+        result = self._working_state.delete_scenario(scenario_id)
 
         return result
     
+    @requires_modification
     def create_bidirectional_connection(self, 
         from_scenario_id: str, 
         direction_from_origin: Direction, 
@@ -125,17 +108,17 @@ class SimulatedMap:
         if from_scenario_id == to_scenario_id:
             raise ValueError("Cannot connect a scenario to itself.")
 
-        origin_scenario = self.working_state.find_scenario(from_scenario_id)
+        origin_scenario = self._working_state.find_scenario(from_scenario_id)
         if not origin_scenario:
             raise KeyError(f"Origin scenario ID '{from_scenario_id}' not found.")
 
-        destination_scenario = self.working_state.find_scenario(to_scenario_id)
+        destination_scenario = self._working_state.find_scenario(to_scenario_id)
         if not destination_scenario:
             raise KeyError(f"Destination scenario ID '{to_scenario_id}' not found.")
 
         for existing_direction, conn_id in origin_scenario.connections.items():
             if conn_id:
-                conn = self.working_state.get_connection_by_id(conn_id)
+                conn = self._working_state.get_connection_by_id(conn_id)
                 if conn and ((conn.scenario_a_id == from_scenario_id and conn.scenario_b_id == to_scenario_id) or
                             (conn.scenario_b_id == from_scenario_id and conn.scenario_a_id == to_scenario_id)):
                     raise ValueError(
@@ -164,15 +147,15 @@ class SimulatedMap:
         )
 
         connection = Connection(connection_model)
-        self._started_modifying()
-        connection = self.working_state.add_connection(connection)
+        connection = self._working_state.add_connection(connection)
         if not connection:
             raise ValueError("Something unexpected went wrong")
         return connection
     
+    @requires_modification
     def delete_bidirectional_connection(self, scenario_id_A: str, direction_from_A: Direction)->Connection:
         """Delete a bidirectional connection from scenario A in the specified direction."""
-        scenario_A = self.working_state.find_scenario(scenario_id_A)
+        scenario_A = self._working_state.find_scenario(scenario_id_A)
         if not scenario_A:
             raise KeyError(f"Scenario A ID '{scenario_id_A}' not found.")
 
@@ -180,13 +163,12 @@ class SimulatedMap:
         if conn_id is None:
             raise KeyError(f"Scenario '{scenario_id_A}' has no connection to the '{direction_from_A}'.")
 
-        self._started_modifying()
-        connection = self.working_state.delete_bidirectional_connection(conn_id)
+        connection = self._working_state.delete_bidirectional_connection(conn_id)
         if connection is None:
             raise KeyError(f"Scenario '{scenario_id_A}' has no connection to the '{direction_from_A}'.")
         return connection
 
-
+    @requires_modification
     def modify_bidirectional_connection(self, 
         from_scenario_id: str, 
         direction_from_origin: Direction,
@@ -196,7 +178,7 @@ class SimulatedMap:
     ) -> None:
         """Modify an existing bidirectional connection."""
 
-        from_scenario = self.working_state.find_scenario(from_scenario_id)
+        from_scenario = self._working_state.find_scenario(from_scenario_id)
         if not from_scenario:
             raise KeyError(f"Origin scenario ID '{from_scenario_id}' not found.")
 
@@ -204,8 +186,7 @@ class SimulatedMap:
         if not connection_id:
             raise KeyError(f"Scenario '{from_scenario_id}' has no connection to the '{direction_from_origin}'.")
         
-        self._started_modifying()
-        success = self.working_state.modify_bidirectional_connection(
+        success = self._working_state.modify_bidirectional_connection(
             connection_id,
             new_connection_type,
             new_travel_description,
@@ -214,20 +195,19 @@ class SimulatedMap:
         if not success:
             raise ValueError("Something unexpected went wrong")
 
-
     def get_connection(
         self, scenario_id: str, direction_from: Direction
     ) -> Optional[Connection]:
         """
         Given a scenario id and direction, returns the Connection or None if not found.
         """
-        return self.working_state.get_connection(scenario_id,direction_from)
+        return self._working_state.get_connection(scenario_id,direction_from)
     
     def get_scenario_count(self)->int:
         """
         Returns the number of scenarios.
         """
-        return self.working_state.get_scenario_count()
+        return self._working_state.get_scenario_count()
     
     def get_cluster_summary(self, list_all_scenarios: bool, max_listed_per_cluster: Optional[int] = 5) -> str:
         """
@@ -235,7 +215,7 @@ class SimulatedMap:
         Lists all scenarios (ID and name) per cluster if list_all_scenarios is True.
         Otherwise, lists up to 'max_listed_per_cluster' scenarios per cluster.
         """
-        return self.working_state.get_cluster_summary(list_all_scenarios,max_listed_per_cluster)
+        return self._working_state.get_cluster_summary(list_all_scenarios,max_listed_per_cluster)
 
     def get_summary_list(self)->str:
         """Returns a string that represents a summary of scenarios and clusters"""
@@ -243,7 +223,7 @@ class SimulatedMap:
     
     def find_scenarios_by_attribute(self,attribute_to_filter: Literal["type", "name_contains", "zone", "indoor_or_outdoor"],value_to_match: str)->List[Scenario]:
         """Returns a list of filtered scenarios by an attribute"""
-        return self.working_state.find_scenarios_by_attribute(attribute_to_filter,value_to_match)
+        return self._working_state.find_scenarios_by_attribute(attribute_to_filter,value_to_match)
 
     def can_place_player(self, player: PlayerCharacter, scenario_id: str) -> Tuple[bool,str]:
         """Checks if it can place the player to a certain scenario. Returns result and message in case of negative result"""
@@ -259,41 +239,36 @@ class SimulatedMap:
         else:
             return (True, "")
 
+    @requires_modification
     def place_player(self, player: PlayerCharacter, scenario_id: str)->Scenario:
         success, message = self.can_place_player(player, scenario_id)
         if not success:
             raise KeyError(message)
                 
-        self._started_modifying()
-
-        if scenario_id not in self._added_scenarios: 
-            self._modified_scenarios.add(scenario_id)
-        scenario=self.working_state.place_player(player, scenario_id)
+        scenario=self._working_state.place_player(player, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         
         return scenario
     
+    @requires_modification
     def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:
         success, message = self.can_place_character(character, scenario_id)
         if not success:
             raise KeyError(message)
                 
-        self._started_modifying()
-
-        if scenario_id not in self._added_scenarios: 
-            self._modified_scenarios.add(scenario_id)
-        scenario=self.working_state.place_character(character, scenario_id)
+        scenario=self._working_state.place_character(character, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         
         return scenario
     
+    @requires_modification
     def remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str)->Scenario:
-        scenario = self.working_state.find_scenario(scenario_id)
+        scenario = self._working_state.find_scenario(scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
-        scenario = self.working_state.remove_character_from_scenario(character, scenario_id)
+        scenario = self._working_state.remove_character_from_scenario(character, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         return scenario
