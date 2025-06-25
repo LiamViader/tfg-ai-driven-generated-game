@@ -15,8 +15,6 @@ from core_game.character.schemas import (
     KnowledgeModel,
     DynamicStateModel,
 )
-from core_game.map.domain import Scenario
-from simulated.decorators import requires_modification
 
 class SimulatedCharacters:
     """Lightweight wrapper around :class:`Characters` for isolated modifications."""

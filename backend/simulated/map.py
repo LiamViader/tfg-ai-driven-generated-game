@@ -8,7 +8,6 @@ from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirectio
 
 from core_game.character.domain import BaseCharacter, PlayerCharacter
 
-from simulated.decorators import requires_modification
 
 class SimulatedMap:
     def __init__(self, game_map: GameMap) -> None:

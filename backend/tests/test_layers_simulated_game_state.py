@@ -1,11 +1,11 @@
 import os
 import sys
+import uuid
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from simulated.game_state import SimulatedGameState, SimulatedGameStateSingleton
 from core_game.game.singleton import GameStateSingleton
-import uuid
 
 def print_scenarios(state: SimulatedGameState, label: str):
     print(f"\n--- {label} ---")
@@ -22,8 +22,8 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.reset_instance()
     state = SimulatedGameStateSingleton.get_instance()
 
-    print("Create scenario before creating a layer")
-
+    # --- BASE MODIFICATION (no layers yet) ---
+    print(">>> [BASE] Creating scenario before any layers are created (direct modification of domain copy)")
     scenario1 = state.create_scenario(
         name=random_scenario_name(),
         summary_description="A simple place",
@@ -33,48 +33,48 @@ def run_manual_simulation_test():
         type="start",
         zone="zoneA"
     )
-    print_scenarios(state, "Scenarios after creating scenario 1")
-    print(GameStateSingleton.get_instance().game_map._scenarios)
-    
-    # --- Layer 1 () ---
+    print_scenarios(state, "[BASE] After creating scenario 1")
+    print("[BASE] Domain map scenarios:", GameStateSingleton.get_instance().game_map._scenarios)
+
+    # --- LAYER 1 ---
     state.begin_layer()
-    print(">>> [LAYER 1] Layer 1 created")
+    print(">>> [LAYER 1] Layer created")
 
     scenario1 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="A simple place",
-        visual_description="Looks calm and empty.",
-        narrative_context="Opening area",
+        summary_description="A second place",
+        visual_description="Also calm and indoors.",
+        narrative_context="Continuation",
         indoor_or_outdoor="indoor",
-        type="start",
+        type="secondary",
         zone="zoneA"
     )
     print_scenarios(state, "[LAYER 1] After creating scenario 1")
 
-    # --- Layer 2 ---
+    # --- LAYER 2 ---
     state.begin_layer()
-    print(">>> [LAYER 2] Started")
+    print(">>> [LAYER 2] Layer created")
 
     scenario2 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="A second scenario",
-        visual_description="Brighter and larger.",
-        narrative_context="Mid area",
-        indoor_or_outdoor="indoor",
-        type="mid",
+        summary_description="A third place",
+        visual_description="Bright and open.",
+        narrative_context="Outdoor step",
+        indoor_or_outdoor="outdoor",
+        type="transition",
         zone="zoneB"
     )
     print_scenarios(state, "[LAYER 2] After creating scenario 2")
 
-    # --- Rollback Layer 2 ---
-    print(">>> [LAYER 2] Rollback")
+    # --- ROLLBACK LAYER 2 ---
+    print(">>> [LAYER 2] Rolling back")
     state.rollback()
-    print_scenarios(state, "[LAYER 1] After rollback of LAYER 2")
+    print_scenarios(state, "[LAYER 1] After rollback of Layer 2")
 
-    # --- Continue in Layer 1 (still active) ---
+    # --- CONTINUE IN LAYER 1 ---
     scenario3 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="A replacement for 2",
+        summary_description="Replacement scenario",
         visual_description="Shadowy and strange.",
         narrative_context="New mid area",
         indoor_or_outdoor="indoor",
@@ -82,75 +82,75 @@ def run_manual_simulation_test():
         zone="zoneC"
     )
     print_scenarios(state, "[LAYER 1] After creating scenario 3")
-    print(GameStateSingleton.get_instance().game_map._scenarios)
+    print("[BASE] Domain map (unchanged):", GameStateSingleton.get_instance().game_map._scenarios)
 
-    # --- Commit Layer 1 ---
-    print(">>> [LAYER 1] Commit to domain")
+    # --- COMMIT LAYER 1 ---
+    print(">>> [LAYER 1] Committing changes to base/domain")
     state.commit()
-    print_scenarios(state, "[BASE] After committing LAYER 1 (now in domain)")
+    print_scenarios(state, "[BASE] After committing LAYER 1")
+    print("[BASE] Domain map (updated):", GameStateSingleton.get_instance().game_map._scenarios)
 
-    print(GameStateSingleton.get_instance().game_map._scenarios)
-
-    # --- Begin New Simulation Layer  ---
+    # --- NEW LAYER 1 ---
     state.begin_layer()
-    print(">>> [NEW LAYER 1] Begin")
+    print(">>> [LAYER 1] New simulation layer created")
 
     scenario4 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="A fourth scenario",
-        visual_description="Deserted and dry.",
-        narrative_context="Desert zone",
+        summary_description="Desert zone",
+        visual_description="Hot and dry.",
+        narrative_context="Outskirts",
         indoor_or_outdoor="outdoor",
-        type="optional",
+        type="exploration",
         zone="zoneD"
     )
-    print_scenarios(state, "[NEW LAYER 1] After creating scenario 4")
+    print_scenarios(state, "[LAYER 1] After creating scenario 4")
 
-    # --- Layer 2 ---
+    # --- NEW LAYER 2 ---
     state.begin_layer()
-    print(">>> [NEW LAYER 2] Started")
+    print(">>> [LAYER 2] Nested simulation layer created")
 
     scenario5 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="Another scenario",
-        visual_description="Mountainous terrain.",
-        narrative_context="Mountain path",
+        summary_description="Mountain area",
+        visual_description="Rocky and elevated.",
+        narrative_context="Path to peak",
         indoor_or_outdoor="outdoor",
         type="path",
         zone="zoneE"
     )
-    print_scenarios(state, "[NEW LAYER 2] After creating scenario 5")
+    print_scenarios(state, "[LAYER 2] After creating scenario 5")
 
-    # --- Layer 3 ---
+    # --- NEW LAYER 3 ---
     state.begin_layer()
-    print(">>> [NEW LAYER 3] Started")
+    print(">>> [LAYER 3] Deepest simulation layer created")
 
     scenario6 = state.create_scenario(
         name=random_scenario_name(),
-        summary_description="Final scenario in chain",
-        visual_description="Abandoned city ruins.",
-        narrative_context="Climax",
+        summary_description="Final encounter",
+        visual_description="Ruins and silence.",
+        narrative_context="Climax area",
         indoor_or_outdoor="indoor",
-        type="end",
+        type="final",
         zone="zoneF"
     )
-    print_scenarios(state, "[NEW LAYER 3] After creating scenario 6")
+    print_scenarios(state, "[LAYER 3] After creating scenario 6")
 
-    # --- Commit Layer 3 ---
-    print(">>> [NEW LAYER 3] Commit to Layer 2")
+    # --- COMMIT LAYER 3 ---
+    print(">>> [LAYER 3] Committing to Layer 2")
     state.commit()
-    print_scenarios(state, "[AFTER COMMIT 3->2]")
+    print_scenarios(state, "[LAYER 2] After commit of Layer 3")
 
-    # --- Rollback Layer 2 ---
-    print(">>> [NEW LAYER 2] Rollback")
+    # --- ROLLBACK LAYER 2 ---
+    print(">>> [LAYER 2] Rolling back")
     state.rollback()
-    print_scenarios(state, "[AFTER ROLLBACK TO LAYER 1]")
+    print_scenarios(state, "[LAYER 1] After rollback of Layer 2")
 
-    # --- Rollback Final Layer (Back to Base) ---
-    print(">>> [NEW LAYER 1] Rollback (to domain/base)")
+    # --- FINAL ROLLBACK TO BASE ---
+    print(">>> [LAYER 1] Rolling back to base/domain")
     state.rollback()
-    print_scenarios(state, "[BASE] Final state after full rollback")
+    print_scenarios(state, "[BASE] Final state after rollback chain")
 
-    print(GameStateSingleton.get_instance().game_map._scenarios)
+    print("[BASE] Final domain map state:", GameStateSingleton.get_instance().game_map._scenarios)
+
 if __name__ == "__main__":
     run_manual_simulation_test()

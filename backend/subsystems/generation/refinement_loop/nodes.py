@@ -1,5 +1,5 @@
-from subsystems.generation_pipeline.refinement_loop.schemas.graph_state import RefinementLoopGraphState
-from subsystems.generation_pipeline.refinement_loop.utils.format_refinement_logs import format_window
+from subsystems.generation.refinement_loop.schemas.graph_state import RefinementLoopGraphState
+from subsystems.generation.refinement_loop.utils.format_refinement_logs import format_window
 
 def start_refinement_loop(state: RefinementLoopGraphState):
     """

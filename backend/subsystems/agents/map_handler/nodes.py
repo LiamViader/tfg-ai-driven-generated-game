@@ -24,7 +24,8 @@ def receive_objective_node(state: MapGraphState):
     """
 
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    initial_summary=SimulatedGameStateSingleton.get_instance().simulated_map.get_summary_list()
+    SimulatedGameStateSingleton.get_instance().begin_layer() # Safety layer
+    initial_summary=SimulatedGameStateSingleton.get_instance().get_map_summary_list()
     return {
         "map_current_try": 0,
         "messages_field_to_update": "map_executor_messages",
@@ -43,7 +44,10 @@ def map_executor_reason_node(state: MapGraphState):
     map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
     full_prompt = format_map_react_reason_prompt(
-        narrative_context=state.map_global_narrative_context,
+        foundational_lore_document=state.map_foundational_lore_document,
+        recent_operations_summary=state.map_recent_operations_summary,
+        relevant_entity_details=state.map_relevant_entity_details,
+        additional_information=state.map_additional_information,
         map_rules_and_constraints=state.map_rules_and_constraints,
         initial_map_summary=state.map_initial_summary,
         objective=state.map_current_objective,
@@ -145,7 +149,7 @@ def final_node_success(state: MapGraphState):
     Last node of agent if succeeded on objective.
     """
     print("---ENTERING: LAST NODE OBJECTIVE SUCESS---")
-    
+    SimulatedGameStateSingleton.get_instance().commit() # commit all changes done by agent
     return {
         "map_task_succeeded_final": True,
     }
@@ -156,7 +160,7 @@ def final_node_failure(state: MapGraphState):
     """
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
 
-    # SimulatedGameStateSingleton.reset_instance() AIXO S'HA DE PENSAR COM FERHO, ARA NO TE SENTIT COM ESTA
+    SimulatedGameStateSingleton.get_instance().rollback() # rollback all changes done by agent
 
     return {
         "map_task_succeeded_final": False,

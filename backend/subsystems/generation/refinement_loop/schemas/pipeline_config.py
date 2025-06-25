@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
-from subsystems.generation_pipeline.refinement_loop.constants import AgentName
+from subsystems.generation.refinement_loop.constants import AgentName
 class PipelineStep(BaseModel):
     """Represents a single step in the generation pipeline."""
 

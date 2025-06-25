@@ -5,12 +5,12 @@ from typing import cast
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from subsystems.generation_pipeline.seed.prompts.refine_generation_prompt import format_refining_prompt
-from subsystems.generation_pipeline.seed.prompts.generate_main_goal import format_main_goal_generation_prompt
-from subsystems.generation_pipeline.seed.prompts.select_narrative_structure import format_structure_selection_prompt
-from subsystems.generation_pipeline.seed.schemas.graph_state import SeedGenerationGraphState
-from subsystems.generation_pipeline.seed.schemas.main_goal import MainGoal
-from subsystems.generation_pipeline.seed.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
+from subsystems.generation.seed.prompts.refine_generation_prompt import format_refining_prompt
+from subsystems.generation.seed.prompts.generate_main_goal import format_main_goal_generation_prompt
+from subsystems.generation.seed.prompts.select_narrative_structure import format_structure_selection_prompt
+from subsystems.generation.seed.schemas.graph_state import SeedGenerationGraphState
+from subsystems.generation.seed.schemas.main_goal import MainGoal
+from subsystems.generation.seed.tools.narrative_structure_selection_tools import STRUCTURE_TOOLS, select_narrative_structure
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError, BaseModel, Field

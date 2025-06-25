@@ -6,8 +6,8 @@ from langgraph.graph.message import add_messages
 from core_game.narrative.schemas import NarrativeStructureTypeModel
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
-from subsystems.generation_pipeline.refinement_loop.schemas.graph_state import RefinementLoopGraphState
-from subsystems.generation_pipeline.seed.schemas.graph_state import SeedGenerationGraphState
+from subsystems.generation.refinement_loop.schemas.graph_state import RefinementLoopGraphState
+from subsystems.generation.seed.schemas.graph_state import SeedGenerationGraphState
 
 class GenerationGraphState(RefinementLoopGraphState, SeedGenerationGraphState):
     refined_prompt: str = Field(default="", description="User's refined prompt.")

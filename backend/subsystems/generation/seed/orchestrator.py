@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END, START
-from subsystems.generation_pipeline.seed.schemas.graph_state import SeedGenerationGraphState
-from subsystems.generation_pipeline.seed.nodes import *
+from subsystems.generation.seed.schemas.graph_state import SeedGenerationGraphState
+from subsystems.generation.seed.nodes import *
 from langchain_core.messages import ToolMessage
 
 def validate_refined_prompt(state: SeedGenerationGraphState) -> str:

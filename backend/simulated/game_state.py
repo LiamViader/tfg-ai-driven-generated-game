@@ -131,10 +131,10 @@ class SimulatedGameState:
     def get_scenario_count(self):
         return self.read_map.get_scenario_count()
 
-    def get_cluster_summary(self, *args, **kwargs):
+    def get_map_cluster_summary(self, *args, **kwargs):
         return self.read_map.get_cluster_summary(*args, **kwargs)
 
-    def get_summary_list(self):
+    def get_map_summary_list(self):
         return self.read_map.get_summary_list()
 
     def find_scenarios_by_attribute(self, *args, **kwargs):
@@ -182,7 +182,7 @@ class SimulatedGameState:
     def group_by_scenario(self, *args, **kwargs):
         return self.read_characters.group_by_scenario(*args, **kwargs)
 
-    def get_initial_summary(self, *args, **kwargs):
+    def get_initial_characters_summary(self, *args, **kwargs):
         return self.read_characters.get_initial_summary(*args, **kwargs)
 
     # ---- MAP AND CHARACTER METHODS ----

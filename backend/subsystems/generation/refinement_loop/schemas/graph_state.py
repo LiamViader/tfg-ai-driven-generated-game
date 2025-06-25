@@ -3,7 +3,7 @@ from typing import Sequence, List
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
-from subsystems.generation_pipeline.refinement_loop.schemas.pipeline_config import PipelineConfig
+from subsystems.generation.refinement_loop.schemas.pipeline_config import PipelineConfig
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState

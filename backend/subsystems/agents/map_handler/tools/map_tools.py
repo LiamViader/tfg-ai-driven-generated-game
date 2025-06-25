@@ -577,7 +577,7 @@ def list_scenarios_summary_per_cluster(
             ]
         })
     
-    summary_text = simulated_state.get_cluster_summary(
+    summary_text = simulated_state.get_map_cluster_summary(
         list_all_scenarios=list_all_scenarios_in_each_cluster,
         max_listed_per_cluster=max_scenarios_to_list_per_cluster_if_not_all
     )

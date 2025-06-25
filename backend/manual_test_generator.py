@@ -1,5 +1,5 @@
-from subsystems.generation_pipeline.seed.orchestrator import get_generator_graph_app
-from subsystems.generation_pipeline.schemas.graph_state import GenerationGraphState
+from subsystems.generation.seed.orchestrator import get_generator_graph_app
+from subsystems.generation.schemas.graph_state import GenerationGraphState
 
 
 if __name__ == '__main__':
