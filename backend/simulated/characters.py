@@ -21,22 +21,20 @@ from simulated.decorators import requires_modification
 class SimulatedCharacters:
     """Lightweight wrapper around :class:`Characters` for isolated modifications."""
 
-    def __init__(self, characters: Characters, is_modifiable: bool = False) -> None:
+    def __init__(self, characters: Characters) -> None:
         self._working_state: Characters = characters
-        self._is_modifiable: bool = is_modifiable
 
     def __deepcopy__(self, memo):
         copied_characters = Characters(model=deepcopy(self._working_state.to_model()))
         new_copy = SimulatedCharacters(
             characters=copied_characters,
-            is_modifiable=True 
         )
         return new_copy
 
     def get_state(self) -> Characters:
         return self._working_state
 
-    @requires_modification
+    
     def create_npc(
         self, 
         identity: IdentityModel,
@@ -69,13 +67,13 @@ class SimulatedCharacters:
     def has_player(self) -> bool:
         return self._working_state.has_player()
 
-    @requires_modification
+    
     def create_player_instance(self, player_model: PlayerCharacterModel) -> PlayerCharacter:
         player = PlayerCharacter(player_model)
         player = self._working_state.add_player(player)
         return player
 
-    @requires_modification
+    
     def modify_character_identity(
         self, 
         character_id: str,
@@ -101,7 +99,7 @@ class SimulatedCharacters:
             new_alignment=new_alignment
         )
 
-    @requires_modification
+    
     def modify_character_physical(
         self,
         character_id: str,
@@ -126,7 +124,7 @@ class SimulatedCharacters:
             append_characteristic_items=append_characteristic_items,
         )
 
-    @requires_modification
+    
     def modify_character_psychological(
         self,
         character_id: str,
@@ -164,7 +162,7 @@ class SimulatedCharacters:
             append_quirks=append_quirks
         )
 
-    @requires_modification
+    
     def modify_character_knowledge(
         self,
         character_id: str,
@@ -184,7 +182,7 @@ class SimulatedCharacters:
             append_acquired_knowledge=append_acquired_knowledge
         )
 
-    @requires_modification
+    
     def modify_character_dynamic_state(
         self,
         character_id: str,
@@ -204,7 +202,7 @@ class SimulatedCharacters:
             new_immediate_goal=new_immediate_goal
         )
 
-    @requires_modification
+    
     def modify_character_narrative(
         self,
         character_id: str,
@@ -227,7 +225,7 @@ class SimulatedCharacters:
             append_narrative_purposes=append_narrative_purposes
         )
 
-    @requires_modification
+    
     def try_delete_character(self, character_id: str) -> BaseCharacter:
         character = self._working_state.find_character(character_id)
         if not character:
@@ -241,14 +239,14 @@ class SimulatedCharacters:
         else:
             raise KeyError(f"Character ID '{character_id}' not found.")
 
-    @requires_modification
+    
     def place_character(self, character: BaseCharacter, scenario_id: str) -> BaseCharacter:
         returned_character = self._working_state.place_character(character,scenario_id)
         if not returned_character:
             raise KeyError(f"Character with ID '{character.id}' not found.")
         return returned_character
 
-    @requires_modification
+    
     def try_remove_character_from_scenario(self, character_id: str) -> Tuple[BaseCharacter,str]:
         character = self._working_state.find_character(character_id)
         if not character:
@@ -262,7 +260,7 @@ class SimulatedCharacters:
         
         return character, scenario_id
     
-    @requires_modification
+    
     def try_remove_any_characters_at_scenario(self, scenario_id: str) -> List[BaseCharacter]:
         characters = self._working_state.get_characters_at_scenario(scenario_id)
         if any(isinstance(c, PlayerCharacter) for c in characters):

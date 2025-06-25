@@ -22,8 +22,23 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.reset_instance()
     state = SimulatedGameStateSingleton.get_instance()
 
-    # --- Layer 1 (Auto created in __init__) ---
-    print(">>> [LAYER 1] Base layer automatically created")
+    print("Create scenario before creating a layer")
+
+    scenario1 = state.create_scenario(
+        name=random_scenario_name(),
+        summary_description="A simple place",
+        visual_description="Looks calm and empty.",
+        narrative_context="Opening area",
+        indoor_or_outdoor="indoor",
+        type="start",
+        zone="zoneA"
+    )
+    print_scenarios(state, "Scenarios after creating scenario 1")
+    print(GameStateSingleton.get_instance().game_map._scenarios)
+    
+    # --- Layer 1 () ---
+    state.begin_layer()
+    print(">>> [LAYER 1] Layer 1 created")
 
     scenario1 = state.create_scenario(
         name=random_scenario_name(),
@@ -67,14 +82,17 @@ def run_manual_simulation_test():
         zone="zoneC"
     )
     print_scenarios(state, "[LAYER 1] After creating scenario 3")
+    print(GameStateSingleton.get_instance().game_map._scenarios)
 
     # --- Commit Layer 1 ---
     print(">>> [LAYER 1] Commit to domain")
     state.commit()
     print_scenarios(state, "[BASE] After committing LAYER 1 (now in domain)")
 
-    # --- Begin New Simulation Layer Stack Again ---
+    print(GameStateSingleton.get_instance().game_map._scenarios)
 
+    # --- Begin New Simulation Layer  ---
+    state.begin_layer()
     print(">>> [NEW LAYER 1] Begin")
 
     scenario4 = state.create_scenario(

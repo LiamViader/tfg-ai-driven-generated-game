@@ -21,7 +21,6 @@ class SimulatedGameState:
         self._map = SimulatedMap(game_state.game_map)
         self._characters = SimulatedCharacters(game_state.characters)
         self._layers: List[SimulationLayer] = []
-        self.begin_layer()
 
     #CONTROL DE VERSIONS
 
@@ -29,8 +28,8 @@ class SimulatedGameState:
         parent = self._layers[-1] if self._layers else None
         self._layers.append(SimulationLayer(parent=parent, base_state=self))
 
-    def current_layer(self) -> SimulationLayer:
-        return self._layers[-1]
+    def current_layer(self) -> Optional[SimulationLayer]:
+        return self._layers[-1] if self._layers else None
 
     @property
     def base_map(self) -> SimulatedMap:
@@ -41,10 +40,26 @@ class SimulatedGameState:
         return self._characters
 
     def modify_map(self) -> SimulatedMap:
-        return self.current_layer().modify_map()
+        layer = self.current_layer()
+        if layer:
+            return layer.modify_map()
+        return self._map
 
     def modify_characters(self) -> SimulatedCharacters:
-        return self.current_layer().modify_characters()
+        layer = self.current_layer()
+        if layer:
+            return layer.modify_characters()
+        return self._characters
+    
+    @property
+    def read_map(self) -> SimulatedMap:
+        layer = self.current_layer()
+        return layer.map if layer else self._map
+
+    @property
+    def read_characters(self) -> SimulatedCharacters:
+        layer = self.current_layer()
+        return layer.characters if layer else self._characters
 
     def commit(self):
         if not self._layers:
@@ -67,9 +82,6 @@ class SimulatedGameState:
                 self._characters = layer.get_modified_characters()
                 self._sync_characters_to_domain()
 
-        if not self._layers:
-            self.begin_layer()
-
     def _sync_map_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_map(self._map.get_state())
@@ -88,8 +100,7 @@ class SimulatedGameState:
             game_state = GameStateSingleton.get_instance()
             self._map = SimulatedMap(game_state.game_map)
             self._characters = SimulatedCharacters(game_state.characters)
-            self.begin_layer()
-            print("[SimulatedGameState] Rolled back to base domain state. New empty layer created.")
+            print("[SimulatedGameState] Rolled back to base domain state.")
 
     # ---- MAP METHODS ------
 
@@ -112,22 +123,22 @@ class SimulatedGameState:
     # READ METHODS
 
     def find_scenario(self, scenario_id: str):
-        return self.current_layer().map.find_scenario(scenario_id)
+        return self.read_map.find_scenario(scenario_id)
 
     def get_connection(self, scenario_id: str, direction_from):
-        return self.current_layer().map.get_connection(scenario_id, direction_from)
+        return self.read_map.get_connection(scenario_id, direction_from)
 
     def get_scenario_count(self):
-        return self.current_layer().map.get_scenario_count()
+        return self.read_map.get_scenario_count()
 
     def get_cluster_summary(self, *args, **kwargs):
-        return self.current_layer().map.get_cluster_summary(*args, **kwargs)
+        return self.read_map.get_cluster_summary(*args, **kwargs)
 
     def get_summary_list(self):
-        return self.current_layer().map.get_summary_list()
+        return self.read_map.get_summary_list()
 
     def find_scenarios_by_attribute(self, *args, **kwargs):
-        return self.current_layer().map.find_scenarios_by_attribute(*args, **kwargs)
+        return self.read_map.find_scenarios_by_attribute(*args, **kwargs)
 
     # ---- CHARACTERS METHODS ------
 
@@ -157,22 +168,22 @@ class SimulatedGameState:
     # READ METHODS
 
     def get_character(self, *args, **kwargs):
-        return self.current_layer().characters.get_character(*args, **kwargs)
+        return self.read_characters.get_character(*args, **kwargs)
 
     def get_player(self, *args, **kwargs):
-        return self.current_layer().characters.get_player(*args, **kwargs)
+        return self.read_characters.get_player(*args, **kwargs)
 
     def characters_count(self):
-        return self.current_layer().characters.characters_count()
+        return self.read_characters.characters_count()
 
     def filter_characters(self, *args, **kwargs):
-        return self.current_layer().characters.filter_characters(*args, **kwargs)
+        return self.read_characters.filter_characters(*args, **kwargs)
 
     def group_by_scenario(self, *args, **kwargs):
-        return self.current_layer().characters.group_by_scenario(*args, **kwargs)
+        return self.read_characters.group_by_scenario(*args, **kwargs)
 
     def get_initial_summary(self, *args, **kwargs):
-        return self.current_layer().characters.get_initial_summary(*args, **kwargs)
+        return self.read_characters.get_initial_summary(*args, **kwargs)
 
     # ---- MAP AND CHARACTER METHODS ----
     
@@ -185,7 +196,7 @@ class SimulatedGameState:
         knowledge: Optional[KnowledgeModel] = None
     ) -> Tuple[PlayerCharacter, Scenario]:
 
-        if self.current_layer().characters.has_player():
+        if self.read_characters.has_player():
             raise ValueError("Player already exists.")
 
         knowledge = knowledge or KnowledgeModel()
@@ -199,7 +210,7 @@ class SimulatedGameState:
         )
 
         player = PlayerCharacter(player_model)
-        can_place, msg = self.current_layer().map.can_place_player(player, scenario_id)
+        can_place, msg = self.read_map.can_place_player(player, scenario_id)
         if not can_place:
             rollback_character_id()
             raise ValueError(msg)
@@ -210,14 +221,14 @@ class SimulatedGameState:
         return final_player, scenario
     
     def place_character(self, character_id: str, scenario_id: str) -> Tuple[BaseCharacter,Scenario]:
-        character = self.current_layer().characters.get_character(character_id)
+        character = self.read_characters.get_character(character_id)
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         
         if character.present_in_scenario == scenario_id:
             raise ValueError(f"Character is already present in scenario with ID {scenario_id}")
         
-        success, message = self.current_layer().map.can_place_character(character,scenario_id)
+        success, message = self.read_map.can_place_character(character,scenario_id)
         if not success:
             raise ValueError(message)
         

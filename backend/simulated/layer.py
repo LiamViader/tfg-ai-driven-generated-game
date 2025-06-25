@@ -12,7 +12,7 @@ class SimulationLayer:
         base_state: 'SimulatedGameState'
     ):
         self.parent = parent
-        self._base_state = base_state  # <- Referencia al SimulatedGameState
+        self._base_state = base_state 
         self._map: Optional[SimulatedMap] = None
         self._characters: Optional[SimulatedCharacters] = None
         self.modified_components = set()

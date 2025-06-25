@@ -11,22 +11,20 @@ from core_game.character.domain import BaseCharacter, PlayerCharacter
 from simulated.decorators import requires_modification
 
 class SimulatedMap:
-    def __init__(self, game_map: GameMap, is_modifiable: bool = False) -> None:
+    def __init__(self, game_map: GameMap) -> None:
         self._working_state: GameMap = game_map
-        self._is_modifiable: bool = is_modifiable
 
     def __deepcopy__(self, memo):
         copied_game_map = GameMap(map_model=deepcopy(self._working_state.to_model()))
         new_copy = SimulatedMap(
             game_map=copied_game_map,
-            is_modifiable=True 
         )
         return new_copy
 
     def get_state(self) -> GameMap:
         return self._working_state
 
-    @requires_modification
+    
     def create_scenario(self,
         name: str, 
         summary_description: str, 
@@ -56,7 +54,7 @@ class SimulatedMap:
 
         return scenario
 
-    @requires_modification
+    
     def modify_scenario(self, 
         scenario_id: str, new_name: Optional[str] = None,
         new_summary_description: Optional[str] = None,
@@ -85,7 +83,7 @@ class SimulatedMap:
         """Return the scenario if it exists, or None otherwise."""
         return self._working_state.find_scenario(scenario_id)
     
-    @requires_modification
+    
     def delete_scenario(self, scenario_id: str) -> Scenario:
         """Delete a scenario from the simulated map. Returns True if deleted, False if it does not exist."""
         scenario = self._working_state.find_scenario(scenario_id)
@@ -95,7 +93,7 @@ class SimulatedMap:
         return scenario
 
     
-    @requires_modification
+    
     def create_bidirectional_connection(self, 
         from_scenario_id: str, 
         direction_from_origin: Direction, 
@@ -153,7 +151,7 @@ class SimulatedMap:
             raise ValueError("Something unexpected went wrong")
         return connection
     
-    @requires_modification
+    
     def delete_bidirectional_connection(self, scenario_id_A: str, direction_from_A: Direction)->Connection:
         """Delete a bidirectional connection from scenario A in the specified direction."""
         scenario_A = self._working_state.find_scenario(scenario_id_A)
@@ -169,7 +167,7 @@ class SimulatedMap:
             raise KeyError(f"Scenario '{scenario_id_A}' has no connection to the '{direction_from_A}'.")
         return connection
 
-    @requires_modification
+    
     def modify_bidirectional_connection(self, 
         from_scenario_id: str, 
         direction_from_origin: Direction,
@@ -240,7 +238,7 @@ class SimulatedMap:
         else:
             return (True, "")
 
-    @requires_modification
+    
     def place_player(self, player: PlayerCharacter, scenario_id: str)->Scenario:
         scenario=self._working_state.place_player(player, scenario_id)
         if not scenario:
@@ -248,7 +246,7 @@ class SimulatedMap:
         
         return scenario
     
-    @requires_modification
+    
     def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:              
         scenario=self._working_state.place_character(character, scenario_id)
         if not scenario:
@@ -256,7 +254,7 @@ class SimulatedMap:
         
         return scenario
     
-    @requires_modification
+    
     def try_remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str)->Scenario:
         scenario = self._working_state.find_scenario(scenario_id)
         if not scenario:
