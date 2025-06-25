@@ -10,4 +10,4 @@ from subsystems.generation.refinement_loop.schemas.graph_state import Refinement
 from subsystems.generation.seed.schemas.graph_state import SeedGenerationGraphState
 
 class GenerationGraphState(RefinementLoopGraphState, SeedGenerationGraphState):
-    refined_prompt: str = Field(default="", description="User's refined prompt.")
+    pass
