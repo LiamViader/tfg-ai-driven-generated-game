@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Set, Literal, Tuple, TYPE_CHECKING
+from typing import List, Dict, Any, Optional, Set, Literal, Tuple
 
 from copy import deepcopy
 from core_game.map.domain import GameMap, Scenario, Connection
@@ -8,22 +8,17 @@ from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirectio
 
 from core_game.character.domain import BaseCharacter, PlayerCharacter
 
-if TYPE_CHECKING:
-    from simulated.game_state import SimulatedGameState
-
 from simulated.decorators import requires_modification
 
 class SimulatedMap:
-    def __init__(self, game_map: GameMap, simulated_game_state: 'SimulatedGameState', is_modifiable: bool = False) -> None:
+    def __init__(self, game_map: GameMap, is_modifiable: bool = False) -> None:
         self._working_state: GameMap = game_map
-        self._simulated_game_state: 'SimulatedGameState' = simulated_game_state
         self._is_modifiable: bool = is_modifiable
 
     def __deepcopy__(self, memo):
         copied_game_map = GameMap(map_model=deepcopy(self._working_state.to_model()))
         new_copy = SimulatedMap(
             game_map=copied_game_map,
-            simulated_game_state=self._simulated_game_state,
             is_modifiable=True 
         )
         return new_copy
@@ -88,11 +83,14 @@ class SimulatedMap:
         return self._working_state.find_scenario(scenario_id)
     
     @requires_modification
-    def delete_scenario(self, scenario_id: str) -> bool:
+    def delete_scenario(self, scenario_id: str) -> Scenario:
         """Delete a scenario from the simulated map. Returns True if deleted, False if it does not exist."""
-        result = self._working_state.delete_scenario(scenario_id)
+        scenario = self._working_state.find_scenario(scenario_id)
+        if not scenario:
+            raise ValueError(f"Scenario with ID '{scenario_id}' does not exist.")
+        self._working_state.delete_scenario(scenario_id)
+        return scenario
 
-        return result
     
     @requires_modification
     def create_bidirectional_connection(self, 
@@ -241,10 +239,6 @@ class SimulatedMap:
 
     @requires_modification
     def place_player(self, player: PlayerCharacter, scenario_id: str)->Scenario:
-        success, message = self.can_place_player(player, scenario_id)
-        if not success:
-            raise KeyError(message)
-                
         scenario=self._working_state.place_player(player, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
@@ -252,11 +246,7 @@ class SimulatedMap:
         return scenario
     
     @requires_modification
-    def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:
-        success, message = self.can_place_character(character, scenario_id)
-        if not success:
-            raise KeyError(message)
-                
+    def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:              
         scenario=self._working_state.place_character(character, scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
@@ -264,7 +254,7 @@ class SimulatedMap:
         return scenario
     
     @requires_modification
-    def remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str)->Scenario:
+    def try_remove_character_from_scenario(self, character: BaseCharacter, scenario_id: str)->Scenario:
         scenario = self._working_state.find_scenario(scenario_id)
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")

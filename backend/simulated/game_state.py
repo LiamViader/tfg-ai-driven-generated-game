@@ -3,7 +3,13 @@ from core_game.game.domain import GameState
 from simulated.map import SimulatedMap
 from simulated.characters import SimulatedCharacters
 from simulated.layer import SimulationLayer
-from typing import List
+from typing import List, Tuple, Optional
+from core_game.character.schemas import PlayerCharacterModel, rollback_character_id
+from core_game.character.domain import PlayerCharacter, BaseCharacter
+from core_game.character.schemas import (
+    IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
+)
+from core_game.map.domain import Scenario
 
 class SimulatedGameState:
     """
@@ -12,8 +18,8 @@ class SimulatedGameState:
     So it doesnt modify the real game state directly.
     """
     def __init__(self, game_state: GameState):
-        self._map = SimulatedMap(game_state.game_map, self)
-        self._characters = SimulatedCharacters(game_state.characters, self)
+        self._map = SimulatedMap(game_state.game_map)
+        self._characters = SimulatedCharacters(game_state.characters)
         self._layers: List[SimulationLayer] = []
 
     #CONTROL DE VERSIONS
@@ -60,17 +66,14 @@ class SimulatedGameState:
     def rollback(self):
         self._layers.pop()
 
-    # ---- METODES MAPA ------
+    # ---- MAP METHODS ------
 
-    #METODES DE MODIFICACIO
+    #MODIFYING METHODS
     def create_scenario(self, *args, **kwargs):
         return self.modify_map().create_scenario(*args, **kwargs)
 
     def modify_scenario(self, *args, **kwargs):
         return self.modify_map().modify_scenario(*args, **kwargs)
-
-    def delete_scenario(self, scenario_id: str):
-        return self.modify_map().delete_scenario(scenario_id)
 
     def create_bidirectional_connection(self, *args, **kwargs):
         return self.modify_map().create_bidirectional_connection(*args, **kwargs)
@@ -80,17 +83,9 @@ class SimulatedGameState:
 
     def modify_bidirectional_connection(self, *args, **kwargs):
         return self.modify_map().modify_bidirectional_connection(*args, **kwargs)
-
-    def place_player(self, *args, **kwargs):
-        return self.modify_map().place_player(*args, **kwargs)
-
-    def place_character(self, *args, **kwargs):
-        return self.modify_map().place_character(*args, **kwargs)
     
-    def remove_character_from_scenario(self, *args, **kwargs):
-        return self.modify_map().remove_character_from_scenario(*args, **kwargs)
+    # READ METHODS
 
-    # METODES DE LECTURA
     def find_scenario(self, scenario_id: str):
         return self.current_layer().map.find_scenario(scenario_id)
 
@@ -109,13 +104,121 @@ class SimulatedGameState:
     def find_scenarios_by_attribute(self, *args, **kwargs):
         return self.current_layer().map.find_scenarios_by_attribute(*args, **kwargs)
 
-    def can_place_player(self, *args, **kwargs):
-        return self.current_layer().map.can_place_player(*args, **kwargs)
+    # ---- CHARACTERS METHODS ------
 
-    def can_place_character(self, *args, **kwargs):
-        return self.current_layer().map.can_place_character(*args, **kwargs)
+    #MODIFYING METHODS
 
+    def create_npc(self, *args, **kwargs):
+        return self.modify_characters().create_npc(*args, **kwargs)
 
+    def modify_character_identity(self, *args, **kwargs):
+        return self.modify_characters().modify_character_identity(*args, **kwargs)
+
+    def modify_character_physical(self, *args, **kwargs):
+        return self.modify_characters().modify_character_physical(*args, **kwargs)
+
+    def modify_character_psychological(self, *args, **kwargs):
+        return self.modify_characters().modify_character_psychological(*args, **kwargs)
+
+    def modify_character_knowledge(self, *args, **kwargs):
+        return self.modify_characters().modify_character_knowledge(*args, **kwargs)
+
+    def modify_character_dynamic_state(self, *args, **kwargs):
+        return self.modify_characters().modify_character_dynamic_state(*args, **kwargs)
+
+    def modify_character_narrative(self, *args, **kwargs):
+        return self.modify_characters().modify_character_narrative(*args, **kwargs)
+    
+    # READ METHODS
+
+    def get_character(self, *args, **kwargs):
+        return self.current_layer().characters.get_character(*args, **kwargs)
+
+    def get_player(self, *args, **kwargs):
+        return self.current_layer().characters.get_player(*args, **kwargs)
+
+    def characters_count(self):
+        return self.current_layer().characters.characters_count()
+
+    def filter_characters(self, *args, **kwargs):
+        return self.current_layer().characters.filter_characters(*args, **kwargs)
+
+    def group_by_scenario(self, *args, **kwargs):
+        return self.current_layer().characters.group_by_scenario(*args, **kwargs)
+
+    def get_initial_summary(self, *args, **kwargs):
+        return self.current_layer().characters.get_initial_summary(*args, **kwargs)
+
+    # ---- MAP AND CHARACTER METHODS ----
+    
+    def create_player(
+        self,
+        identity: IdentityModel,
+        physical: PhysicalAttributesModel,
+        psychological: PsychologicalAttributesModel,
+        scenario_id: str,
+        knowledge: Optional[KnowledgeModel] = None
+    ) -> Tuple[PlayerCharacter, Scenario]:
+
+        if self.current_layer().characters.has_player():
+            raise ValueError("Player already exists.")
+
+        knowledge = knowledge or KnowledgeModel()
+
+        player_model = PlayerCharacterModel(
+            identity=identity,
+            physical=physical,
+            psychological=psychological,
+            knowledge=knowledge,
+            present_in_scenario=scenario_id
+        )
+
+        player = PlayerCharacter(player_model)
+        can_place, msg = self.current_layer().map.can_place_player(player, scenario_id)
+        if not can_place:
+            rollback_character_id()
+            raise ValueError(msg)
+        
+        final_player = self.modify_characters().create_player_instance(player_model)
+        scenario = self.modify_map().place_player(player, scenario_id)
+
+        return final_player, scenario
+    
+    def place_character(self, character_id: str, scenario_id: str) -> Tuple[BaseCharacter,Scenario]:
+        character = self.current_layer().characters.get_character(character_id)
+        if not character:
+            raise KeyError(f"Character with ID '{character_id}' not found.")
+        
+        if character.present_in_scenario == scenario_id:
+            raise ValueError(f"Character is already present in scenario with ID {scenario_id}")
+        
+        success, message = self.current_layer().map.can_place_character(character,scenario_id)
+        if not success:
+            raise ValueError(message)
+        
+        character = self.modify_characters().place_character(character,scenario_id)
+        scenario = self.modify_map().place_character(character,scenario_id)
+        return character, scenario
+
+    def delete_character(self, character_id: str) -> BaseCharacter:
+        deleted_character = self.modify_characters().try_delete_character(character_id)
+        if deleted_character.present_in_scenario:
+            try:
+                self.modify_map().try_remove_character_from_scenario(deleted_character, deleted_character.present_in_scenario)
+            except Exception as e:
+                return deleted_character
+        return deleted_character
+    
+    def remove_character_from_scenario(self, character_id: str) -> Tuple[BaseCharacter,Scenario]:
+        character, scenario_id = self.modify_characters().try_remove_character_from_scenario(character_id)
+        scenario = self.modify_map().try_remove_character_from_scenario(character, scenario_id)
+        return character, scenario
+
+    def delete_scenario(self, scenario_id: str) -> Scenario:
+        self.modify_characters().try_remove_any_characters_at_scenario(scenario_id)
+        return self.modify_map().delete_scenario(scenario_id)
+        
+    
 class SimulatedGameStateSingleton:
     """ Singleton class to manage the simulated game state.
     This class ensures that only one instance of SimulatedGameState exists at any time."""

@@ -310,8 +310,8 @@ class Characters:
             return None
         return self._registry.pop(character_id, None)
 
-    def place_character(self, character_id: str, new_scenario_id: str) -> Optional[BaseCharacter]:
-        char = self.find_character(character_id)
+    def place_character(self, character: BaseCharacter, new_scenario_id: str) -> Optional[BaseCharacter]:
+        char = self.find_character(character.id)
         if char:
             char.present_in_scenario = new_scenario_id
         return char
@@ -371,3 +371,10 @@ class Characters:
                 char
             )
         return groups
+    
+    def get_characters_at_scenario(self, scenario_id: str) -> List[BaseCharacter]:
+        matches = []
+        for char in self._registry.values():
+            if char.present_in_scenario == scenario_id:
+                matches.append(char)
+        return matches

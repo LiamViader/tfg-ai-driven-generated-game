@@ -217,27 +217,28 @@ def delete_scenario(
 
     args = extract_tool_args(locals())
 
-    simulated_map = SimulatedGameStateSingleton.get_instance().simulated_map
-    if simulated_map.delete_scenario(scenario_id):
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        scenario = simulated_state.delete_scenario(scenario_id)
+    except Exception as e:
         return Command(update={
-            logs_field_to_update: [get_log_item("delete_scenario", args, False, True, f"Scenario '{scenario_id}' deleted successfully.")],
+            logs_field_to_update: [get_log_item("delete_scenario", args, False, False, str(e))],
             messages_field_to_update: [
                 ToolMessage(
-                    get_observation(simulated_map.get_scenario_count(), "delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully."),
+                    get_observation(simulated_state.get_scenario_count(), "delete_scenario", False, str(e)),
                     tool_call_id=tool_call_id
                 )
             ]
         })
-    else:
-        return Command(update={
-            logs_field_to_update: [get_log_item("delete_scenario", args, False, False, f"Scenario with ID '{scenario_id}' does not exist.")],
-            messages_field_to_update: [
-                ToolMessage(
-                    get_observation(simulated_map.get_scenario_count(), "delete_scenario", False, f"Scenario with ID '{scenario_id}' does not exist."),
-                    tool_call_id=tool_call_id
-                )
-            ]
-        })
+    return Command(update={
+        logs_field_to_update: [get_log_item("delete_scenario", args, False, True, f"Scenario '{scenario_id}' deleted successfully.")],
+        messages_field_to_update: [
+            ToolMessage(
+                get_observation(simulated_state.get_scenario_count(), "delete_scenario", True, f"Scenario '{scenario_id}' deleted successfully."),
+                tool_call_id=tool_call_id
+            )
+        ]
+    })
     
 
 @tool(args_schema=ToolCreateBidirectionalConnectionArgs)
