@@ -290,4 +290,10 @@ class SimulatedCharacters:
         characters = self.filter_characters(None, None)
         if not characters:
             return "No characters created yet."
-        return f"Cast has {self.characters_count()} Characters{", and no player character yet" if not self._working_state.has_player() else ""}: " + ", ".join(f"{c.identity.full_name}({cid})" for cid, c in characters.items())
+        suffix = ", and no player character yet" if not self._working_state.has_player() else ""
+        return (
+            f"Cast has {self.characters_count()} characters{suffix}: "
+            + ", ".join(
+                f"{c.identity.full_name}({cid})" for cid, c in characters.items()
+            )
+        )
