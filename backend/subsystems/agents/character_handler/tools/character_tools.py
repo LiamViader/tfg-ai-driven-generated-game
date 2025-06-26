@@ -143,6 +143,11 @@ class ToolListCharactersByScenarioArgs(InjectedToolContext):
 class ToolFinalizeSimulationArgs(InjectedToolContext):
     justification: str
 
+class ToolValidateSimulatedCharactersArgs(InjectedToolContext):
+    does_characters_meet_criteria: bool = Field(..., description="Assessment flag: True if the characters meet the objective, False otherwise")
+    assessment_reasoning: str = Field(..., description="Reasoning behind the validation outcome")
+    suggested_improvements: Optional[str] = Field(default=None, description="Suggestions on how to improve if validation failed")
+
 
 
 @tool(args_schema=ToolCreateNPCArgs)
@@ -832,6 +837,46 @@ def finalize_simulation(
     })
 
 
+@tool(args_schema=ToolValidateSimulatedCharactersArgs)
+def validate_simulated_characters(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    does_characters_meet_criteria: bool,
+    assessment_reasoning: str,
+    suggested_improvements: Optional[str] = None,
+) -> Command:
+    """Validates the simulated characters state. Call when you are sure the objective is met or not."""
+
+    args = extract_tool_args(locals())
+
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    if not suggested_improvements:
+        suggested_improvements = ""
+
+    if does_characters_meet_criteria:
+        message = f"Simulated characters meet all criteria. Reason: {assessment_reasoning}"
+    else:
+        message = (
+            f"Simulated characters don't meet all criteria. Reason: {assessment_reasoning}. "
+            f"Suggestions: {suggested_improvements}"
+        )
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("validate_simulated_characters", args, False, True, message)],
+        messages_field_to_update: [
+            ToolMessage(
+                get_observation(simulated_state.characters_count(), "validate_simulated_characters", True, message),
+                tool_call_id=tool_call_id,
+            )
+        ],
+        "characters_agent_validated": True,
+        "characters_agent_validation_conclusion_flag": does_characters_meet_criteria,
+        "characters_agent_validation_assessment_reasoning": assessment_reasoning,
+        "characters_agent_validation_suggested_improvements": suggested_improvements,
+    })
+
+
 EXECUTORTOOLS = [
     create_npc,
     create_player,
@@ -849,5 +894,20 @@ EXECUTORTOOLS = [
     remove_character_from_scenario,
     delete_character,
     finalize_simulation,
+]
+
+VALIDATIONTOOLS = [
+    list_characters,
+    list_characters_by_scenario,
+    get_player_details,
+    get_character_details,
+    validate_simulated_characters,
+]
+
+QUERYTOOLS = [
+    list_characters,
+    list_characters_by_scenario,
+    get_player_details,
+    get_character_details,
 ]
 

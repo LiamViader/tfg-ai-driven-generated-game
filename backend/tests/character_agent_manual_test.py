@@ -13,7 +13,7 @@ def print_step(title: str) -> None:
 
 if __name__ == "__main__":
     state = CharacterGraphState(
-        characters_global_narrative_context=(
+        characters_foundational_lore_document=(
             "a world where theres humanlike creatures (called Stoners) that are born with a stone incrustrated in their back. the stone keeps growing until they are crushed by its weight. some people that live freely and happy, their stone doesn't grow as fast. theres people that works mining other peoples stone with a pickaxe. when people dye, as the get crushed by its stone the only thing that remains in the surface is their stone, posing as a tombstone."
         ),
         characters_rules_and_constraints=[
