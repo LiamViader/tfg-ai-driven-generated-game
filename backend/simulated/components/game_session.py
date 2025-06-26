@@ -19,25 +19,22 @@ class SimulatedGameSession:
 
     # ----- Modification methods -----
     def set_user_prompt(self, prompt: str) -> None:
-        self._working_state._user_prompt = prompt
+        self._working_state.set_user_prompt(prompt)
 
     def set_refined_prompt(self, prompt: str) -> None:
-        self._working_state._refined_prompt = prompt
+        self._working_state.set_refined_prompt(prompt)
 
     def set_player_main_goal(self, goal: str) -> None:
-        self._working_state._player_main_goal = goal
+        self._working_state.set_player_main_goal(goal)
 
     def set_global_flag(self, key: str, value: Any) -> None:
-        self._working_state._global_flags[key] = value
+        self._working_state.set_global_flag(key, value)
 
     def remove_global_flag(self, key: str) -> None:
-        if key in self._working_state._global_flags:
-            del self._working_state._global_flags[key]
-        else:
-            raise KeyError(f"Global flag '{key}' not found.")
+        self._working_state.remove_global_flag(key)
 
     def advance_time(self, minutes: int) -> None:
-        self._working_state._time.advance(minutes)
+        self._working_state.advance_time(minutes)
 
     # ----- Read methods -----
     def get_user_prompt(self) -> Optional[str]:
