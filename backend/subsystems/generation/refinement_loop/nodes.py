@@ -7,17 +7,10 @@ def start_refinement_loop(state: RefinementLoopGraphState):
     Entry point, any preprocess will happen here.
     """
 
-    game_state = SimulatedGameStateSingleton.get_instance()
-    refined_prompt = game_state.get_refined_prompt()
-    main_goal = game_state.get_player_main_goal()
-
-    foundational_info = refined_prompt + "\n In this narrative world, the player has the following goal/objective: " + main_goal
-
     print("---ENTERING: START REFINEMENT LOOP NODE---")
 
     return {
         "refinement_current_pass": 0,
-        "refinement_foundational_world_info": foundational_info
     }
 
 def prepare_next_step(state: RefinementLoopGraphState):
@@ -33,7 +26,6 @@ def map_step_start(state: RefinementLoopGraphState):
     """
     Sets up the state for the pass to refine the map
     """
-
 
     applied_operations_log = "Old operations summary: " + state.changelog_old_operations_summary + "Most recent operations:" + format_window(6,state.refinement_pass_changelog)
     relevant_entities_str = ""

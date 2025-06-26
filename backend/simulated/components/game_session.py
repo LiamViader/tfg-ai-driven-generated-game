@@ -40,17 +40,13 @@ class SimulatedGameSession:
     def get_user_prompt(self) -> Optional[str]:
         return self._working_state.user_prompt
 
-    def get_refined_prompt(self) -> str:
-        if self._working_state.refined_prompt:
-            return self._working_state.refined_prompt
-        else: 
-            return ""
+    def get_refined_prompt(self) -> Optional[str]:
+        return self._working_state.refined_prompt
 
-    def get_player_main_goal(self) -> str:
-        if self._working_state.player_main_goal:
-            return self._working_state.player_main_goal
-        else: 
-            return ""
+
+    def get_player_main_goal(self) -> Optional[str]:
+        return self._working_state.player_main_goal
+
 
     def get_global_flags(self) -> dict[str, Any]:
         return dict(self._working_state.global_flags)
