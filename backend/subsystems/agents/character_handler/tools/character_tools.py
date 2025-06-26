@@ -12,7 +12,7 @@ from langchain_core.messages import ToolMessage
 from pydantic import Field
 from subsystems.agents.utils.schemas import InjectedToolContext
 from .helpers import get_observation, _format_nested_dict
-from simulated.game_state import SimulatedGameStateSingleton
+from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import get_log_item, extract_tool_args
 from core_game.character.schemas import NarrativePurposeModel
 import json

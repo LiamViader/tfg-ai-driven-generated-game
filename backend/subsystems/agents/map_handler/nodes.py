@@ -48,8 +48,8 @@ def map_executor_reason_node(state: MapGraphState):
         recent_operations_summary=state.map_recent_operations_summary,
         relevant_entity_details=state.map_relevant_entity_details,
         additional_information=state.map_additional_information,
-        map_rules_and_constraints=state.map_rules_and_constraints,
-        initial_map_summary=state.map_initial_summary,
+        rules_and_constraints=state.map_rules_and_constraints,
+        initial_summary=state.map_initial_summary,
         objective=state.map_current_objective,
         other_guidelines=state.map_other_guidelines,
         messages=get_valid_messages_window(state.map_executor_messages,30)
