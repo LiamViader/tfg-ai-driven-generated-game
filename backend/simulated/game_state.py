@@ -147,16 +147,16 @@ class SimulatedGameState:
     def advance_time(self, minutes: int) -> None:
         self._write_session.advance_time(minutes)
 
-    def get_user_prompt(self) -> Optional[str]:
+    def get_user_prompt(self):
         return self._read_session.get_user_prompt()
 
-    def get_refined_prompt(self) -> Optional[str]:
+    def get_refined_prompt(self):
         return self._read_session.get_refined_prompt()
 
-    def get_player_main_goal(self) -> Optional[str]:
+    def get_player_main_goal(self):
         return self._read_session.get_player_main_goal()
 
-    def get_global_flags(self) -> dict[str, Any]:
+    def get_global_flags(self):
         return self._read_session.get_global_flags()
 
     def get_time(self):

@@ -14,6 +14,7 @@ from subsystems.generation.seed.tools.narrative_structure_selection_tools import
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError, BaseModel, Field
+from simulated.singleton import SimulatedGameStateSingleton
 
 def receive_generation_prompt(state: SeedGenerationGraphState):
     """
@@ -21,6 +22,9 @@ def receive_generation_prompt(state: SeedGenerationGraphState):
     Entry point, any preprocess will happen here.
     """
 
+    SimulatedGameStateSingleton.begin_transaction()
+    game_state = SimulatedGameStateSingleton.get_instance()
+    game_state.set_user_prompt(state.initial_prompt)
     print("---ENTERING: RECEIVE GENERATION PROMPT NODE---")
     return {}
 
@@ -124,6 +128,10 @@ def generate_main_goal(state: SeedGenerationGraphState):
     This node uses an llm to generate a narrative main goal from the refined user prompt. 
     This goal purpose is to give direction to the player on the narrative.
     """
+    #save the refined prompt
+    game_state = SimulatedGameStateSingleton.get_instance()
+    game_state.set_refined_prompt(state.refined_prompt)
+
     print("---ENTERING: GENERATE MAIN GOAL NODE---")
 
     class MainGoalValidation(BaseModel):
@@ -192,6 +200,11 @@ def generate_main_goal(state: SeedGenerationGraphState):
 
 def narrative_structure_reason_node(state: SeedGenerationGraphState):
     """Reasoning step for selecting a narrative structure."""
+
+    #save the main goal
+    game_state = SimulatedGameStateSingleton.get_instance()
+    game_state.set_player_main_goal(state.main_goal)
+
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
 
     #Si s'acosta el màxim d'iteracions, es força a seleccionar la estructura. 2 iteracions de marge per si hi ha errors
@@ -223,4 +236,18 @@ narrative_structure_tool_node = ToolNode(STRUCTURE_TOOLS)
 narrative_structure_tool_node.messages_key = "structure_selection_messages"
 
 
+def final_success_node(state: SeedGenerationGraphState):
+    """Last step if all succeeded."""
+    #save narrative structure TODOOO IMPORTANT
+    SimulatedGameStateSingleton.commit()
+    return {
+        "seed_generation_succeeded": True
+    }
 
+
+def final_failed_node(state: SeedGenerationGraphState):
+    """Last step if all succeeded."""
+    SimulatedGameStateSingleton.rollback()
+    return {
+        "seed_generation_succeeded": False
+    }

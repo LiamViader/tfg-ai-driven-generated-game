@@ -56,6 +56,8 @@ def get_seed_generator_graph_app():
     workflow.add_node("generate_main_goal", generate_main_goal)
     workflow.add_node("narrative_structure_reason", narrative_structure_reason_node)
     workflow.add_node("narrative_structure_tool", narrative_structure_tool_node)
+    workflow.add_node("final_success_node", final_success_node)
+    workflow.add_node("final_failed_node", final_failed_node)
 
     workflow.add_edge(START, "receive_generation_prompt")
     workflow.add_edge("receive_generation_prompt", "refine_generation_prompt")
@@ -68,7 +70,7 @@ def get_seed_generator_graph_app():
         {
             "continue": "generate_main_goal",
             "retry": "refine_generation_prompt",
-            "end_by_error": END
+            "end_by_error": "final_failed_node"
         }
     )
     workflow.add_conditional_edges(
@@ -77,18 +79,20 @@ def get_seed_generator_graph_app():
         {
             "continue": "narrative_structure_reason",
             "retry": "generate_main_goal",
-            "end_by_error": END
+            "end_by_error": "final_failed_node"
         }
     )
     workflow.add_conditional_edges(
         "narrative_structure_tool",
         structure_selected_or_reason_again,
         {
-            "continue": END,
+            "continue": "final_success_node",
             "reason": "narrative_structure_reason",
-            "end_by_error": END,
+            "end_by_error": "final_failed_node",
         }
     )
+    workflow.add_edge("final_failed_node", END)
+    workflow.add_edge("final_success_node", END)
 
     app = workflow.compile()
     return app

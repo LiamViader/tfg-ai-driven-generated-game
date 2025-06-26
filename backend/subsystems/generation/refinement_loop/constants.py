@@ -7,5 +7,5 @@ class AgentName(str, Enum):
     """
     NARRATIVE = "NarrativeAgent"
     MAP = "MapAgent"
-    CHARACTER = "CharacterArchitectAI" 
+    CHARACTERS = "CharacterArchitectAI" 
     RELATIONSHIP = "RelationshipAgent"
