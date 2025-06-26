@@ -1,6 +1,6 @@
 from copy import deepcopy
-from simulated.characters import SimulatedCharacters
-from simulated.map import SimulatedMap
+from simulated.components.characters import SimulatedCharacters
+from simulated.components.map import SimulatedMap
 from simulated.game_state import SimulatedGameState
 from typing import Any
 

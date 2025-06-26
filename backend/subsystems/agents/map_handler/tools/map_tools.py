@@ -8,7 +8,7 @@ from langchain_core.messages import ToolMessage
 from core_game.map.schemas import Direction, OppositeDirections
 from core_game.map.field_descriptions import SCENARIO_FIELDS, EXIT_FIELDS
 
-from simulated.game_state import SimulatedGameStateSingleton
+from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.map_handler.tools.helpers import get_observation
 from langgraph.prebuilt import InjectedState
 from subsystems.agents.utils.schemas import InjectedToolContext

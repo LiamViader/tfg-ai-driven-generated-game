@@ -4,14 +4,15 @@ import uuid
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from simulated.game_state import SimulatedGameState, SimulatedGameStateSingleton
+from simulated.game_state import SimulatedGameState
+from simulated.singleton import SimulatedGameStateSingleton
 from core_game.game.singleton import GameStateSingleton
 
 def print_scenarios(state: SimulatedGameState, label: str):
     print(f"\n--- {label} ---")
     count = state.get_scenario_count()
     print(f"Scenario count: {count}")
-    print(state.get_summary_list())
+    print(state.get_map_summary_list())
     print("--------------------------")
 
 def random_scenario_name():
@@ -37,7 +38,7 @@ def run_manual_simulation_test():
     print("[BASE] Domain map scenarios:", GameStateSingleton.get_instance().game_map._scenarios)
 
     # --- LAYER 1 ---
-    state.begin_layer()
+    SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 1] Layer created")
 
     scenario1 = state.create_scenario(
@@ -52,7 +53,7 @@ def run_manual_simulation_test():
     print_scenarios(state, "[LAYER 1] After creating scenario 1")
 
     # --- LAYER 2 ---
-    state.begin_layer()
+    SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 2] Layer created")
 
     scenario2 = state.create_scenario(
@@ -68,7 +69,7 @@ def run_manual_simulation_test():
 
     # --- ROLLBACK LAYER 2 ---
     print(">>> [LAYER 2] Rolling back")
-    state.rollback()
+    SimulatedGameStateSingleton.rollback()
     print_scenarios(state, "[LAYER 1] After rollback of Layer 2")
 
     # --- CONTINUE IN LAYER 1 ---
@@ -86,12 +87,12 @@ def run_manual_simulation_test():
 
     # --- COMMIT LAYER 1 ---
     print(">>> [LAYER 1] Committing changes to base/domain")
-    state.commit()
+    SimulatedGameStateSingleton.commit()
     print_scenarios(state, "[BASE] After committing LAYER 1")
     print("[BASE] Domain map (updated):", GameStateSingleton.get_instance().game_map._scenarios)
 
     # --- NEW LAYER 1 ---
-    state.begin_layer()
+    SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 1] New simulation layer created")
 
     scenario4 = state.create_scenario(
@@ -106,7 +107,7 @@ def run_manual_simulation_test():
     print_scenarios(state, "[LAYER 1] After creating scenario 4")
 
     # --- NEW LAYER 2 ---
-    state.begin_layer()
+    SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 2] Nested simulation layer created")
 
     scenario5 = state.create_scenario(
@@ -121,7 +122,7 @@ def run_manual_simulation_test():
     print_scenarios(state, "[LAYER 2] After creating scenario 5")
 
     # --- NEW LAYER 3 ---
-    state.begin_layer()
+    SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 3] Deepest simulation layer created")
 
     scenario6 = state.create_scenario(
@@ -137,17 +138,17 @@ def run_manual_simulation_test():
 
     # --- COMMIT LAYER 3 ---
     print(">>> [LAYER 3] Committing to Layer 2")
-    state.commit()
+    SimulatedGameStateSingleton.commit()
     print_scenarios(state, "[LAYER 2] After commit of Layer 3")
 
     # --- ROLLBACK LAYER 2 ---
     print(">>> [LAYER 2] Rolling back")
-    state.rollback()
+    SimulatedGameStateSingleton.rollback()
     print_scenarios(state, "[LAYER 1] After rollback of Layer 2")
 
     # --- FINAL ROLLBACK TO BASE ---
     print(">>> [LAYER 1] Rolling back to base/domain")
-    state.rollback()
+    SimulatedGameStateSingleton.rollback()
     print_scenarios(state, "[BASE] Final state after rollback chain")
 
     print("[BASE] Final domain map state:", GameStateSingleton.get_instance().game_map._scenarios)

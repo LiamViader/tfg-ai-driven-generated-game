@@ -1,7 +1,8 @@
 from typing import Optional, TYPE_CHECKING
-from simulated.map import SimulatedMap
-from simulated.characters import SimulatedCharacters
+from simulated.components.map import SimulatedMap
+from simulated.components.characters import SimulatedCharacters
 if TYPE_CHECKING:
+    from simulated.versioning.manager import GameStateVersionManager
     from simulated.game_state import SimulatedGameState
 from copy import deepcopy
 
@@ -9,13 +10,12 @@ class SimulationLayer:
     def __init__(
         self, 
         parent: Optional['SimulationLayer'], 
-        base_state: 'SimulatedGameState'
+        version_manager: 'GameStateVersionManager'
     ):
         self.parent = parent
-        self._base_state = base_state 
+        self._version_manager = version_manager
         self._map: Optional[SimulatedMap] = None
         self._characters: Optional[SimulatedCharacters] = None
-        self.modified_components = set()
 
     @property
     def map(self) -> SimulatedMap:
@@ -24,7 +24,7 @@ class SimulationLayer:
         elif self.parent:
             return self.parent.map
         else:
-            return self._base_state.base_map
+            return self._version_manager.base_map
 
     @property
     def characters(self) -> SimulatedCharacters:
@@ -33,18 +33,16 @@ class SimulationLayer:
         elif self.parent:
             return self.parent.characters
         else:
-            return self._base_state.base_characters
+            return self._version_manager.base_characters
         
     def modify_map(self) -> SimulatedMap:
         if self._map is None:
             self._map = deepcopy(self.map)
-            self.modified_components.add("map")
         return self._map
 
     def modify_characters(self) -> SimulatedCharacters:
         if self._characters is None:
             self._characters = deepcopy(self.characters)
-            self.modified_components.add("characters")
         return self._characters
     
     def has_modified_map(self) -> bool:

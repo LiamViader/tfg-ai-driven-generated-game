@@ -13,7 +13,7 @@ from utils.message_window import get_valid_messages_window
 from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage, AIMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
-from simulated.game_state import SimulatedGameStateSingleton
+from simulated.singleton import SimulatedGameStateSingleton
 
 from subsystems.agents.utils.logs import ToolLog
 
@@ -24,7 +24,7 @@ def receive_objective_node(state: MapGraphState):
     """
 
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    SimulatedGameStateSingleton.get_instance().begin_layer() # Safety layer
+    SimulatedGameStateSingleton.begin_transaction() # Safety layer
     initial_summary=SimulatedGameStateSingleton.get_instance().get_map_summary_list()
     return {
         "map_current_try": 0,
@@ -149,7 +149,7 @@ def final_node_success(state: MapGraphState):
     Last node of agent if succeeded on objective.
     """
     print("---ENTERING: LAST NODE OBJECTIVE SUCESS---")
-    SimulatedGameStateSingleton.get_instance().commit() # commit all changes done by agent
+    SimulatedGameStateSingleton.commit() # commit all changes done by agent
     return {
         "map_task_succeeded_final": True,
     }
@@ -160,7 +160,7 @@ def final_node_failure(state: MapGraphState):
     """
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
 
-    SimulatedGameStateSingleton.get_instance().rollback() # rollback all changes done by agent
+    SimulatedGameStateSingleton.rollback() # rollback all changes done by agent
 
     return {
         "map_task_succeeded_final": False,
