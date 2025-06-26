@@ -6,12 +6,6 @@ def start_generation(state: GenerationGraphState):
     print("---ENTERING: START GENERATION NODE---")
     return {}
 
-def check_generated_seed(state: GenerationGraphState):
-    """Updates the game state adding all the generated info"""
-    print("---ENTERING: UPDATE GAME STATE SEED---")
-
-    return {}
-
 def finalize_generation(state: GenerationGraphState):
     """Final node for the generation workflow."""
     print("---ENTERING: FINALIZE GENERATION NODE---")
