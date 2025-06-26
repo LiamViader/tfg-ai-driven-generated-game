@@ -19,6 +19,7 @@ class SimulatedGameSession:
 
     # ----- Modification methods -----
     def set_user_prompt(self, prompt: str) -> None:
+<<<<<<< biksub-codex/crear-componente-para-sesión-de-juego
         self._working_state.set_user_prompt(prompt)
 
     def set_refined_prompt(self, prompt: str) -> None:
@@ -51,3 +52,40 @@ class SimulatedGameSession:
 
     def get_time(self):
         return self._working_state.time
+=======
+        self._working_state._user_prompt = prompt
+
+    def set_refined_prompt(self, prompt: str) -> None:
+        self._working_state._refined_prompt = prompt
+
+    def set_player_main_goal(self, goal: str) -> None:
+        self._working_state._player_main_goal = goal
+
+    def set_global_flag(self, key: str, value: Any) -> None:
+        self._working_state._global_flags[key] = value
+
+    def remove_global_flag(self, key: str) -> None:
+        if key in self._working_state._global_flags:
+            del self._working_state._global_flags[key]
+        else:
+            raise KeyError(f"Global flag '{key}' not found.")
+
+    def advance_time(self, minutes: int) -> None:
+        self._working_state._time.advance(minutes)
+
+    # ----- Read methods -----
+    def get_user_prompt(self) -> Optional[str]:
+        return self._working_state._user_prompt
+
+    def get_refined_prompt(self) -> Optional[str]:
+        return self._working_state._refined_prompt
+
+    def get_player_main_goal(self) -> Optional[str]:
+        return self._working_state._player_main_goal
+
+    def get_global_flags(self) -> dict[str, Any]:
+        return dict(self._working_state._global_flags)
+
+    def get_time(self):
+        return self._working_state._time
+>>>>>>> main
