@@ -4,6 +4,7 @@ from core_game.game_state.singleton import GameStateSingleton
 from core_game.game_state.domain import GameState
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
+from simulated.components.game_session import SimulatedGameSession
 from simulated.versioning.layer import SimulationLayer # Importamos la clase SimulationLayer
 from typing import List, Optional
 
@@ -15,6 +16,7 @@ class GameStateVersionManager:
     def __init__(self, game_state: GameState):
         self._base_map = SimulatedMap(game_state.game_map)
         self._base_characters = SimulatedCharacters(game_state.characters)
+        self._base_session = SimulatedGameSession(game_state.session)
         self._layers: List[SimulationLayer] = []
 
     @property
@@ -24,6 +26,10 @@ class GameStateVersionManager:
     @property
     def base_characters(self) -> SimulatedCharacters:
         return self._base_characters
+
+    @property
+    def base_session(self) -> SimulatedGameSession:
+        return self._base_session
 
     def begin_transaction(self):
         """Starts a new transaction layer."""
@@ -52,6 +58,13 @@ class GameStateVersionManager:
                 self._base_characters = layer.get_modified_characters()
                 self._sync_characters_to_domain()
 
+        if layer.has_modified_session():
+            if parent:
+                parent.set_modified_session(layer.get_modified_session())
+            else:
+                self._base_session = layer.get_modified_session()
+                self._sync_session_to_domain()
+
     def rollback(self):
         """Discards all changes in the current transaction layer."""
         if not self._layers:
@@ -72,8 +85,16 @@ class GameStateVersionManager:
         layer = self._layers[-1] if self._layers else None
         if not layer:
             return self._base_characters
-        
+
         return layer.modify_characters() if for_writing else layer.characters
+
+    def get_current_session(self, for_writing: bool = False) -> SimulatedGameSession:
+        """Gets the current session state. If for_writing, ensures it's a mutable copy."""
+        layer = self._layers[-1] if self._layers else None
+        if not layer:
+            return self._base_session
+
+        return layer.modify_session() if for_writing else layer.session
 
     def _sync_map_to_domain(self):
         game_state = GameStateSingleton.get_instance()
@@ -82,3 +103,7 @@ class GameStateVersionManager:
     def _sync_characters_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_characters(self._base_characters.get_state())
+
+    def _sync_session_to_domain(self):
+        game_state = GameStateSingleton.get_instance()
+        game_state.update_session(self._base_session.get_state())

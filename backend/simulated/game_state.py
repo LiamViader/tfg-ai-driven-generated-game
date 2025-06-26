@@ -1,8 +1,8 @@
 
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
-from simulated.versioning.layer import SimulationLayer
-from typing import List, Tuple, Optional
+from simulated.components.game_session import SimulatedGameSession
+from typing import List, Tuple, Optional, Any
 from core_game.character.schemas import PlayerCharacterModel, rollback_character_id
 from core_game.character.domain import PlayerCharacter, BaseCharacter
 from core_game.character.schemas import (
@@ -36,6 +36,14 @@ class SimulatedGameState:
     @property
     def _write_characters(self) -> SimulatedCharacters:
         return self._version_manager.get_current_characters(for_writing=True)
+
+    @property
+    def _read_session(self) -> SimulatedGameSession:
+        return self._version_manager.get_current_session(for_writing=False)
+
+    @property
+    def _write_session(self) -> SimulatedGameSession:
+        return self._version_manager.get_current_session(for_writing=True)
 
     # ---- MAP METHODS ------
 
@@ -119,6 +127,40 @@ class SimulatedGameState:
 
     def get_initial_characters_summary(self, *args, **kwargs):
         return self._read_characters.get_initial_summary(*args, **kwargs)
+
+    # ---- SESSION METHODS ----
+    def set_user_prompt(self, prompt: str) -> None:
+        self._write_session.set_user_prompt(prompt)
+
+    def set_refined_prompt(self, prompt: str) -> None:
+        self._write_session.set_refined_prompt(prompt)
+
+    def set_player_main_goal(self, goal: str) -> None:
+        self._write_session.set_player_main_goal(goal)
+
+    def set_global_flag(self, key: str, value: Any) -> None:
+        self._write_session.set_global_flag(key, value)
+
+    def remove_global_flag(self, key: str) -> None:
+        self._write_session.remove_global_flag(key)
+
+    def advance_time(self, minutes: int) -> None:
+        self._write_session.advance_time(minutes)
+
+    def get_user_prompt(self) -> Optional[str]:
+        return self._read_session.get_user_prompt()
+
+    def get_refined_prompt(self) -> Optional[str]:
+        return self._read_session.get_refined_prompt()
+
+    def get_player_main_goal(self) -> Optional[str]:
+        return self._read_session.get_player_main_goal()
+
+    def get_global_flags(self) -> dict[str, Any]:
+        return self._read_session.get_global_flags()
+
+    def get_time(self):
+        return self._read_session.get_time()
 
     # ---- MAP AND CHARACTER METHODS ----
     
