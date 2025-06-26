@@ -22,13 +22,29 @@ def receive_operations_log_node(state: SummarizeLogsGraphState):
 
 def summarize_operations_node(state: SummarizeLogsGraphState):
 
+    def convert_to_json_serializable(item: Any) -> Any:
+        """
+        Recursively converts Pydantic models and other non-serializable objects
+        into a format that can be handled by json.dumps.
+        """
+        if hasattr(item, 'model_dump'):  # Para Pydantic v2
+            return item.model_dump()
+        if hasattr(item, 'dict'):  # Para Pydantic v1
+            return item.dict()
+        if isinstance(item, dict):
+            return {key: convert_to_json_serializable(value) for key, value in item.items()}
+        if isinstance(item, list):
+            return [convert_to_json_serializable(element) for element in item]
+        # Si no es ninguno de los anteriores, se asume que es serializable
+        return item
+
     def format_operation_logs(operation_logs: Sequence[ToolLog]):
         successful_operations = []
         for operation in operation_logs:
             if operation.success and not operation.is_query:
                 op_dict = {
                     "tool_called": operation.tool_called,
-                    "arguments": operation.args,
+                    "arguments": convert_to_json_serializable(operation.args),
                     "result_message": operation.message
                 }
                 successful_operations.append(op_dict)
@@ -44,6 +60,7 @@ def summarize_operations_node(state: SummarizeLogsGraphState):
     prompt = format_summarize_log_operations_prompt(formatted_operations, 300)
 
     response = summarizing_llm.invoke(prompt)
+
     summary = response.content
 
     #falta fer validacio i tal del output del llm
