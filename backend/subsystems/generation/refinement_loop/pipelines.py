@@ -75,8 +75,51 @@ def map_then_characters_pipeline() -> PipelineConfig:
         ],
     )
 
+def alternating_expansion_pipeline() -> PipelineConfig:
+    """Pipeline with six steps alternating between map and characters."""
+
+    steps = []
+    for i in range(1, 4):
+        steps.append(
+            PipelineStep(
+                step_name=f"Map Expansion {i}",
+                agent_name=AgentName.MAP,
+                objective_prompt=(
+                    "Expand the world map with 1-5 new scenarios based on the current context."
+                ),
+                rules_and_constraints=[],
+                other_guidelines="Ensure new scenarios logically connect with previous ones.",
+                max_executor_iterations=5,
+                max_validation_iterations=1,
+                max_retries=1,
+            )
+        )
+        steps.append(
+            PipelineStep(
+                step_name=f"Character Expansion {i}",
+                agent_name=AgentName.CHARACTERS,
+                objective_prompt=(
+                    "Introduce 1-3 new characters that enrich the expanded world."
+                ),
+                rules_and_constraints=[],
+                other_guidelines="Place characters in appropriate scenarios and expand the lore.",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=1,
+            )
+        )
+
+    return PipelineConfig(
+        name="alternating_expansion",
+        description=(
+            "Six-step pipeline alternating between map and character generation to gradually expand the world."
+        ),
+        steps=steps,
+    )
+
 __all__ = [
     "map_only_pipeline",
     "characters_only_pipeline",
     "map_then_characters_pipeline",
+    "alternating_expansion_pipeline",
 ]

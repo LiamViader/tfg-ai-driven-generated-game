@@ -35,7 +35,6 @@ def validate_main_goal(state: SeedGenerationGraphState) -> str:
 
 def structure_selected_or_reason_again(state: SeedGenerationGraphState) -> str:
     """Check if a narrative structure has been selected."""
-    print(state.selected_structure)
     if state.selected_structure is not None:
         return "continue"
     elif state.current_structure_selection_iteration < state.max_structure_selection_reason_iterations + state.max_structure_forced_selection_iterations:
@@ -61,8 +60,6 @@ def get_seed_generator_graph_app():
 
     workflow.add_edge(START, "receive_generation_prompt")
     workflow.add_edge("receive_generation_prompt", "refine_generation_prompt")
-    workflow.add_edge("refine_generation_prompt", "generate_main_goal")
-    workflow.add_edge("generate_main_goal", "narrative_structure_reason")
     workflow.add_edge("narrative_structure_reason", "narrative_structure_tool")
     workflow.add_conditional_edges(
         "refine_generation_prompt",

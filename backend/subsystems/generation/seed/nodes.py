@@ -25,7 +25,7 @@ def receive_generation_prompt(state: SeedGenerationGraphState):
     SimulatedGameStateSingleton.begin_transaction()
     game_state = SimulatedGameStateSingleton.get_instance()
     game_state.set_user_prompt(state.initial_prompt)
-    print("---ENTERING: RECEIVE GENERATION PROMPT NODE---")
+    print("---ENTERING: RECEIVE USER PROMPT NODE---")
     return {}
 
 def refine_generation_prompt(state: SeedGenerationGraphState):
@@ -33,7 +33,7 @@ def refine_generation_prompt(state: SeedGenerationGraphState):
     This node calls an llm to refine the user promp and validates the result.
     """
 
-    print("---ENTERING: REFINE GENERATION PROMPT NODE---")
+    print("---ENTERING: REFINE USER PROMPT NODE---")
 
     class RefinedPromptValidation(BaseModel):
         valid: bool = Field(..., description="Whether the refined prompt is valid for creativity, coherence, and richness.")
@@ -246,7 +246,7 @@ def final_success_node(state: SeedGenerationGraphState):
 
 
 def final_failed_node(state: SeedGenerationGraphState):
-    """Last step if all succeeded."""
+    """Last step if something failed."""
     SimulatedGameStateSingleton.rollback()
     return {
         "seed_generation_succeeded": False

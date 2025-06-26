@@ -48,10 +48,11 @@ def select_narrative_structure(justification: str, structure_id: str, tool_call_
 @tool(args_schema=ToolGetStructureInfoArgs)
 def get_structure_description(structure_id: str) -> str:
     """Get description and use cases of a narrative structure."""
+    print("GETTING DESCRIPTION")
     struct = AVAILABLE_STRUCTURES_BY_ID.get(structure_id)
     if struct is None:
         return f"Structure id '{structure_id}' not found"
-    return f"{struct.name}: {struct.description} Use cases: {struct.orientative_use_cases}"
+    return f"{struct.name} ({structure_id}): {struct.description} Use cases: {struct.orientative_use_cases}"
 
 @tool(args_schema=ToolGetStructureInfoArgs)
 def get_structure_stages(structure_id: str) -> str:

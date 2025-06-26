@@ -28,7 +28,7 @@ def map_step_start(state: RefinementLoopGraphState):
     """
 
     applied_operations_log = "Old operations summary: " + state.changelog_old_operations_summary + "Most recent operations:" + format_window(6,state.refinement_pass_changelog)
-    relevant_entities_str = ""
+    relevant_entities_str = "" # AQUI S'HAURIA DE INJECTAR INFORMACIO D'ENTITATS QUE PUGUIN SER UTILS, FENT RAG A PARTIR DE LES ULTIMES OPERACIONS I TENINT EN COMPTE QUE LI POT INTERESSAR A AQUEST AGENT I DE QUI ERA CADA OPERACIO
     additional_info_str = ""
     current_step=state.refinement_pipeline_config.steps[state.refinement_current_pass]
     return {
