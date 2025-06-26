@@ -26,6 +26,11 @@ def receive_objective_node(state: CharacterGraphState):
         "logs_field_to_update": "characters_executor_applied_operations_log",
         "characters_current_executor_iteration": 0,
         "characters_initial_summary": initial_summary,
+        "characters_executor_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)],
+        "characters_task_finalized_by_agent": False,
+        "characters_task_finalized_justification": None,
+        "characters_current_validation_iteration": 0,
+        "characters_task_succeeded_final": False,
     }
 
 

@@ -15,7 +15,7 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from simulated.singleton import SimulatedGameStateSingleton
 
-from subsystems.agents.utils.logs import ToolLog
+from subsystems.agents.utils.logs import ToolLog, ClearLogs
 
 def receive_objective_node(state: MapGraphState):
     """
@@ -31,7 +31,12 @@ def receive_objective_node(state: MapGraphState):
         "messages_field_to_update": "map_executor_messages",
         "logs_field_to_update": "map_executor_applied_operations_log",
         "map_current_executor_iteration": 0,
-        "map_initial_summary": initial_summary
+        "map_initial_summary": initial_summary,
+        "map_executor_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)],
+        "map_task_finalized_by_agent": False,
+        "map_task_finalized_justification": None,
+        "map_current_validation_iteration": 0,
+        "map_task_succeeded_final": False,
     }
 
 

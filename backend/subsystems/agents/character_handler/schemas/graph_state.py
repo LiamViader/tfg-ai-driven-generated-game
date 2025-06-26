@@ -6,6 +6,7 @@ from langgraph.graph.message import add_messages
 import operator
 
 from subsystems.agents.utils.schemas import ToolLog
+from subsystems.agents.utils.logs import log_reducer
 
 class CharacterGraphState(BaseModel):
     """Holds context and working memory for the character agent."""
@@ -75,9 +76,7 @@ class CharacterGraphState(BaseModel):
         default=None,
         description="A string of the justification provided by the agent who finalized the characters",
     )
-    characters_executor_applied_operations_log: Annotated[
-        Sequence[ToolLog], operator.add
-    ] = Field(
+    characters_executor_applied_operations_log: Annotated[Sequence[ToolLog], log_reducer] = Field(
         default_factory=list,
         description="A chronological log of all tool-based operations applied to the simulated characters, by the executor agent including 'tool_called', 'success', 'message'.",
     )
@@ -114,9 +113,7 @@ class CharacterGraphState(BaseModel):
         default=False,
         description="A flag indicating whether the validation agent gave a validation yet",
     )
-    characters_validator_applied_operations_log: Annotated[
-        Sequence[ToolLog], operator.add
-    ] = Field(
+    characters_validator_applied_operations_log: Annotated[Sequence[ToolLog], log_reducer] = Field(
         default_factory=list,
         description="A chronological log of all tool-based operations applied to the simulated characters, by the validator agent including 'tool_called', 'success', 'message'.",
     )

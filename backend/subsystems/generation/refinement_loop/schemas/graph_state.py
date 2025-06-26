@@ -7,7 +7,7 @@ from subsystems.generation.refinement_loop.schemas.pipeline_config import Pipeli
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
-
+from subsystems.agents.utils.schemas import AgentLog
 class RefinementLoopGraphState(CharacterGraphState, MapGraphState, SummarizeLogsGraphState):
     """
     Manages the state of the iterative N-pass enrichment loop.
@@ -30,7 +30,7 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, SummarizeLogs
     refinement_foundational_world_info: str = Field(default="", description="Foundational info about the world that will be passed to the agents")
 
     #Shared with other agents
-    refinement_pass_changelog: Annotated[Sequence[str], operator.add] = Field(
+    refinement_pass_changelog: Annotated[Sequence[AgentLog], operator.add] = Field(
         default_factory=list,
         description="A log that accumulates the summary or outcome of each agent's operation in every pass. The 'operator.add' ensures that new log entries are appended, creating a complete history of the generation process."
     )

@@ -79,17 +79,17 @@ def alternating_expansion_pipeline() -> PipelineConfig:
     """Pipeline with six steps alternating between map and characters."""
 
     steps = []
-    for i in range(1, 4):
+    for i in range(1, 3):
         steps.append(
             PipelineStep(
                 step_name=f"Map Expansion {i}",
                 agent_name=AgentName.MAP,
                 objective_prompt=(
-                    "Expand the world map with 1-5 new scenarios based on the current context."
+                    "Expand the world map with 3-5 new scenarios based on the current context."
                 ),
                 rules_and_constraints=[],
-                other_guidelines="Ensure new scenarios logically connect with previous ones.",
-                max_executor_iterations=5,
+                other_guidelines="Ensure new scenarios logically connect with previous ones before you started the simulation. The map should be interesting for the player to explore, you can keep expanding zones or adding new ones. Use the provided context to make interesting decisions",
+                max_executor_iterations=9,
                 max_validation_iterations=1,
                 max_retries=1,
             )
@@ -99,11 +99,11 @@ def alternating_expansion_pipeline() -> PipelineConfig:
                 step_name=f"Character Expansion {i}",
                 agent_name=AgentName.CHARACTERS,
                 objective_prompt=(
-                    "Introduce 1-3 new characters that enrich the expanded world."
+                    "Introduce 1-2 new characters that enrich the expanded world. Give characters diferent narrative roles. When you feel like so, you can create the player."
                 ),
                 rules_and_constraints=[],
-                other_guidelines="Place characters in appropriate scenarios and expand the lore.",
-                max_executor_iterations=3,
+                other_guidelines="Place characters in appropriate scenarios and expand the given context lore by adding background knowledge to existing characters, or updating other atributes",
+                max_executor_iterations=7,
                 max_validation_iterations=1,
                 max_retries=1,
             )

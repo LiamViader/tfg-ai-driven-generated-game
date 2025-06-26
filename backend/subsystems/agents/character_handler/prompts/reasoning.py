@@ -76,9 +76,9 @@ This is your **single initial source of truth** for the world's lore, tone, and 
 ## 2. Supporting Information
 This is additional or technical information that you must respect.
 
-### Rules and Constraints:
+### Rules and Constraints (Mandatory):
 
-This is your most important guiding principle: The Rule of 'Zero Assumed Context'. You must generate every piece of content as if the recipient has **ZERO prior knowledge** of the game world, its lore, or its rules. Do not take shortcuts or assume shared context. Everything should be self-contained and self-explanatory;
+THIS IS YOUR MOST IMPORTANT GUIDING PRINCIPLE: The 'Zero Context' Principle: Write everything for a total stranger. All descriptions MUST be self-contained, assuming zero prior knowledge of lore or rules. For example, even if all aliens in the lore had 3 eyes, when creating an alien you must explicitly state that it has 3 eyes in its description.
 {rules_and_constraints}
 
 ### Other Guidelines (Softer rules):

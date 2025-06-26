@@ -47,6 +47,7 @@ def get_refinement_loop_graph_app():
     workflow.add_node("finalize_step", finalize_step)
     workflow.add_node("prepare_next_step", prepare_next_step)
     workflow.add_node("summarize_agent_logs", summarize_sub_graph)
+    workflow.add_node("add_summarized_agent_log", add_agent_log_to_changelog)
 
 
 
@@ -88,7 +89,8 @@ def get_refinement_loop_graph_app():
             "failure": "prepare_next_step",
         }
     )
-    workflow.add_edge("summarize_agent_logs", "prepare_next_step")
+    workflow.add_edge("summarize_agent_logs", "add_summarized_agent_log")
+    workflow.add_edge("add_summarized_agent_log", "prepare_next_step")
 
 
     app = workflow.compile()

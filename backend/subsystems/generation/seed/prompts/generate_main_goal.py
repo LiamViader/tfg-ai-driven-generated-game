@@ -31,7 +31,7 @@ GENERATE_MAIN_GOAL_SYSTEM_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_tem
     GENERATE_MAIN_GOAL_SYSTEM_PROMPT_TEMPLATE_STRING
 )
 
-GENERATE_MAIN_GOAL_HUMAN_PROMPT_TEMPLATE = SystemMessagePromptTemplate.from_template(
+GENERATE_MAIN_GOAL_HUMAN_PROMPT_TEMPLATE = HumanMessagePromptTemplate.from_template(
     "{refined_user_prompt}"
 )
 

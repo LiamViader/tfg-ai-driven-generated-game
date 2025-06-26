@@ -6,7 +6,7 @@ import json
 from langgraph.prebuilt import ToolNode
 from typing import Sequence, Dict, Any, List
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
-
+from subsystems.agents.utils.schemas import AgentLog
 from subsystems.agents.utils.logs import ToolLog
 from subsystems.summarize_agent_logs.prompts.summarize_operations import format_summarize_log_operations_prompt
 
@@ -61,11 +61,10 @@ def summarize_operations_node(state: SummarizeLogsGraphState):
 
     response = summarizing_llm.invoke(prompt)
 
-    summary = response.content
+    summary = AgentLog(agent_name=state.current_agent_name,summary=str(response.content))
 
     #falta fer validacio i tal del output del llm
 
     return {
         "sumarized_operations_result": summary,
-        "refinement_pass_changelog": [summary]
     }

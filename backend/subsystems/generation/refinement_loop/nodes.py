@@ -1,6 +1,7 @@
 from subsystems.generation.refinement_loop.schemas.graph_state import RefinementLoopGraphState
 from subsystems.generation.refinement_loop.utils.format_refinement_logs import format_window
 from simulated.singleton import SimulatedGameStateSingleton
+from subsystems.agents.utils.logs import ToolLog, ClearLogs
 def start_refinement_loop(state: RefinementLoopGraphState):
     """
     First node of the graph.
@@ -17,9 +18,21 @@ def prepare_next_step(state: RefinementLoopGraphState):
     """
     Node that prepares for the next step. This node is executed after every step
     """
-    #AQUI S'HAURIA DE FER EL RESUM DE LES OPERACIONS MES VELLES EN CAS QUE CALGUI
+    print("---ENTERING: PREPARE NEXT STEP---")
+    agentName = state.refinement_pipeline_config.steps[state.refinement_current_pass+1].agent_name
     return {
-        "refinement_current_pass": state.refinement_current_pass+1
+        "refinement_current_pass": state.refinement_current_pass+1,
+        "current_agent_name": agentName,
+    }
+
+def add_agent_log_to_changelog(state: RefinementLoopGraphState):
+    """
+    Adds the summarized log to the changelog
+    """
+    #AQUI S'HAURIA DE FER EL RESUM DE LES OPERACIONS MES VELLES EN CAS QUE CALGUI
+
+    return {
+        "refinement_pass_changelog": [state.sumarized_operations_result]
     }
 
 def map_step_start(state: RefinementLoopGraphState):
@@ -41,7 +54,9 @@ def map_step_start(state: RefinementLoopGraphState):
         "map_current_objective": current_step.objective_prompt,
         "map_max_executor_iterations": current_step.max_executor_iterations,
         "map_max_validation_iterations": current_step.max_validation_iterations,
-        "map_max_retries": current_step.max_retries
+        "map_max_retries": current_step.max_retries,
+        "map_executor_applied_operations_log": ClearLogs(),
+        "map_validator_applied_operations_log": ClearLogs()
     }
 
 def map_step_finish(state: RefinementLoopGraphState):
@@ -50,7 +65,7 @@ def map_step_finish(state: RefinementLoopGraphState):
     """
     return {
         "operations_log_to_summarize": state.map_executor_applied_operations_log,
-        "last_step_succeeded": state.map_task_succeeded_final
+        "last_step_succeeded": state.map_task_succeeded_final,
     }
 
 def characters_step_start(state: RefinementLoopGraphState):
@@ -71,7 +86,9 @@ def characters_step_start(state: RefinementLoopGraphState):
         "characters_current_objective": current_step.objective_prompt,
         "characters_max_executor_iterations": current_step.max_executor_iterations,
         "characters_max_validation_iterations": current_step.max_validation_iterations,
-        "characters_max_retries": current_step.max_retries
+        "characters_max_retries": current_step.max_retries,
+        "characters_executor_applied_operations_log": ClearLogs(),
+        "characters_validator_applied_operations_log": ClearLogs()
     }
 
 def characters_step_finish(state: RefinementLoopGraphState):

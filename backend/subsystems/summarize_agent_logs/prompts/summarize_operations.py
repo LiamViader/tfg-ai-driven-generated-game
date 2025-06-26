@@ -1,6 +1,6 @@
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.prompts import SystemMessagePromptTemplate
+from langchain.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import BaseMessage
 
 
@@ -58,7 +58,7 @@ SYSTEM_TEMPLATE = SystemMessagePromptTemplate.from_template(
     SYSTEM_PROMPT
 )
 
-HUMAN_TEMPLATE = SystemMessagePromptTemplate.from_template(
+HUMAN_TEMPLATE = HumanMessagePromptTemplate.from_template(
     "Operations: {operations_log}"
 )
 
