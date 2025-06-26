@@ -74,6 +74,10 @@ class GameState:
     def update_map(self, map: GameMap) -> None:
         self._game_map = map
 
+    def update_session(self, session: GameSession) -> None:
+        """Update the game session component."""
+        self._session = session
+
 
 
 

@@ -1,6 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
+from simulated.components.game_session import SimulatedGameSession
 if TYPE_CHECKING:
     from simulated.versioning.manager import GameStateVersionManager
     from simulated.game_state import SimulatedGameState
@@ -16,6 +17,7 @@ class SimulationLayer:
         self._version_manager = version_manager
         self._map: Optional[SimulatedMap] = None
         self._characters: Optional[SimulatedCharacters] = None
+        self._session: Optional[SimulatedGameSession] = None
 
     @property
     def map(self) -> SimulatedMap:
@@ -34,6 +36,15 @@ class SimulationLayer:
             return self.parent.characters
         else:
             return self._version_manager.base_characters
+
+    @property
+    def session(self) -> SimulatedGameSession:
+        if self._session:
+            return self._session
+        elif self.parent:
+            return self.parent.session
+        else:
+            return self._version_manager.base_session
         
     def modify_map(self) -> SimulatedMap:
         if self._map is None:
@@ -44,6 +55,11 @@ class SimulationLayer:
         if self._characters is None:
             self._characters = deepcopy(self.characters)
         return self._characters
+
+    def modify_session(self) -> SimulatedGameSession:
+        if self._session is None:
+            self._session = deepcopy(self.session)
+        return self._session
     
     def has_modified_map(self) -> bool:
         return self._map is not None
@@ -57,8 +73,17 @@ class SimulationLayer:
     def has_modified_characters(self) -> bool:
         return self._characters is not None
 
+    def has_modified_session(self) -> bool:
+        return self._session is not None
+
     def get_modified_characters(self) -> SimulatedCharacters:
         return self._characters or self.characters
 
+    def get_modified_session(self) -> SimulatedGameSession:
+        return self._session or self.session
+
     def set_modified_characters(self, new_characters: SimulatedCharacters):
         self._characters = new_characters
+
+    def set_modified_session(self, new_session: SimulatedGameSession):
+        self._session = new_session
