@@ -19,10 +19,11 @@ def generate_session_id() -> str:
 class GameSessionModel(BaseModel):
     """Contains global information and configuration for the game session."""
     session_id: str = Field(..., description="Unique identifier for the game session.")
-    player_prompt: str = Field(..., description="The initial prompt that generated this world.")
+    user_prompt: str = Field(..., description="The initial prompt that generated this world.")
+    refined_prompt: str = Field(..., description="The refined user prompt")
+    player_main_goal: str = Field(..., description="The main goal for the player in the narrative")
     narrative_time: GameTimeModel = Field(..., description="The current state of in-game time.")
     global_flags: Dict[str, Any] = Field(default_factory=dict, description="Dictionary for global world state flags (e.g., 'current_weather': 'storm', 'city_on_lockdown': True / False, ).")
-    #ATRIBUTS DE RESUM DE LA NARRATIVA INICIAL, DEL MON, ETC
 
 
 class GameStateModel(BaseModel):

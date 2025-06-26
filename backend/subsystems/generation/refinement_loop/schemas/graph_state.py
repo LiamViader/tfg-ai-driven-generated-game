@@ -30,6 +30,8 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, SummarizeLogs
     #Shared with other agents
     refined_prompt: str = Field(default="", description="User's refined prompt.")
 
+    main_goal: str = Field(default="",description="Main goal that gives direction to the player in the narrative.")
+
     refinement_pass_changelog: Annotated[Sequence[str], operator.add] = Field(
         default_factory=list,
         description="A log that accumulates the summary or outcome of each agent's operation in every pass. The 'operator.add' ensures that new log entries are appended, creating a complete history of the generation process."

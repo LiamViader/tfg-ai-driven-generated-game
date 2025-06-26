@@ -15,24 +15,30 @@ class GameSession:
 
     def __init__(self, model: Optional[GameSessionModel] = None) -> None:
         self._session_id: str 
-        self._player_prompt: Optional[str]
+        self._user_prompt: Optional[str]
+        self._refined_prompt: Optional[str]
         self._time: GameTime 
         self._global_flags: Dict[str, Any] 
+        self._player_main_goal: Optional[str]
         if model:
             self._populate_from_model(model)
         else:
             self._session_id = generate_session_id()
-            self._player_prompt = None
+            self._user_prompt = None
+            self._refined_prompt = None
             self._time = GameTime()
             self._global_flags = {}
+            self._player_main_goal = None
     
 
     def _populate_from_model(self, model: GameSessionModel) -> None:
         """Populate the domain state from a :class:`GameSessionModel`."""
         self._session_id = model.session_id
-        self._player_prompt = model.player_prompt
+        self._user_prompt = model.user_prompt
+        self._refined_prompt = model.refined_prompt
         self._time = GameTime(model.narrative_time)
         self._global_flags = model.global_flags
+        self._player_main_goal = model.player_main_goal
     
 
 
@@ -58,6 +64,10 @@ class GameState:
             #self._narrative_state = NarrativeStateModel()
             self._game_event_log = []
 
+
+    @property
+    def session(self) -> GameSession:
+        return self._session
 
     @property
     def game_map(self) -> GameMap:
