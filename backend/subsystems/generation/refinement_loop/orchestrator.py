@@ -35,7 +35,7 @@ def get_refinement_loop_graph_app():
     workflow = StateGraph(RefinementLoopGraphState)
     summarize_sub_graph = get_summarize_graph_app()
     map_agent_sub_graph = get_map_graph_app()
-    characters_agent_sub_graph = get_map_graph_app()
+    characters_agent_sub_graph = get_character_graph_app()
 
     workflow.add_node("start_refinement_loop", start_refinement_loop)
     workflow.add_node("map_agent", map_agent_sub_graph)
