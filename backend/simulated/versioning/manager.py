@@ -1,7 +1,7 @@
 # nueva-clase/game_state_version_manager.py
 
-from core_game.game.singleton import GameStateSingleton
-from core_game.game.domain import GameState
+from core_game.game_state.singleton import GameStateSingleton
+from core_game.game_state.domain import GameState
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.versioning.layer import SimulationLayer # Importamos la clase SimulationLayer

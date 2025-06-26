@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from simulated.game_state import SimulatedGameState
 from simulated.singleton import SimulatedGameStateSingleton
-from core_game.game.singleton import GameStateSingleton
+from core_game.game_state.singleton import GameStateSingleton
 
 def print_scenarios(state: SimulatedGameState, label: str):
     print(f"\n--- {label} ---")
