@@ -5,14 +5,14 @@ from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.refinement_loop.pipelines import alternating_expansion_pipeline
 
 USER_PROMPT = """
-a world where theres humanlike creatures called BackStones that are born with a stone incrustrated in their back. the stone keeps growing until they are crushed by its weight. some people that live freely and happy, their stone doesn't grow as fast. theres people that works mining other peoples stone with a pickaxe. when people dye, as the get crushed by its stone the only thing that remains in the surface is their stone, posing as a tombstone
+a world where theres humanlike creatures (called Stoners) that are born with a stone incrustrated in their back. the stone keeps growing until they are crushed by its weight. some people that live freely and happy, their stone doesn't grow as fast. theres people that works mining other peoples stone with a pickaxe. when people dye, as the get crushed by its stone the only thing that remains in the surface is their stone, posing as a tombstone
 """
 
 if __name__ == "__main__":
     pipeline = alternating_expansion_pipeline()
     state = GenerationGraphState(
         initial_prompt=USER_PROMPT,
-        refined_prompt_desired_word_length=500,
+        refined_prompt_desired_word_length=200,
         refinement_pipeline_config=pipeline,
     )
 

@@ -85,10 +85,10 @@ def alternating_expansion_pipeline() -> PipelineConfig:
                 step_name=f"Map Expansion {i}",
                 agent_name=AgentName.MAP,
                 objective_prompt=(
-                    "Expand the world map with 3-5 new scenarios based on the current context."
+                    "Expand the world map with 2-5 new scenarios based on the current context. Use the context of characters to maybe create some scenarios coherent with them."
                 ),
-                rules_and_constraints=[],
-                other_guidelines="Ensure new scenarios logically connect with previous ones before you started the simulation. The map should be interesting for the player to explore, you can keep expanding zones or adding new ones. Use the provided context to make interesting decisions",
+                rules_and_constraints=["Be as creative as you can while creating the map. You can create interiors made of more than one scenario, cities, villages, forages, forests anything you can think of. Always think the design is to surprise the player in quality, coherence and narrative"],
+                other_guidelines="Ensure new scenarios are interconected with eachother. The map should be interesting for the player to explore, you can keep expanding zones or adding new ones. Use the provided context to make interesting decisions",
                 max_executor_iterations=9,
                 max_validation_iterations=1,
                 max_retries=1,
@@ -101,7 +101,7 @@ def alternating_expansion_pipeline() -> PipelineConfig:
                 objective_prompt=(
                     "Introduce 1-2 new characters that enrich the expanded world. Give characters diferent narrative roles. When you feel like so, you can create the player."
                 ),
-                rules_and_constraints=[],
+                rules_and_constraints=["Characters should have unique personalities and physical atributes that make them outstand."],
                 other_guidelines="Place characters in appropriate scenarios and expand the given context lore by adding background knowledge to existing characters, or updating other atributes",
                 max_executor_iterations=7,
                 max_validation_iterations=1,
