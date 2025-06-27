@@ -19,7 +19,12 @@ def prepare_next_step(state: RefinementLoopGraphState):
     Node that prepares for the next step. This node is executed after every step
     """
     print("---ENTERING: PREPARE NEXT STEP---")
-    agentName = state.refinement_pipeline_config.steps[state.refinement_current_pass+1].agent_name
+    
+    if state.refinement_current_pass+1 < len(state.refinement_pipeline_config.steps):
+        agentName = state.refinement_pipeline_config.steps[state.refinement_current_pass+1].agent_name
+    else:
+        agentName = state.current_agent_name
+    
     return {
         "refinement_current_pass": state.refinement_current_pass+1,
         "current_agent_name": agentName,

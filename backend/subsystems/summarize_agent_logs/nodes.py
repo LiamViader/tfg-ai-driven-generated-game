@@ -57,7 +57,7 @@ def summarize_operations_node(state: SummarizeLogsGraphState):
 
     summarizing_llm = ChatOpenAI(model="gpt-4.1-nano")
 
-    prompt = format_summarize_log_operations_prompt(formatted_operations, 300)
+    prompt = format_summarize_log_operations_prompt(formatted_operations, 150)
 
     response = summarizing_llm.invoke(prompt)
 

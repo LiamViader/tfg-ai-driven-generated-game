@@ -16,7 +16,7 @@ from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import get_log_item, extract_tool_args
 from core_game.character.schemas import NarrativePurposeModel
 import json
-
+from core_game.character.domain import NPCCharacter, PlayerCharacter
 from core_game.character.schemas import (
     IdentityModel,
     PhysicalAttributesModel,
@@ -742,7 +742,7 @@ def list_characters(
         lines.append(f"\n=== Character ID: {char.id} ===")
         lines.append(f"Name: {char.identity.full_name}")
         lines.append(f"Type: {char.type}")
-        role = char.narrative.narrative_role if isinstance(char, NonPlayerCharacterModel) else "N/A"
+        role = char.narrative.narrative_role if isinstance(char, NPCCharacter) else "N/A"
         lines.append(f"Narrative Role: {role}")
 
         # Optional sections
@@ -762,11 +762,11 @@ def list_characters(
             lines.append("--- Knowledge ---")
             lines.extend(_format_nested_dict(char.knowledge.model_dump(), indent=1))
 
-        if isinstance(char, NonPlayerCharacterModel) and list_dynamic_state:
+        if isinstance(char, NPCCharacter) and list_dynamic_state:
             lines.append("--- Dynamic State ---")
             lines.extend(_format_nested_dict(char.dynamic_state.model_dump(), indent=1))
 
-        if isinstance(char, NonPlayerCharacterModel) and list_narrative:
+        if isinstance(char, NPCCharacter) and list_narrative:
             lines.append("--- Narrative ---")
             lines.extend(_format_nested_dict(char.narrative.model_dump(), indent=1))
 
