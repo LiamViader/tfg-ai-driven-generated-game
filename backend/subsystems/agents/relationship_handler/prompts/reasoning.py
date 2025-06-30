@@ -1,5 +1,6 @@
 from typing import List, Sequence
 from langchain_core.prompts import ChatPromptTemplate
+
 from langchain.prompts import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
@@ -88,6 +89,7 @@ THIS IS YOUR MOST IMPORTANT GUIDING PRINCIPLE: The 'Zero Context' Principle: Wri
 You must achieve this objective in a way that honors and/or expands upon the world detailed in the context above.
 
 Begin your reasoning process now.
+
 """
 
 SYSTEM_TEMPLATE = SystemMessagePromptTemplate.from_template(SYSTEM_PROMPT)
@@ -111,6 +113,7 @@ def format_relationship_reason_prompt(
     other_guidelines: str,
     messages: Sequence[BaseMessage],
 ) -> List[BaseMessage]:
+
     prompt_input_values = {
         "foundational_lore_document": foundational_lore_document,
         "recent_operations_summary": recent_operations_summary,
@@ -126,3 +129,4 @@ def format_relationship_reason_prompt(
     formatted_messages = chat_prompt.format_messages(**prompt_input_values)
 
     return formatted_messages
+

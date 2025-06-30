@@ -1,3 +1,4 @@
+
 """Tool functions used by the relationship handler agent."""
 
 from typing import Optional, Annotated
@@ -88,7 +89,7 @@ def create_relationship_type(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Create a new relationship type in the simulated game state."""
+    """Create a new relationship type if it doesn't already exist."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -113,7 +114,7 @@ def create_directed_relationship(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Create a directed relationship from one character to another."""
+    """Create a directed relationship between two characters."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -201,7 +202,7 @@ def get_relationship_details(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Retrieve relationship details from one character to another."""
+    """Retrieve details of relationships from one character to another."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     rels = simulated_state.get_relationship_details(source_character_id, target_character_id)
