@@ -1,3 +1,6 @@
+
+"""Tool functions used by the relationship handler agent."""
+
 from typing import Optional, Annotated
 from pydantic import BaseModel, Field
 from langchain_core.tools import tool, InjectedToolCallId
@@ -17,29 +20,65 @@ class ToolCreateRelationshipTypeArgs(InjectedToolContext):
     explanation: Optional[str] = Field(default=None, description="Explanation of the relationship type")
 
 class ToolCreateDirectedRelationshipArgs(InjectedToolContext):
-    source_character_id: str = Field(...)
-    target_character_id: str = Field(...)
-    relationship_type: str = Field(...)
-    intensity: Optional[int] = Field(default=None, ge=0, le=10)
+    source_character_id: str = Field(
+        ..., description="ID of the character initiating the relationship"
+    )
+    target_character_id: str = Field(
+        ..., description="ID of the character receiving the relationship"
+    )
+    relationship_type: str = Field(
+        ..., description="Name of the relationship type to create"
+    )
+    intensity: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=10,
+        description="Optional intensity value from 0 to 10",
+    )
 
 class ToolCreateUndirectedRelationshipArgs(InjectedToolContext):
-    character_a_id: str = Field(...)
-    character_b_id: str = Field(...)
-    relationship_type: str = Field(...)
-    intensity: Optional[int] = Field(default=None, ge=0, le=10)
+    character_a_id: str = Field(
+        ..., description="ID of the first character in the relationship"
+    )
+    character_b_id: str = Field(
+        ..., description="ID of the second character in the relationship"
+    )
+    relationship_type: str = Field(
+        ..., description="Name of the relationship type to create"
+    )
+    intensity: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=10,
+        description="Optional intensity value from 0 to 10",
+    )
 
 class ToolModifyRelationshipIntensityArgs(InjectedToolContext):
-    source_character_id: str = Field(...)
-    target_character_id: str = Field(...)
-    relationship_type: str = Field(...)
-    new_intensity: int = Field(..., ge=0, le=10)
+    source_character_id: str = Field(
+        ..., description="ID of the character initiating the relationship"
+    )
+    target_character_id: str = Field(
+        ..., description="ID of the relationship target"
+    )
+    relationship_type: str = Field(
+        ..., description="Relationship type whose intensity will be modified"
+    )
+    new_intensity: int = Field(
+        ..., ge=0, le=10, description="New intensity value from 0 to 10"
+    )
 
 class ToolGetRelationshipDetailsArgs(InjectedToolContext):
-    source_character_id: str
-    target_character_id: str
+    source_character_id: str = Field(
+        ..., description="ID of the character initiating the relationship"
+    )
+    target_character_id: str = Field(
+        ..., description="ID of the character receiving the relationship"
+    )
 
 class ToolFinalizeSimulationArgs(InjectedToolContext):
-    justification: str
+    justification: str = Field(
+        ..., description="Explanation of why the relationships meet the objective"
+    )
 
 # --- Tool implementations ---
 @tool(args_schema=ToolCreateRelationshipTypeArgs)
