@@ -8,9 +8,17 @@ IDENTITY_MODEL_FIELDS = {
     "alignment": "Character's ethical and moral alignment (e.g., 'lawful good', 'chaotic neutral', 'benign')."
 }
 
-#a vegades funciona millor aixo a apereance "A detailed description of the character's physical appearance. Approx. 150 words. The description must be visually concrete and self-contained, explicitly stating all physical traits. It should be detailed enough for someone to draw or generate the character image without ambiguity. It must include, among other things: body type and build, facial structure, eye shape and color, hairstyle and color, skin tone, facial expression, clothing style and color, notable accessories, posture, and any unique or identifying features.",
+# A very explicit explanation used as a guideline for the `appearance` field.
+# The text must be completely self contained, assuming zero outside context.
+# It should clearly describe every relevant visual trait of the character so an
+# artist or image generation model could render it without guessing.  Mention
+# body type and build, height, facial structure, eye shape and colour, hairstyle
+# and colour, skin tone, facial expression, clothing style and colours, notable
+# accessories, posture and any unique or identifying features.  Aim for roughly
+# 200 words so the description is exhaustive but still concise.
 PHYSICAL_ATTRIBUTES_MODEL_FIELDS = {
-    "appearance": "A detailed description of the character's physical appearance. Aprox 150 words. The description must be visually concrete and self-contained, explicitly stating all physical traits, Detailed enough for someone to draw it unequivocally.",
+    "appearance": "A detailed description of the character's physical appearance. Approximately 200 words. It must be visually concrete and self-contained, explicitly listing all traits so the image can be drawn without any assumed context.",
+    "visual_prompt": "Around 200 words intended as a direct prompt for AI image generation. It must restate all relevant physical details in a single self-contained paragraph with zero assumed context.",
     "distinctive_features": "A list of distinctive physical features and unique traits. Should state all important traits even if everyone in the species have it",
     "clothing_style": "Description of the character's clothing, armor, or style of dress.",
     "characteristic_items": "A list of notable items the character carries that reinforce their identity, can be empty."

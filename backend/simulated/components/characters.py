@@ -102,6 +102,7 @@ class SimulatedCharacters:
         self,
         character_id: str,
         new_appearance: Optional[str] = None,
+        new_visual_prompt: Optional[str] = None,
         new_distinctive_features: Optional[list] = None,
         append_distinctive_features: bool = False,
         new_clothing_style: Optional[str] = None,
@@ -115,6 +116,7 @@ class SimulatedCharacters:
         self._working_state.modify_character_physical(
             character_id=character_id,
             new_appearance=new_appearance,
+            new_visual_prompt=new_visual_prompt,
             new_distinctive_features=new_distinctive_features,
             append_distinctive_features=append_distinctive_features,
             new_clothing_style=new_clothing_style,

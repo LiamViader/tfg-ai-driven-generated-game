@@ -58,6 +58,7 @@ class ToolModifyIdentityArgs(InjectedToolContext):
 class ToolModifyPhysicalArgs(InjectedToolContext):
     character_id: str = Field(..., description="ID of the character (NPC or player) to modify",)
     new_appearance: Optional[str] = Field(None, description="New appearance")
+    new_visual_prompt: Optional[str] = Field(None, description="New visual prompt")
     new_distinctive_features: Optional[List[str]] = Field(None, description="New distinctive features list")
     append_distinctive_features: bool = Field(default=False,description="Append features instead of replacing the list",)
     new_clothing_style: Optional[str] = Field(None, description="New clothing style")
@@ -289,6 +290,7 @@ def modify_physical(
     tool_call_id: Annotated[str, InjectedToolCallId],
     character_id: str,
     new_appearance: Optional[str] = None,
+    new_visual_prompt: Optional[str] = None,
     new_distinctive_features: Optional[List[str]] = None,
     append_distinctive_features: bool = False,
     new_clothing_style: Optional[str] = None,
@@ -303,6 +305,7 @@ def modify_physical(
         simulated_state.modify_character_physical(
             character_id=character_id,
             new_appearance=new_appearance,
+            new_visual_prompt=new_visual_prompt,
             new_distinctive_features=new_distinctive_features,
             append_distinctive_features=append_distinctive_features,
             new_clothing_style=new_clothing_style,
@@ -318,6 +321,8 @@ def modify_physical(
     updated_fields = []
     if new_appearance is not None:
         updated_fields.append("appearance")
+    if new_visual_prompt is not None:
+        updated_fields.append("visual_prompt")
     if new_distinctive_features is not None:
         updated_fields.append("distinctive_features")
     if new_clothing_style is not None:

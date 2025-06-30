@@ -29,17 +29,18 @@ if __name__ == "__main__":
     # === CREATE SCENARIOS ===
     print_step("Create Scenarios")
     scenarios = [
-        ("Forest Entrance", "Entry point", "Trees", "Start", "outdoor", "forest", "North Woods"),
-        ("Deep Forest", "Dense area", "Dark canopy", "Middle", "outdoor", "forest", "North Woods"),
-        ("Forest Clearing", "Open space", "Sunny clearing", "Rest area", "outdoor", "clearing", "North Woods"),
-        ("Cave Entrance", "Cave mouth", "Stone arch", "Leads underground", "outdoor", "cave", "Mountain Edge"),
-        ("Underground Tunnel", "Dark tunnel", "Barely lit path", "Leads deep underground", "indoor", "tunnel", "Mountain Depths")
+        ("Forest Entrance", "Entry point", "Trees", "Dirt path leading into towering trees", "Start", "outdoor", "forest", "North Woods"),
+        ("Deep Forest", "Dense area", "Dark canopy", "Thick foliage with shafts of light", "Middle", "outdoor", "forest", "North Woods"),
+        ("Forest Clearing", "Open space", "Sunny clearing", "Grassy patch surrounded by pines", "Rest area", "outdoor", "clearing", "North Woods"),
+        ("Cave Entrance", "Cave mouth", "Stone arch", "Jagged rocks framing a shadowed opening", "Leads underground", "outdoor", "cave", "Mountain Edge"),
+        ("Underground Tunnel", "Dark tunnel", "Barely lit path", "Rough-hewn walls with dripping water", "Leads deep underground", "indoor", "tunnel", "Mountain Depths")
     ]
 
-    for name, summary, visual, context, inout, typ, zone in scenarios:
+    for name, summary, visual_prompt, visual, context, inout, typ, zone in scenarios:
         args = CreateScenarioArgs(
             name=name,
             summary_description=summary,
+            visual_prompt=visual_prompt,
             visual_description=visual,
             narrative_context=context,
             indoor_or_outdoor=inout,
@@ -50,6 +51,7 @@ if __name__ == "__main__":
             name=args.name,
             narrative_context=args.narrative_context,
             visual_description=args.visual_description,
+            visual_prompt=args.visual_prompt,
             summary_description=args.summary_description,
             indoor_or_outdoor=args.indoor_or_outdoor,
             type=args.type,

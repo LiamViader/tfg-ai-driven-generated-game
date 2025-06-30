@@ -160,6 +160,7 @@ class Characters:
         self,
         character_id: str,
         new_appearance: Optional[str] = None,
+        new_visual_prompt: Optional[str] = None,
         new_distinctive_features: Optional[List[str]] = None,
         append_distinctive_features: bool = False,
         new_clothing_style: Optional[str] = None,
@@ -171,6 +172,8 @@ class Characters:
             return False
         if new_appearance is not None:
             char.physical.appearance = new_appearance
+        if new_visual_prompt is not None:
+            char.physical.visual_prompt = new_visual_prompt
         if new_distinctive_features is not None:
             if append_distinctive_features:
                 char.physical.distinctive_features.extend(new_distinctive_features)

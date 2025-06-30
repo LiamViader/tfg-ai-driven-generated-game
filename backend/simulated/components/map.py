@@ -25,12 +25,13 @@ class SimulatedMap:
 
     
     def create_scenario(self,
-        name: str, 
-        summary_description: str, 
+        name: str,
+        summary_description: str,
         visual_description: str,
-        narrative_context: str, 
+        visual_prompt: str,
+        narrative_context: str,
         indoor_or_outdoor: IndoorOrOutdoor,
-        type: str, 
+        type: str,
         zone: str
     ) -> Scenario:
         """Create a new scenario in the simulated map and returns it."""
@@ -39,6 +40,7 @@ class SimulatedMap:
             name=name,
             summary_description=summary_description,
             visual_description=visual_description,
+            visual_prompt=visual_prompt,
             narrative_context=narrative_context,
             indoor_or_outdoor=indoor_or_outdoor,
             type=type,
@@ -54,13 +56,14 @@ class SimulatedMap:
         return scenario
 
     
-    def modify_scenario(self, 
+    def modify_scenario(self,
         scenario_id: str, new_name: Optional[str] = None,
         new_summary_description: Optional[str] = None,
         new_visual_description: Optional[str] = None,
+        new_visual_prompt: Optional[str] = None,
         new_narrative_context: Optional[str] = None,
         new_indoor_or_outdoor: Optional[IndoorOrOutdoor] = None,
-        new_type: Optional[str] = None, 
+        new_type: Optional[str] = None,
         new_zone: Optional[str] = None,
     ) -> bool:
         """Modify an existing scenario in the simulated map. Returns True if modified, False if it does not exist."""
@@ -70,9 +73,10 @@ class SimulatedMap:
             new_name,
             new_summary_description,
             new_visual_description,
+            new_visual_prompt,
             new_narrative_context,
             new_indoor_or_outdoor,
-            new_type, 
+            new_type,
             new_zone,
         )
 
