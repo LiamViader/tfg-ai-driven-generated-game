@@ -25,7 +25,7 @@ class CharacterRelationship:
         return self._data.type
 
     @property
-    def intensity(self) -> Optional[int]:
+    def intensity(self) -> int:
         return self._data.intensity
 
     def get_model(self) -> CharacterRelationshipModel:

@@ -27,13 +27,14 @@ class ToolCreateDirectedRelationshipArgs(InjectedToolContext):
         ..., description="ID of the character receiving the relationship"
     )
     relationship_type: str = Field(
-        ..., description="Name of the relationship type to create"
+        ...,
+        description="Name of an existing relationship type. Use 'create_relationship_type' first if needed"
     )
-    intensity: Optional[int] = Field(
-        default=None,
+    intensity: int = Field(
+        ...,
         ge=0,
         le=10,
-        description="Optional intensity value from 0 to 10",
+        description="Intensity value from 0 to 10",
     )
 
 class ToolCreateUndirectedRelationshipArgs(InjectedToolContext):
@@ -44,13 +45,14 @@ class ToolCreateUndirectedRelationshipArgs(InjectedToolContext):
         ..., description="ID of the second character in the relationship"
     )
     relationship_type: str = Field(
-        ..., description="Name of the relationship type to create"
+        ...,
+        description="Name of an existing relationship type. Use 'create_relationship_type' first if needed"
     )
-    intensity: Optional[int] = Field(
-        default=None,
+    intensity: int = Field(
+        ...,
         ge=0,
         le=10,
-        description="Optional intensity value from 0 to 10",
+        description="Intensity value from 0 to 10",
     )
 
 class ToolModifyRelationshipIntensityArgs(InjectedToolContext):
@@ -109,12 +111,12 @@ def create_directed_relationship(
     source_character_id: str,
     target_character_id: str,
     relationship_type: str,
-    intensity: Optional[int],
+    intensity: int,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Create a directed relationship between two characters."""
+    """Create a directed relationship between two characters. The relationship type must already exist."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -139,12 +141,12 @@ def create_undirected_relationship(
     character_a_id: str,
     character_b_id: str,
     relationship_type: str,
-    intensity: Optional[int],
+    intensity: int,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Create an undirected relationship between two characters."""
+    """Create an undirected relationship between two characters. The relationship type must already exist."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True

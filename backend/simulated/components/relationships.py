@@ -47,7 +47,7 @@ class SimulatedRelationships:
         source_character_id: str,
         target_character_id: str,
         relationship_type: str,
-        intensity: Optional[int] = None,
+        intensity: int,
     ) -> CharacterRelationship:
         if relationship_type not in self._working_state._relationship_types:
             raise ValueError(f"Unknown relationship type '{relationship_type}'.")
@@ -64,7 +64,7 @@ class SimulatedRelationships:
         character_a_id: str,
         character_b_id: str,
         relationship_type: str,
-        intensity: Optional[int] = None,
+        intensity: int,
     ) -> None:
         self.create_directed_relationship(character_a_id, character_b_id, relationship_type, intensity)
         self.create_directed_relationship(character_b_id, character_a_id, relationship_type, intensity)
@@ -80,8 +80,6 @@ class SimulatedRelationships:
             rel = self._working_state._matrix[source_character_id][target_character_id][relationship_type]
         except KeyError as exc:
             raise KeyError("Relationship not found") from exc
-        if rel.get_model().intensity is None:
-            raise ValueError("Relationship has no intensity to modify.")
         rel._data.intensity = new_intensity
 
     # ---- Read methods ----
