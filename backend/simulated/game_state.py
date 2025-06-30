@@ -2,6 +2,7 @@
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
+from simulated.components.relationships import SimulatedRelationships
 from typing import List, Tuple, Optional, Any
 from core_game.character.schemas import PlayerCharacterModel, rollback_character_id
 from core_game.character.domain import PlayerCharacter, BaseCharacter
@@ -36,6 +37,14 @@ class SimulatedGameState:
     @property
     def _write_characters(self) -> SimulatedCharacters:
         return self._version_manager.get_current_characters(for_writing=True)
+
+    @property
+    def _read_relationships(self) -> SimulatedRelationships:
+        return self._version_manager.get_current_relationships(for_writing=False)
+
+    @property
+    def _write_relationships(self) -> SimulatedRelationships:
+        return self._version_manager.get_current_relationships(for_writing=True)
 
     @property
     def _read_session(self) -> SimulatedGameSession:
@@ -127,6 +136,28 @@ class SimulatedGameState:
 
     def get_initial_characters_summary(self, *args, **kwargs):
         return self._read_characters.get_initial_summary(*args, **kwargs)
+
+    # ---- RELATIONSHIPS METHODS ----
+
+    # MODIFYING METHODS
+    def create_relationship_type(self, *args, **kwargs):
+        return self._write_relationships.create_relationship_type(*args, **kwargs)
+
+    def create_directed_relationship(self, *args, **kwargs):
+        return self._write_relationships.create_directed_relationship(*args, **kwargs)
+
+    def create_undirected_relationship(self, *args, **kwargs):
+        return self._write_relationships.create_undirected_relationship(*args, **kwargs)
+
+    def modify_relationship_intensity(self, *args, **kwargs):
+        return self._write_relationships.modify_relationship_intensity(*args, **kwargs)
+
+    # READ METHODS
+    def get_relationship_details(self, *args, **kwargs):
+        return self._read_relationships.get_relationship_details(*args, **kwargs)
+
+    def get_relationship_count(self) -> int:
+        return self._read_relationships.relationship_count()
 
     # ---- SESSION METHODS ----
     def set_user_prompt(self, prompt: str) -> None:

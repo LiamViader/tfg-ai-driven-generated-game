@@ -45,6 +45,10 @@ class GameState:
     def characters(self) -> Characters:
         return self._characters
 
+    @property
+    def relationships(self) -> Relationships:
+        return self._relationships
+
 
     def _populate_from_model(self, game_state_model: GameStateModel) -> None:
         """Populate the domain state from a :class:`GameStateModel`."""
@@ -77,6 +81,9 @@ class GameState:
     def update_session(self, session: GameSession) -> None:
         """Update the game session component."""
         self._session = session
+
+    def update_relationships(self, relationships: Relationships) -> None:
+        self._relationships = relationships
 
 
 
