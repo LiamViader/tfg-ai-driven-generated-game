@@ -105,6 +105,35 @@ def characters_step_finish(state: RefinementLoopGraphState):
         "last_step_succeeded": state.characters_task_succeeded_final
     }
 
+def relationship_step_start(state: RefinementLoopGraphState):
+    """Sets up the state for the pass to refine the relationships"""
+
+    applied_operations_log = "Old operations summary: " + state.changelog_old_operations_summary + "Most recent operations:" + format_window(6, state.refinement_pass_changelog)
+    relevant_entities_str = ""
+    additional_info_str = ""
+    current_step = state.refinement_pipeline_config.steps[state.refinement_current_pass]
+    return {
+        "relationships_foundational_lore_document": state.refinement_foundational_world_info,
+        "relationships_recent_operations_summary": applied_operations_log,
+        "relationships_relevant_entity_details": relevant_entities_str,
+        "relationships_additional_information": additional_info_str,
+        "relationships_rules_and_constraints": current_step.rules_and_constraints,
+        "relationships_other_guidelines": current_step.other_guidelines,
+        "relationships_current_objective": current_step.objective_prompt,
+        "relationships_max_executor_iterations": current_step.max_executor_iterations,
+        "relationships_max_validation_iterations": current_step.max_validation_iterations,
+        "relationships_max_retries": current_step.max_retries,
+        "relationships_executor_applied_operations_log": ClearLogs(),
+        "relationships_validator_applied_operations_log": ClearLogs(),
+    }
+
+def relationship_step_finish(state: RefinementLoopGraphState):
+    """Postprocesses the finished relationship step."""
+    return {
+        "operations_log_to_summarize": state.relationships_executor_applied_operations_log,
+        "last_step_succeeded": state.relationships_task_succeeded_final,
+    }
+
 
 def finalize_step(state: RefinementLoopGraphState):
     """

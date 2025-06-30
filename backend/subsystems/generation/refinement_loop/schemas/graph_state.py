@@ -6,9 +6,10 @@ from pydantic import BaseModel, Field
 from subsystems.generation.refinement_loop.schemas.pipeline_config import PipelineConfig
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
+from subsystems.agents.relationship_handler.schemas.graph_state import RelationshipGraphState
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
 from subsystems.agents.utils.schemas import AgentLog
-class RefinementLoopGraphState(CharacterGraphState, MapGraphState, SummarizeLogsGraphState):
+class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipGraphState, SummarizeLogsGraphState):
     """
     Manages the state of the iterative N-pass enrichment loop.
     """
