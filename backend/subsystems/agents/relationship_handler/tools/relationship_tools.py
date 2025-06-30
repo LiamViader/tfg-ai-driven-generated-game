@@ -82,6 +82,19 @@ class ToolFinalizeSimulationArgs(InjectedToolContext):
         ..., description="Explanation of why the relationships meet the objective"
     )
 
+
+class ToolValidateSimulatedRelationshipsArgs(InjectedToolContext):
+    does_relationships_meet_criteria: bool = Field(
+        ..., description="Assessment flag: True if the relationships meet the objective, False otherwise"
+    )
+    assessment_reasoning: str = Field(
+        ..., description="Reasoning behind the validation outcome"
+    )
+    suggested_improvements: Optional[str] = Field(
+        default=None,
+        description="Suggestions on how to improve if validation failed",
+    )
+
 # --- Tool implementations ---
 @tool(args_schema=ToolCreateRelationshipTypeArgs)
 def create_relationship_type(
@@ -213,7 +226,8 @@ def get_relationship_details(
         success = False
     else:
         lines = [f"{name}: intensity {rel.intensity}" for name, rel in rels.items()]
-        message = " | ".join(lines)
+        rel_text = " | ".join(lines)
+        message = f"(from {source_character_id} to {target_character_id}) {rel_text}"
         success = True
     return Command(update={
         logs_field_to_update: [get_log_item("get_relationship_details", args, True, success, message)],
@@ -238,6 +252,46 @@ def finalize_simulation(
         "relationships_task_finalized_justification": justification,
     })
 
+
+@tool(args_schema=ToolValidateSimulatedRelationshipsArgs)
+def validate_simulated_relationships(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    does_relationships_meet_criteria: bool,
+    assessment_reasoning: str,
+    suggested_improvements: Optional[str] = None,
+) -> Command:
+    """Validates the simulated relationships state. Call when you are sure the objective is met or not."""
+
+    args = extract_tool_args(locals())
+
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    if not suggested_improvements:
+        suggested_improvements = ""
+
+    if does_relationships_meet_criteria:
+        message = f"Simulated relationships meet all criteria. Reason: {assessment_reasoning}"
+    else:
+        message = (
+            f"Simulated relationships don't meet all criteria. Reason: {assessment_reasoning}. "
+            f"Suggestions: {suggested_improvements}"
+        )
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("validate_simulated_relationships", args, False, True, message)],
+        messages_field_to_update: [
+            ToolMessage(
+                get_observation(simulated_state.get_relationship_count(), "validate_simulated_relationships", True, message),
+                tool_call_id=tool_call_id,
+            )
+        ],
+        "relationships_agent_validated": True,
+        "relationships_agent_validation_conclusion_flag": does_relationships_meet_criteria,
+        "relationships_agent_validation_assessment_reasoning": assessment_reasoning,
+        "relationships_agent_validation_suggested_improvements": suggested_improvements,
+    })
+
 EXECUTORTOOLS = [
     create_relationship_type,
     create_directed_relationship,
@@ -249,6 +303,7 @@ EXECUTORTOOLS = [
 
 VALIDATIONTOOLS = [
     get_relationship_details,
+    validate_simulated_relationships,
 ]
 
 QUERYTOOLS = [
