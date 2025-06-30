@@ -37,6 +37,7 @@ def receive_objective_node(state: CharacterGraphState):
 def character_executor_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
     llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+    print("TOOLS BINDED")
     full_prompt = format_character_reason_prompt(
         foundational_lore_document=state.characters_foundational_lore_document,
         recent_operations_summary=state.characters_recent_operations_summary,
@@ -48,8 +49,10 @@ def character_executor_reason_node(state: CharacterGraphState):
         other_guidelines=state.characters_other_guidelines,
         messages=get_valid_messages_window(state.characters_executor_messages, 30),
     )
+    print("PROMPT FORMATED")
     state.characters_current_executor_iteration += 1
     response = llm.invoke(full_prompt)
+    print("LLM INVOKED")
     return {
         "characters_executor_messages": [response],
         "characters_current_executor_iteration": state.characters_current_executor_iteration,

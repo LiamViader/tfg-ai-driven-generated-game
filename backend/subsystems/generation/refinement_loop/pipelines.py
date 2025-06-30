@@ -79,7 +79,7 @@ def alternating_expansion_pipeline() -> PipelineConfig:
     """Pipeline with six steps alternating between map and characters."""
 
     steps = []
-    for i in range(1, 3):
+    for i in range(1, 4):
         steps.append(
             PipelineStep(
                 step_name=f"Map Expansion {i}",

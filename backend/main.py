@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     print("--- INVOKE GENERATION GRAPH ---")
     generation_app = get_generation_graph_app()
-    final_state_data = generation_app.invoke(state, {"recursion_limit": 200})
+    final_state_data = generation_app.invoke(state, {"recursion_limit": 500})
     final_state = GenerationGraphState(**final_state_data)
 
     print("\n--- FINAL STATE ---\n")
