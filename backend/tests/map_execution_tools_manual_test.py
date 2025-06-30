@@ -132,6 +132,15 @@ if __name__ == "__main__":
         simulated_map_state=simulated_map,
     ))
 
+    print_step("Find Scenarios by Name Contains")
+    find_name_args = FindScenariosArgs(attribute_to_filter="name_contains", value_to_match="Forest")
+    print(find_scenarios_by_attribute(
+        attribute_to_filter=find_name_args.attribute_to_filter,
+        value_to_match=find_name_args.value_to_match,
+        max_results=find_name_args.max_results,
+        simulated_map_state=simulated_map,
+    ))
+
     # === SPATIAL INFO ===
     print_step("SPATIAL INFO")
     spatialinfo_args = GetNeighborsAtDistanceArgs(start_scenario_id="scene_002",max_distance=3)

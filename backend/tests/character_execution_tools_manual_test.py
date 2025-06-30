@@ -230,6 +230,17 @@ if __name__ == "__main__":
         )
     )
 
+    print_step("Filter By Name Contains")
+    print(
+        list_characters.invoke(
+            {
+                "simulated_characters_state": characters_state,
+                "attribute_to_filter": "name_contains",
+                "value_to_match": "the",
+            }
+        )
+    )
+
     print_step("Player Details")
     print(
         get_player_details.invoke(
