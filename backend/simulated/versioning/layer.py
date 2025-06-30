@@ -2,6 +2,7 @@ from typing import Optional, TYPE_CHECKING
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
+from simulated.components.relationships import SimulatedRelationships
 if TYPE_CHECKING:
     from simulated.versioning.manager import GameStateVersionManager
     from simulated.game_state import SimulatedGameState
@@ -17,6 +18,7 @@ class SimulationLayer:
         self._version_manager = version_manager
         self._map: Optional[SimulatedMap] = None
         self._characters: Optional[SimulatedCharacters] = None
+        self._relationships: Optional[SimulatedRelationships] = None
         self._session: Optional[SimulatedGameSession] = None
 
     @property
@@ -45,6 +47,15 @@ class SimulationLayer:
             return self.parent.session
         else:
             return self._version_manager.base_session
+
+    @property
+    def relationships(self) -> SimulatedRelationships:
+        if self._relationships:
+            return self._relationships
+        elif self.parent:
+            return self.parent.relationships
+        else:
+            return self._version_manager.base_relationships
         
     def modify_map(self) -> SimulatedMap:
         if self._map is None:
@@ -60,6 +71,11 @@ class SimulationLayer:
         if self._session is None:
             self._session = deepcopy(self.session)
         return self._session
+
+    def modify_relationships(self) -> SimulatedRelationships:
+        if self._relationships is None:
+            self._relationships = deepcopy(self.relationships)
+        return self._relationships
     
     def has_modified_map(self) -> bool:
         return self._map is not None
@@ -76,14 +92,23 @@ class SimulationLayer:
     def has_modified_session(self) -> bool:
         return self._session is not None
 
+    def has_modified_relationships(self) -> bool:
+        return self._relationships is not None
+
     def get_modified_characters(self) -> SimulatedCharacters:
         return self._characters or self.characters
 
     def get_modified_session(self) -> SimulatedGameSession:
         return self._session or self.session
 
+    def get_modified_relationships(self) -> SimulatedRelationships:
+        return self._relationships or self.relationships
+
     def set_modified_characters(self, new_characters: SimulatedCharacters):
         self._characters = new_characters
 
     def set_modified_session(self, new_session: SimulatedGameSession):
         self._session = new_session
+
+    def set_modified_relationships(self, new_relationships: SimulatedRelationships):
+        self._relationships = new_relationships

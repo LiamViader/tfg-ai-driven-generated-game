@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
+from core_game.relationship.schemas import RelationshipTypeModel as RelationshipType
 from core_game.character.constants import (
     Gender,
     CharacterType,

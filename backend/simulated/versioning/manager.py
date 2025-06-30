@@ -5,6 +5,7 @@ from core_game.game_state.domain import GameState
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
+from simulated.components.relationships import SimulatedRelationships
 from simulated.versioning.layer import SimulationLayer # Importamos la clase SimulationLayer
 from typing import List, Optional
 
@@ -16,6 +17,7 @@ class GameStateVersionManager:
     def __init__(self, game_state: GameState):
         self._base_map = SimulatedMap(game_state.game_map)
         self._base_characters = SimulatedCharacters(game_state.characters)
+        self._base_relationships = SimulatedRelationships(game_state.relationships)
         self._base_session = SimulatedGameSession(game_state.session)
         self._layers: List[SimulationLayer] = []
 
@@ -26,6 +28,10 @@ class GameStateVersionManager:
     @property
     def base_characters(self) -> SimulatedCharacters:
         return self._base_characters
+
+    @property
+    def base_relationships(self) -> SimulatedRelationships:
+        return self._base_relationships
 
     @property
     def base_session(self) -> SimulatedGameSession:
@@ -57,6 +63,13 @@ class GameStateVersionManager:
             else:
                 self._base_characters = layer.get_modified_characters()
                 self._sync_characters_to_domain()
+
+        if layer.has_modified_relationships():
+            if parent:
+                parent.set_modified_relationships(layer.get_modified_relationships())
+            else:
+                self._base_relationships = layer.get_modified_relationships()
+                self._sync_relationships_to_domain()
 
         if layer.has_modified_session():
             if parent:
@@ -96,6 +109,14 @@ class GameStateVersionManager:
 
         return layer.modify_session() if for_writing else layer.session
 
+    def get_current_relationships(self, for_writing: bool = False) -> SimulatedRelationships:
+        """Gets the current relationships state. If for_writing, ensures it's a mutable copy."""
+        layer = self._layers[-1] if self._layers else None
+        if not layer:
+            return self._base_relationships
+
+        return layer.modify_relationships() if for_writing else layer.relationships
+
     def _sync_map_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_map(self._base_map.get_state())
@@ -107,3 +128,7 @@ class GameStateVersionManager:
     def _sync_session_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_session(self._base_session.get_state())
+
+    def _sync_relationships_to_domain(self):
+        game_state = GameStateSingleton.get_instance()
+        game_state.update_relationships(self._base_relationships.get_state())
