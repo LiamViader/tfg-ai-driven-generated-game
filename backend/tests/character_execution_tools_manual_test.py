@@ -11,11 +11,8 @@ from core_game.character.schemas import (
     NarrativeWeightModel,
     NarrativePurposeModel,
 )
-from subsystems.agents.character_handler.schemas.simulated_characters import (
-    SimulatedCharactersModel,
-    CreateNPCArgs,
-    CreatePlayerArgs,
-)
+from simulated.singleton import SimulatedGameStateSingleton
+
 from subsystems.agents.character_handler.tools.character_tools import (
     create_npc,
     get_character_details,
@@ -43,7 +40,7 @@ if __name__ == "__main__":
         "Tension grows as rumors of roaming bandits threaten the celebration."
     )
 
-    characters_state = SimulatedCharactersModel()
+    state = SimulatedGameStateSingleton.get_instance()
 
     print_step("Create Characters")
 
