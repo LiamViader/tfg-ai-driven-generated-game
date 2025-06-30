@@ -5,7 +5,12 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolNode
 from typing import Sequence
 from subsystems.agents.relationship_handler.schemas.graph_state import RelationshipGraphState
-from subsystems.agents.relationship_handler.tools.relationship_tools import EXECUTORTOOLS, VALIDATIONTOOLS, get_relationship_details
+from subsystems.agents.relationship_handler.tools.relationship_tools import (
+    EXECUTORTOOLS,
+    VALIDATIONTOOLS,
+    get_relationship_details,
+    validate_simulated_relationships,
+)
 from subsystems.agents.relationship_handler.prompts.reasoning import format_relationship_reason_prompt
 from subsystems.agents.relationship_handler.prompts.validating import format_relationship_validation_prompt
 from utils.message_window import get_valid_messages_window
@@ -86,7 +91,10 @@ def relationship_validation_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
     state.relationships_current_validation_iteration += 1
-    validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
+    if state.relationships_current_validation_iteration <= state.relationships_max_validation_iterations:
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
+    else:
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools([validate_simulated_relationships], tool_choice="any")
 
     full_prompt = format_relationship_validation_prompt(
         state.relationships_current_objective,
