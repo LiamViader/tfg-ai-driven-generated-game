@@ -76,7 +76,7 @@ if __name__ == "__main__":
     call(
         create_npc,
         identity=IdentityModel(
-            full_name="Lia the Merchant",
+            full_name="Lia The Merchant",
             gender="female",
             age=30,
             profession="merchant",
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     call(
         create_player,
         identity=IdentityModel(
-            full_name="Arin the Wanderer",
+            full_name="Arin The Wanderer",
             gender="non-binary",
             age=24,
             profession="adventurer",
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     call(list_characters, attribute_to_filter="gender", value_to_match="female")
 
     print_step("Filter By Name Contains")
-    call(list_characters, attribute_to_filter="name_contains", value_to_match="the")
+    call(list_characters, attribute_to_filter="name_contains", value_to_match="The")
 
     print_step("Player Details")
     call(get_player_details)
@@ -242,7 +242,4 @@ if __name__ == "__main__":
     print_step("List Character by scenario")
     call(list_characters_by_scenario)
 
-    for cid, char in state._read_characters.get_state()._working_state.registry.items():
-        print(f"\nID: {cid}")
-        print(char.model_dump_json(indent=2))
 
