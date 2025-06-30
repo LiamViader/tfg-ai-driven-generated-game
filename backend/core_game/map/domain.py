@@ -28,6 +28,14 @@ class Scenario:
         self._data.visual_description = value
 
     @property
+    def visual_prompt(self) -> str:
+        return self._data.visual_prompt
+
+    @visual_prompt.setter
+    def visual_prompt(self, value: str) -> None:
+        self._data.visual_prompt = value
+
+    @property
     def narrative_context(self) -> str:
         return self._data.narrative_context
 
@@ -87,6 +95,7 @@ class Scenario:
         snapshot = ScenarioSnapshot(
             name=self._data.name,
             visual_description=self._data.visual_description,
+            visual_prompt=self._data.visual_prompt,
             narrative_context=self._data.narrative_context,
             summary_description=self._data.summary_description,
             indoor_or_outdoor=self._data.indoor_or_outdoor,
@@ -258,13 +267,14 @@ class GameMap():
         self._island_clusters.append({scenario.id})
         return scenario
     
-    def modify_scenario(self, 
+    def modify_scenario(self,
         scenario_id: str, new_name: Optional[str] = None,
         new_summary_description: Optional[str] = None,
         new_visual_description: Optional[str] = None,
+        new_visual_prompt: Optional[str] = None,
         new_narrative_context: Optional[str] = None,
         new_indoor_or_outdoor: Optional[IndoorOrOutdoor] = None,
-        new_type: Optional[str] = None, 
+        new_type: Optional[str] = None,
         new_zone: Optional[str] = None,
     ) -> bool:
         """Modify an existing scenario. Returns True if modified, False if it does not exist."""
@@ -280,6 +290,8 @@ class GameMap():
             scenario_to_modify.summary_description = new_summary_description
         if new_visual_description is not None:
             scenario_to_modify.visual_description = new_visual_description
+        if new_visual_prompt is not None:
+            scenario_to_modify.visual_prompt = new_visual_prompt
         if new_narrative_context is not None:
             scenario_to_modify.narrative_context = new_narrative_context
         if new_indoor_or_outdoor is not None:

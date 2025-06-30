@@ -36,6 +36,7 @@ class IdentityModel(BaseModel):
 class PhysicalAttributesModel(BaseModel):
     """Physical characteristics and appearance."""
     appearance: str = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["appearance"])
+    visual_prompt: str = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["visual_prompt"])
     distinctive_features: List[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["distinctive_features"])
     clothing_style: Optional[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["clothing_style"])
     characteristic_items: List[str] = Field(..., description=PHYSICAL_ATTRIBUTES_MODEL_FIELDS["characteristic_items"])

@@ -1,6 +1,7 @@
 SCENARIO_FIELDS = {
     "name": "Descriptive name of the scenario.",
     "visual_description": "Describes the visual appearance of the scenario—its layout, key visual elements, atmosphere, and spatial composition.",
+    "visual_prompt": "Around 200 words providing a complete, self-contained description of the scenario intended as a direct prompt for AI image generation. It must detail the environment, important features, mood and spatial arrangement without assuming any prior context.",
     "narrative_context": "Narrative background of the scenario, including its history, role in the story, mood, important events that occur here, relevance within the world’s lore, etc.",
     "summary_description": "Short, high-level summary of the scenario, capturing its essence in one or two sentences.",
     "indoor_or_outdoor": "Indicates whether the scenario takes place in an indoor or outdoor environment.",

@@ -58,6 +58,7 @@ if __name__ == "__main__":
         ),
         physical=PhysicalAttributesModel(
             appearance="Short woman with sharp eyes",
+            visual_prompt="Short woman with sharp eyes wearing travel garb and carrying a ledger.",
             clothing_style="travel garb",
             characteristic_items=["ledger"],
             distinctive_features=[],
@@ -101,6 +102,7 @@ if __name__ == "__main__":
         ),
         physical=PhysicalAttributesModel(
             appearance="Tall and muscular",
+            visual_prompt="Tall and muscular guard in uniform wielding a halberd, scar across left cheek.",
             clothing_style="town guard uniform",
             characteristic_items=["halberd"],
             distinctive_features=["scar across left cheek"],
@@ -146,6 +148,7 @@ if __name__ == "__main__":
         ),
         physical=PhysicalAttributesModel(
             appearance="Lean and quick on their feet",
+            visual_prompt="Lean and quick wanderer in travel gear carrying a map and lute, tattooed arms visible.",
             clothing_style="traveler's gear",
             characteristic_items=["map", "lute"],
             distinctive_features=["tattooed arms"],
