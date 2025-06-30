@@ -22,17 +22,17 @@ class CharacterRelationshipModel(BaseModel):
     - 0: Total absence or neutrality of the relationship. It does NOT mean the opposite. For example, 'love' with an intensity of 0 means there is no love, but it does NOT imply hate.
     - 10: Maximum possible intensity. For example, 'love' with an intensity of 10 means being completely in love.
     
-    For relationships that do not have a measurable intensity (such as 'siblings' or 'parent'), the intensity can be None.
+    Every relationship must have an intensity, measured on a scale from 0 to 10.
     """
     type: RelationshipTypeModel = Field(
         ...,
         description="The type of relationship being measured."
     )
-    intensity: Optional[int] = Field(
-        default=None,
+    intensity: int = Field(
+        ...,
         ge=0,
         le=10,
-        description="Level of the relationship on a scale of 0 (neutral/absence) to 10 (maximum). It is None if the relationship does not have an intensity."
+        description="Level of the relationship on a scale of 0 (neutral/absence) to 10 (maximum)."
     )
 
 class RelationshipsModel(BaseModel):
