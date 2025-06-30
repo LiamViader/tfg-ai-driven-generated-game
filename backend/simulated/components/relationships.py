@@ -116,6 +116,5 @@ class SimulatedRelationships:
             )
 
         return (
-            f"Relationship types: {rel_types}. "
-            f"Relationships per character: {relationships_summary}"
+            f"Relationship types: {rel_types}. \n" + f"Relationships per character: {relationships_summary}"
         )

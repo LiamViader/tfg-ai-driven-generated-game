@@ -18,10 +18,7 @@ from simulated.singleton import SimulatedGameStateSingleton
 def receive_objective_node(state: RelationshipGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
     SimulatedGameStateSingleton.begin_transaction()
-    initial_summary = (
-        SimulatedGameStateSingleton.get_instance()
-        .get_initial_relationships_summary()
-    )
+    initial_summary = SimulatedGameStateSingleton.get_instance().get_initial_relationships_summary()
     return {
         "relationships_current_try": 0,
         "messages_field_to_update": "relationships_executor_messages",
