@@ -12,11 +12,16 @@ from utils.message_window import get_valid_messages_window
 from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from subsystems.agents.utils.logs import ToolLog
+from simulated.singleton import SimulatedGameStateSingleton
 
 
 def receive_objective_node(state: RelationshipGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
-    initial_summary = "No relationships defined yet."
+    SimulatedGameStateSingleton.begin_transaction()
+    initial_summary = (
+        SimulatedGameStateSingleton.get_instance()
+        .get_initial_relationships_summary()
+    )
     return {
         "relationships_current_try": 0,
         "messages_field_to_update": "relationships_executor_messages",
@@ -120,6 +125,7 @@ def retry_executor_node(state: RelationshipGraphState):
 
 def final_node_success(state: RelationshipGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE SUCCESS---")
+    SimulatedGameStateSingleton.commit()
     return {
         "relationships_task_succeeded_final": True,
     }
@@ -127,6 +133,7 @@ def final_node_success(state: RelationshipGraphState):
 
 def final_node_failure(state: RelationshipGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
+    SimulatedGameStateSingleton.rollback()
     return {
         "relationships_task_succeeded_final": False,
     }

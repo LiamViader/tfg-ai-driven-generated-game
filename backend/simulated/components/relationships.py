@@ -94,3 +94,28 @@ class SimulatedRelationships:
             for rels in nested.values():
                 count += len(rels)
         return count
+
+    def get_initial_summary(self) -> str:
+        """Return a brief summary of existing relationship data."""
+        rel_types = ", ".join(self._working_state._relationship_types.keys())
+        if not rel_types:
+            rel_types = "None"
+
+        character_counts: Dict[str, int] = {}
+        for src, nested in self._working_state._matrix.items():
+            for tgt, rels in nested.items():
+                count = len(rels)
+                character_counts[src] = character_counts.get(src, 0) + count
+                character_counts[tgt] = character_counts.get(tgt, 0) + count
+
+        if not character_counts:
+            relationships_summary = "No relationships created yet"
+        else:
+            relationships_summary = ", ".join(
+                f"{cid}: {cnt}" for cid, cnt in character_counts.items()
+            )
+
+        return (
+            f"Relationship types: {rel_types}. "
+            f"Relationships per character: {relationships_summary}"
+        )

@@ -159,6 +159,9 @@ class SimulatedGameState:
     def get_relationship_count(self) -> int:
         return self._read_relationships.relationship_count()
 
+    def get_initial_relationships_summary(self) -> str:
+        return self._read_relationships.get_initial_summary()
+
     # ---- SESSION METHODS ----
     def set_user_prompt(self, prompt: str) -> None:
         self._write_session.set_user_prompt(prompt)

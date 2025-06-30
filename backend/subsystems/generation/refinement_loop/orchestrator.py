@@ -7,6 +7,7 @@ from subsystems.summarize_agent_logs.orchestrator import get_summarize_graph_app
 from subsystems.generation.refinement_loop.constants import AgentName
 from subsystems.agents.map_handler.orchestrator import get_map_graph_app
 from subsystems.agents.character_handler.orchestrator import get_character_graph_app
+from subsystems.agents.relationship_handler.orchestrator import get_relationship_graph_app
 
 def go_to_next_agent_or_finish(state: RefinementLoopGraphState) -> Union[AgentName, Literal["finalize"]]:
     """
@@ -36,6 +37,7 @@ def get_refinement_loop_graph_app():
     summarize_sub_graph = get_summarize_graph_app()
     map_agent_sub_graph = get_map_graph_app()
     characters_agent_sub_graph = get_character_graph_app()
+    relationship_agent_sub_graph = get_relationship_graph_app()
 
     workflow.add_node("start_refinement_loop", start_refinement_loop)
     workflow.add_node("map_agent", map_agent_sub_graph)
@@ -44,6 +46,9 @@ def get_refinement_loop_graph_app():
     workflow.add_node("characters_agent", characters_agent_sub_graph)
     workflow.add_node("characters_step_start", characters_step_start)
     workflow.add_node("characters_step_finish", characters_step_finish)
+    workflow.add_node("relationship_agent", relationship_agent_sub_graph)
+    workflow.add_node("relationship_step_start", relationship_step_start)
+    workflow.add_node("relationship_step_finish", relationship_step_finish)
     workflow.add_node("finalize_step", finalize_step)
     workflow.add_node("prepare_next_step", prepare_next_step)
     workflow.add_node("summarize_agent_logs", summarize_sub_graph)
@@ -58,6 +63,7 @@ def get_refinement_loop_graph_app():
         {
             AgentName.MAP: "map_step_start",
             AgentName.CHARACTERS: "characters_step_start",
+            AgentName.RELATIONSHIP: "relationship_step_start",
             "finalize": END,
         }
     )
@@ -68,6 +74,7 @@ def get_refinement_loop_graph_app():
         {
             AgentName.MAP: "map_step_start",
             AgentName.CHARACTERS: "characters_step_start",
+            AgentName.RELATIONSHIP: "relationship_step_start",
             "finalize": END,
         }
     )
@@ -80,6 +87,10 @@ def get_refinement_loop_graph_app():
     workflow.add_edge("characters_step_start", "characters_agent")
     workflow.add_edge("characters_agent", "characters_step_finish")
     workflow.add_edge("characters_step_finish", "finalize_step")
+
+    workflow.add_edge("relationship_step_start", "relationship_agent")
+    workflow.add_edge("relationship_agent", "relationship_step_finish")
+    workflow.add_edge("relationship_step_finish", "finalize_step")
 
     workflow.add_conditional_edges(
         "finalize_step",
