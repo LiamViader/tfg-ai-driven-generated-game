@@ -25,6 +25,10 @@ class SimulatedNarrative:
         """Return summary info about the current narrative stage."""
         return self._working_state.get_initial_summary()
 
+    def get_structure_details(self) -> str:
+        """Return details of the narrative structure with beats and current stage."""
+        return self._working_state.get_structure_details()
+
     # ---- Main goal helpers ----
     def set_main_goal(self, goal: str) -> None:
         self._working_state.set_main_goal(goal)
@@ -35,11 +39,43 @@ class SimulatedNarrative:
     def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
         self._working_state.set_narrative_structure(structure_type)
 
+    # ---- Stage index helpers ----
+    def get_current_stage_index(self) -> int:
+        """Return the index of the currently active narrative stage."""
+        index = self._working_state.to_model().current_stage_index
+        return index or 0
+
+    def get_next_stage_index(self) -> int:
+        """Return the index of the next narrative stage if available."""
+        if self._working_state.narrative_structure is None:
+            raise ValueError("No narrative structure selected")
+        next_index = self.get_current_stage_index() + 1
+        if next_index >= len(self._working_state.narrative_structure.stages):
+            raise IndexError("No next stage exists")
+        return next_index
+
     # ---- Narrative beat management ----
     def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
-        self._working_state.add_narrative_beat(stage_index, beat)
+        """Add a beat ensuring the stage exists and avoiding duplicates."""
+        if self._working_state.narrative_structure is None:
+            raise ValueError("No narrative structure selected")
+
+        stages = self._working_state.narrative_structure.stages
+        if stage_index < 0 or stage_index >= len(stages):
+            raise IndexError("Stage index out of range")
+
+        stage = stages[stage_index]
+        if any(existing.id == beat.id for existing in stage.stage_beats):
+            raise ValueError(
+                f"Beat with ID '{beat.id}' already exists in stage {stage_index}"
+            )
+
+        stage.stage_beats.append(beat)
 
     def add_failure_condition(self, failure_condition: FailureConditionModel) -> None:
+        """Add a new failure condition ensuring unique ids."""
+        if any(fc.id == failure_condition.id for fc in self._working_state.failure_conditions):
+            raise ValueError(f"Failure condition '{failure_condition.id}' already exists")
         self._working_state.failure_conditions.append(failure_condition)
 
     def _find_failure(self, condition_id: str) -> FailureConditionModel:
