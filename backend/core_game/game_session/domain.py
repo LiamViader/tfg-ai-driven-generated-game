@@ -18,8 +18,7 @@ class GameSession:
         self._user_prompt: Optional[str]
         self._refined_prompt: Optional[str]
         self._time: GameTime 
-        self._global_flags: Dict[str, Any] 
-        self._player_main_goal: Optional[str]
+        self._global_flags: Dict[str, Any]
         if model:
             self._populate_from_model(model)
         else:
@@ -28,7 +27,6 @@ class GameSession:
             self._refined_prompt = None
             self._time = GameTime()
             self._global_flags = {}
-            self._player_main_goal = None
     
 
     def _populate_from_model(self, model: GameSessionModel) -> None:
@@ -38,7 +36,6 @@ class GameSession:
         self._refined_prompt = model.refined_prompt
         self._time = GameTime(model.narrative_time)
         self._global_flags = model.global_flags
-        self._player_main_goal = model.player_main_goal
 
     # ------------------------------------------------------------------
     # Accessor properties
@@ -64,9 +61,6 @@ class GameSession:
     def global_flags(self) -> Dict[str, Any]:
         return self._global_flags
 
-    @property
-    def player_main_goal(self) -> Optional[str]:
-        return self._player_main_goal
 
     # ------------------------------------------------------------------
     # Modification methods
@@ -80,9 +74,6 @@ class GameSession:
         """Update the refined user prompt."""
         self._refined_prompt = prompt
 
-    def set_player_main_goal(self, goal: str) -> None:
-        """Set the player's main goal for the session."""
-        self._player_main_goal = goal
 
     def set_global_flag(self, key: str, value: Any) -> None:
         """Set or update a global flag."""

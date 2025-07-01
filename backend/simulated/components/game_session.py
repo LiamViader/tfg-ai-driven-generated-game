@@ -24,8 +24,6 @@ class SimulatedGameSession:
     def set_refined_prompt(self, prompt: str) -> None:
         self._working_state.set_refined_prompt(prompt)
 
-    def set_player_main_goal(self, goal: str) -> None:
-        self._working_state.set_player_main_goal(goal)
 
     def set_global_flag(self, key: str, value: Any) -> None:
         self._working_state.set_global_flag(key, value)
@@ -42,10 +40,6 @@ class SimulatedGameSession:
 
     def get_refined_prompt(self) -> Optional[str]:
         return self._working_state.refined_prompt
-
-
-    def get_player_main_goal(self) -> Optional[str]:
-        return self._working_state.player_main_goal
 
 
     def get_global_flags(self) -> dict[str, Any]:

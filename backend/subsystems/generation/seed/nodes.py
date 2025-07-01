@@ -203,7 +203,7 @@ def narrative_structure_reason_node(state: SeedGenerationGraphState):
 
     #save the main goal
     game_state = SimulatedGameStateSingleton.get_instance()
-    game_state.set_player_main_goal(state.main_goal)
+    game_state.set_main_goal(state.main_goal)
 
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
 
