@@ -378,6 +378,7 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
                                  suggested_improvements: str | None = None) -> Command:
     """Validate the narrative after execution."""
     args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     if not suggested_improvements:
         suggested_improvements = ""
     if does_narrative_meet_criteria:
