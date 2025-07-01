@@ -238,7 +238,9 @@ narrative_structure_tool_node.messages_key = "structure_selection_messages"
 
 def final_success_node(state: SeedGenerationGraphState):
     """Last step if all succeeded."""
-    #save narrative structure TODOOO IMPORTANT
+    game_state = SimulatedGameStateSingleton.get_instance()
+    if state.selected_structure is not None:
+        game_state.set_narrative_structure(state.selected_structure)
     SimulatedGameStateSingleton.commit()
     return {
         "seed_generation_succeeded": True

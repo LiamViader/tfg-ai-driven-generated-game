@@ -76,6 +76,6 @@ class NarrativeStateModel(BaseModel):
     main_goal: Optional[GoalModel] = Field(None, description="The main goal for the player in the narrative.")
     failure_conditions: List[FailureConditionModel] = Field(default_factory=list, description="List of failure conditions.")
     current_stage_index: Optional[int] = Field(0, description="Index of the currently active narrative stage.")
-    narrative_structure: NarrativeStructureModel = Field(
-        ..., description="Narrative structure selected for the narrative."
+    narrative_structure: Optional[NarrativeStructureModel] = Field(
+        default=None, description="Narrative structure selected for the narrative."
     )

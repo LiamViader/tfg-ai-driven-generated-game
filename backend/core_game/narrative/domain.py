@@ -7,6 +7,7 @@ from core_game.narrative.schemas import (
     RiskTriggeredBeats,
     NarrativeStageModel,
     NarrativeStructureModel,
+    NarrativeStructureTypeModel,
 )
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 
@@ -17,18 +18,12 @@ class NarrativeState:
         if model:
             self._data = model
         else:
-            # create a default narrative state using the first available structure
-            structure_type = AVAILABLE_NARRATIVE_STRUCTURES[0]
-            stages = [
-                NarrativeStageModel(**stage.model_dump(), stage_beats=[])
-                for stage in structure_type.stages
-            ]
-            structure = NarrativeStructureModel(structure_type=structure_type, stages=stages)
+            # create an empty narrative state with no structure selected yet
             self._data = NarrativeStateModel(
                 main_goal=None,
                 failure_conditions=[],
                 current_stage_index=0,
-                narrative_structure=structure,
+                narrative_structure=None,
             )
 
     # ------------------------------------------------------------------
@@ -41,7 +36,7 @@ class NarrativeState:
     # Accessor properties
     # ------------------------------------------------------------------
     @property
-    def narrative_structure(self) -> NarrativeStructureModel:
+    def narrative_structure(self) -> Optional[NarrativeStructureModel]:
         return self._data.narrative_structure
 
     @property
@@ -49,9 +44,25 @@ class NarrativeState:
         return self._data.failure_conditions
 
     # ------------------------------------------------------------------
+    # Configuration methods
+    # ------------------------------------------------------------------
+    def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
+        """Initialize the narrative structure from a type model."""
+        stages = [
+            NarrativeStageModel(**stage.model_dump(), stage_beats=[])
+            for stage in structure_type.stages
+        ]
+        self._data.narrative_structure = NarrativeStructureModel(
+            structure_type=structure_type, stages=stages
+        )
+        self._data.current_stage_index = 0
+
+    # ------------------------------------------------------------------
     # Modification methods
     # ------------------------------------------------------------------
     def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
+        if self._data.narrative_structure is None:
+            raise ValueError("No narrative structure selected")
         stages = self._data.narrative_structure.stages
         if stage_index < 0 or stage_index >= len(stages):
             raise IndexError("Stage index out of range")
@@ -87,6 +98,8 @@ class NarrativeState:
     # ------------------------------------------------------------------
     def get_initial_summary(self) -> str:
         """Return the current stage and beats summary."""
+        if self._data.narrative_structure is None:
+            return "No narrative structure selected"
         stage_index = self._data.current_stage_index or 0
         stages = self._data.narrative_structure.stages
         if stage_index < 0 or stage_index >= len(stages):
