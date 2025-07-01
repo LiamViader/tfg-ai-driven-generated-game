@@ -6,6 +6,7 @@ from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
 from simulated.components.relationships import SimulatedRelationships
+from simulated.components.narrative import SimulatedNarrative
 from simulated.versioning.layer import SimulationLayer # Importamos la clase SimulationLayer
 from typing import List, Optional
 
@@ -19,6 +20,7 @@ class GameStateVersionManager:
         self._base_characters = SimulatedCharacters(game_state.characters)
         self._base_relationships = SimulatedRelationships(game_state.relationships)
         self._base_session = SimulatedGameSession(game_state.session)
+        self._base_narrative = SimulatedNarrative(game_state.narrative_state)
         self._layers: List[SimulationLayer] = []
 
     @property
@@ -36,6 +38,10 @@ class GameStateVersionManager:
     @property
     def base_session(self) -> SimulatedGameSession:
         return self._base_session
+
+    @property
+    def base_narrative(self) -> SimulatedNarrative:
+        return self._base_narrative
 
     def begin_transaction(self):
         """Starts a new transaction layer."""
@@ -70,6 +76,13 @@ class GameStateVersionManager:
             else:
                 self._base_relationships = layer.get_modified_relationships()
                 self._sync_relationships_to_domain()
+
+        if layer.has_modified_narrative():
+            if parent:
+                parent.set_modified_narrative(layer.get_modified_narrative())
+            else:
+                self._base_narrative = layer.get_modified_narrative()
+                self._sync_narrative_to_domain()
 
         if layer.has_modified_session():
             if parent:
@@ -117,6 +130,13 @@ class GameStateVersionManager:
 
         return layer.modify_relationships() if for_writing else layer.relationships
 
+    def get_current_narrative(self, for_writing: bool = False) -> SimulatedNarrative:
+        layer = self._layers[-1] if self._layers else None
+        if not layer:
+            return self._base_narrative
+
+        return layer.modify_narrative() if for_writing else layer.narrative
+
     def _sync_map_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_map(self._base_map.get_state())
@@ -132,3 +152,7 @@ class GameStateVersionManager:
     def _sync_relationships_to_domain(self):
         game_state = GameStateSingleton.get_instance()
         game_state.update_relationships(self._base_relationships.get_state())
+
+    def _sync_narrative_to_domain(self):
+        game_state = GameStateSingleton.get_instance()
+        game_state.update_narrative_state(self._base_narrative.get_state())

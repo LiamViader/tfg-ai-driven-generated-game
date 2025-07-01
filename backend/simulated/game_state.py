@@ -3,6 +3,7 @@ from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
 from simulated.components.relationships import SimulatedRelationships
+from simulated.components.narrative import SimulatedNarrative
 from typing import List, Tuple, Optional, Any
 from core_game.character.schemas import PlayerCharacterModel, rollback_character_id
 from core_game.character.domain import PlayerCharacter, BaseCharacter
@@ -10,6 +11,12 @@ from core_game.character.schemas import (
     IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
 )
 from core_game.map.domain import Scenario
+from core_game.narrative.schemas import (
+    NarrativeBeatModel,
+    FailureConditionModel,
+    RiskTriggeredBeats,
+    NarrativeStructureTypeModel,
+)
 from simulated.versioning.manager import GameStateVersionManager
 
 class SimulatedGameState:
@@ -45,6 +52,14 @@ class SimulatedGameState:
     @property
     def _write_relationships(self) -> SimulatedRelationships:
         return self._version_manager.get_current_relationships(for_writing=True)
+
+    @property
+    def _read_narrative(self) -> SimulatedNarrative:
+        return self._version_manager.get_current_narrative(for_writing=False)
+
+    @property
+    def _write_narrative(self) -> SimulatedNarrative:
+        return self._version_manager.get_current_narrative(for_writing=True)
 
     @property
     def _read_session(self) -> SimulatedGameSession:
@@ -195,6 +210,33 @@ class SimulatedGameState:
 
     def get_time(self):
         return self._read_session.get_time()
+
+    # ---- NARRATIVE METHODS ----
+    def get_initial_narrative_summary(self) -> str:
+        return self._read_narrative.get_initial_summary()
+
+    def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
+        self._write_narrative.set_narrative_structure(structure_type)
+    def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
+        self._write_narrative.add_narrative_beat(stage_index, beat)
+
+    def add_failure_condition(self, failure_condition: FailureConditionModel) -> None:
+        self._write_narrative.add_failure_condition(failure_condition)
+
+    def add_risk_triggered_beats(self, condition_id: str, risk_triggered: RiskTriggeredBeats) -> None:
+        self._write_narrative.add_risk_triggered_beats(condition_id, risk_triggered)
+
+    def set_failure_risk_level(self, condition_id: str, risk_level: int) -> None:
+        self._write_narrative.set_failure_risk_level(condition_id, risk_level)
+
+    def get_current_stage_beats(self, stage_index: int):
+        structure = self._read_narrative.get_state().narrative_structure
+        if structure is None:
+            raise ValueError("No narrative structure selected")
+        stages = structure.stages
+        if stage_index < 0 or stage_index >= len(stages):
+            raise IndexError("Stage index out of range")
+        return stages[stage_index].stage_beats
 
     # ---- MAP AND CHARACTER METHODS ----
     
