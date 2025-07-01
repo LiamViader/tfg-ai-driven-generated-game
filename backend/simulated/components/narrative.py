@@ -4,6 +4,7 @@ from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
     RiskTriggeredBeats,
+    NarrativeStructureTypeModel,
 )
 from core_game.narrative.domain import NarrativeState
 
@@ -23,13 +24,13 @@ class SimulatedNarrative:
     def get_initial_summary(self) -> str:
         """Return summary info about the current narrative stage."""
         return self._working_state.get_initial_summary()
+    
+    def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
+        self._working_state.set_narrative_structure(structure_type)
 
     # ---- Narrative beat management ----
     def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
-        stages = self._working_state.narrative_structure.stages
-        if stage_index < 0 or stage_index >= len(stages):
-            raise IndexError("Stage index out of range")
-        stages[stage_index].stage_beats.append(beat)
+        self._working_state.add_narrative_beat(stage_index, beat)
 
     def add_failure_condition(self, failure_condition: FailureConditionModel) -> None:
         self._working_state.failure_conditions.append(failure_condition)

@@ -7,7 +7,7 @@ from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
 USER_PROMPT = """
-a world where theres humanlike creatures (called Stoners) that are born with a stone incrustrated in their back. the stone keeps growing until they are crushed by its weight. some people that live freely and happy, their stone doesn't grow as fast. theres people that works mining other peoples stone with a pickaxe. when people dye, as the get crushed by its stone the only thing that remains in the surface is their stone, posing as a tombstone
+Apocaliptic world, zombie epidemic
 """
 
 if __name__ == "__main__":
@@ -28,5 +28,4 @@ if __name__ == "__main__":
     print("Refined prompt:\n", final_state.refined_prompt)
     print("Refinement log:", final_state.refinement_pass_changelog)
 
-    # Visualize the final map state
     visualize_map_graph(GameStateSingleton.get_instance())

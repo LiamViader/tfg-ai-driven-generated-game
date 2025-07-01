@@ -15,6 +15,7 @@ from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
     RiskTriggeredBeats,
+    NarrativeStructureTypeModel
 )
 from simulated.versioning.manager import GameStateVersionManager
 
@@ -213,6 +214,10 @@ class SimulatedGameState:
     # ---- NARRATIVE METHODS ----
     def get_initial_narrative_summary(self) -> str:
         return self._read_narrative.get_initial_summary()
+    
+    def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
+        self._write_narrative.set_narrative_structure(structure_type)
+
     def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
         self._write_narrative.add_narrative_beat(stage_index, beat)
 
@@ -226,7 +231,10 @@ class SimulatedGameState:
         self._write_narrative.set_failure_risk_level(condition_id, risk_level)
 
     def get_current_stage_beats(self, stage_index: int):
-        stages = self._read_narrative.get_state().narrative_structure.stages
+        structure = self._read_narrative.get_state().narrative_structure
+        if structure is None:
+            raise ValueError("No narrative structure selected")
+        stages = structure.stages
         if stage_index < 0 or stage_index >= len(stages):
             raise IndexError("Stage index out of range")
         return stages[stage_index].stage_beats
