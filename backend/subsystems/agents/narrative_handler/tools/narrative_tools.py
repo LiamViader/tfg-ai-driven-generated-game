@@ -149,7 +149,15 @@ def add_beat_current_stage(
 
     return Command(update={
         logs_field_to_update: [get_log_item("add_beat_current_stage", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "add_beat_current_stage",
+                success,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
     })
 
 
@@ -183,7 +191,15 @@ def add_beat_next_stage(
 
     return Command(update={
         logs_field_to_update: [get_log_item("add_beat_next_stage", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "add_beat_next_stage",
+                success,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
     })
 
 @tool(args_schema=ToolCreateFailureConditionWithBeatsArgs)
@@ -241,7 +257,15 @@ def create_failure_condition_with_beats(
 
     return Command(update={
         logs_field_to_update: [get_log_item("create_failure_condition_with_beats", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "create_failure_condition_with_beats",
+                success,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
     })
 
 @tool(args_schema=ToolAddRiskTriggeredBeatArgs)
@@ -276,7 +300,15 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
 
     return Command(update={
         logs_field_to_update: [get_log_item("add_risk_triggered_beat", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "add_risk_triggered_beat",
+                success,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
     })
 
 @tool(args_schema=ToolSetFailureRiskLevelArgs)
@@ -297,7 +329,15 @@ def set_failure_risk_level(condition_id: str, risk_level: int,
 
     return Command(update={
         logs_field_to_update: [get_log_item("set_failure_risk_level", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "set_failure_risk_level",
+                success,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
     })
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
@@ -310,7 +350,15 @@ def finalize_simulation(justification: str,
     message = justification
     return Command(update={
         logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "finalize_simulation",
+                True,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
         "narrative_task_finalized_by_agent": True,
         "narrative_task_finalized_justification": justification,
     })
@@ -333,7 +381,15 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
         message = f"Narrative does not meet criteria. Reason: {assessment_reasoning}. Suggestions: {suggested_improvements}"
     return Command(update={
         logs_field_to_update: [get_log_item("validate_simulated_narrative", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(
+            get_observation(
+                simulated_state.narrative_beats_count(),
+                "validate_simulated_narrative",
+                True,
+                message,
+            ),
+            tool_call_id=tool_call_id,
+        )],
         "narrative_agent_validated": True,
         "narrative_agent_validation_conclusion_flag": does_narrative_meet_criteria,
         "narrative_agent_validation_assessment_reasoning": assessment_reasoning,
