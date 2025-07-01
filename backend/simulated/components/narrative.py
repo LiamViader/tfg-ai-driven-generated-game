@@ -100,3 +100,51 @@ class SimulatedNarrative:
                     beat.status = "ACTIVE"
                 if risk_level <= rtb.deactivate_risk_level:
                     beat.status = "PENDING"
+    def get_beat(self, beat_id: str) -> NarrativeBeatModel | None:
+        """Return a beat by id from any source if found."""
+        if self._working_state.narrative_structure:
+            for stage in self._working_state.narrative_structure.stages:
+                for beat in stage.stage_beats:
+                    if beat.id == beat_id:
+                        return beat
+        for fc in self._working_state.failure_conditions:
+            for rtb in fc.risk_triggered_beats:
+                for beat in rtb.beats:
+                    if beat.id == beat_id:
+                        return beat
+        return None
+
+    def get_failure_condition(self, condition_id: str) -> FailureConditionModel | None:
+        """Return a failure condition by id if it exists."""
+        for fc in self._working_state.failure_conditions:
+            if fc.id == condition_id:
+                return fc
+        return None
+
+    def list_active_beats(self) -> List[NarrativeBeatModel]:
+        """Return all beats with status ACTIVE."""
+        beats: List[NarrativeBeatModel] = []
+        if self._working_state.narrative_structure:
+            for stage in self._working_state.narrative_structure.stages:
+                beats.extend([b for b in stage.stage_beats if b.status == "ACTIVE"])
+        for fc in self._working_state.failure_conditions:
+            for rtb in fc.risk_triggered_beats:
+                beats.extend([b for b in rtb.beats if b.status == "ACTIVE"])
+        return beats
+
+    def list_pending_beats_main(self) -> List[NarrativeBeatModel]:
+        """Return PENDING beats only from main narrative stages."""
+        beats: List[NarrativeBeatModel] = []
+        if self._working_state.narrative_structure:
+            for stage in self._working_state.narrative_structure.stages:
+                beats.extend([b for b in stage.stage_beats if b.status == "PENDING"])
+        return beats
+
+    def get_stage_beats(self, stage_index: int) -> List[NarrativeBeatModel]:
+        """Return beats for a given stage index."""
+        if self._working_state.narrative_structure is None:
+            raise ValueError("No narrative structure selected")
+        stages = self._working_state.narrative_structure.stages
+        if stage_index < 0 or stage_index >= len(stages):
+            raise IndexError("Stage index out of range")
+        return stages[stage_index].stage_beats
