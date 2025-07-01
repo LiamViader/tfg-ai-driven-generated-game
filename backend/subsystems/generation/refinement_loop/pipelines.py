@@ -155,10 +155,10 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Create Narrative",
                 agent_name=AgentName.NARRATIVE,
-                objective_prompt="Create a short introductory narrative beat structure for the generated world.",
+                objective_prompt="Create 2-3 narrative beats for the current stage and 1 failure condition.",
                 rules_and_constraints=[],
                 other_guidelines="",
-                max_executor_iterations=3,
+                max_executor_iterations=5,
                 max_validation_iterations=1,
                 max_retries=1,
             ),

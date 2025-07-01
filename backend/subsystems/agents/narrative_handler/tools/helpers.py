@@ -5,7 +5,7 @@ def get_observation(total_beats: int, tool_name: str, success: bool, message: st
     """Generate a standardized observation string for narrative tools."""
     result = "" if success else "Error,"
     observation = (
-        f"Result of '{tool_name}': {result} {message} \nTotal narrative beats tracked: {total_beats}."
+        f"Result of '{tool_name}': {result} {message}"
     )
     print(observation)
     return observation
