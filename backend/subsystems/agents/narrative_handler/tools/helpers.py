@@ -1,11 +1,11 @@
 from typing import Dict, Any, List
 
 
-def get_observation(tool_name: str, success: bool, message: str) -> str:
-    """Generate a standardized observation string for narrative tools."""
+def get_observation(n_beats: int, tool_name: str, success: bool, message: str) -> str:
+    """Return a standardized observation message that includes the beat count."""
     result = "" if success else "Error,"
     observation = (
-        f"Result of '{tool_name}': {result} {message}"
+        f"Result of '{tool_name}': {result} {message} \nNarrative has {n_beats} beats now."
     )
     print(observation)
     return observation
