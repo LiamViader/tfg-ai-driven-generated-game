@@ -7,9 +7,10 @@ from subsystems.generation.refinement_loop.schemas.pipeline_config import Pipeli
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
 from subsystems.agents.relationship_handler.schemas.graph_state import RelationshipGraphState
+from subsystems.agents.narrative_handler.schemas.graph_state import NarrativeGraphState
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
 from subsystems.agents.utils.schemas import AgentLog
-class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipGraphState, SummarizeLogsGraphState):
+class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipGraphState, NarrativeGraphState, SummarizeLogsGraphState):
     """
     Manages the state of the iterative N-pass enrichment loop.
     """

@@ -2,7 +2,11 @@
 
 from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
-from subsystems.generation.refinement_loop.pipelines import alternating_expansion_pipeline, map_characters_relationships_pipeline
+from subsystems.generation.refinement_loop.pipelines import (
+    alternating_expansion_pipeline,
+    map_characters_relationships_pipeline,
+    map_characters_relationships_narrative_pipeline,
+)
 from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
@@ -11,7 +15,7 @@ Apocaliptic world, zombie epidemic
 """
 
 if __name__ == "__main__":
-    pipeline = map_characters_relationships_pipeline()
+    pipeline = map_characters_relationships_narrative_pipeline()
     state = GenerationGraphState(
         initial_prompt=USER_PROMPT,
         refined_prompt_desired_word_length=200,
