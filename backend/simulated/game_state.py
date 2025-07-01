@@ -238,14 +238,45 @@ class SimulatedGameState:
     def set_failure_risk_level(self, condition_id: str, risk_level: int) -> None:
         self._write_narrative.set_failure_risk_level(condition_id, risk_level)
 
-    def get_current_stage_beats(self, stage_index: int):
+    def get_stage_beats(self, stage_index: int):
+        """Return beats for a given stage index."""
+        return self._read_narrative.get_stage_beats(stage_index)
+
+    def get_current_stage_beats(self):
+        """Return beats of the current narrative stage."""
+        index = self.get_current_stage_index()
+        return self.get_stage_beats(index)
+
+    def get_next_stage_beats(self):
+        """Return beats of the next narrative stage if available."""
+        index = self.get_next_stage_index()
+        return self.get_stage_beats(index)
+
+    def narrative_beats_count(self) -> int:
+        """Return the total number of beats tracked in the narrative."""
+        count = 0
         structure = self._read_narrative.get_state().narrative_structure
-        if structure is None:
-            raise ValueError("No narrative structure selected")
-        stages = structure.stages
-        if stage_index < 0 or stage_index >= len(stages):
-            raise IndexError("Stage index out of range")
-        return stages[stage_index].stage_beats
+        if structure:
+            for stage in structure.stages:
+                count += len(stage.stage_beats)
+        for fc in self._read_narrative.get_state().failure_conditions:
+            for rtb in fc.risk_triggered_beats:
+                count += len(rtb.beats)
+        return count
+
+    def get_narrative_beat(self, beat_id: str) -> NarrativeBeatModel | None:
+        """Return a beat by its id from any source."""
+        return self._read_narrative.get_beat(beat_id)
+
+    def get_failure_condition(self, condition_id: str) -> FailureConditionModel | None:
+        """Return a failure condition by id if it exists."""
+        return self._read_narrative.get_failure_condition(condition_id)
+
+    def list_active_beats(self) -> List[NarrativeBeatModel]:
+        return self._read_narrative.list_active_beats()
+
+    def list_pending_beats_main(self) -> List[NarrativeBeatModel]:
+        return self._read_narrative.list_pending_beats_main()
 
     # ---- MAP AND CHARACTER METHODS ----
     

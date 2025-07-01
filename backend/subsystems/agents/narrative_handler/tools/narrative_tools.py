@@ -8,6 +8,7 @@ from langgraph.types import Command
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.schemas import InjectedToolContext
 from subsystems.agents.utils.logs import get_log_item, extract_tool_args
+from .helpers import get_observation, _format_nested_dict
 from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
@@ -107,6 +108,15 @@ class ToolValidateSimulatedNarrativeArgs(InjectedToolContext):
     )
 
 class ToolGetStructureDetailsArgs(InjectedToolContext):
+    pass
+
+class ToolGetBeatDetailsArgs(InjectedToolContext):
+    beat_id: str = Field(..., description="ID of the narrative beat to inspect")
+
+class ToolGetFailureConditionDetailsArgs(InjectedToolContext):
+    condition_id: str = Field(..., description="ID of the failure condition")
+
+class ToolListBeatsArgs(InjectedToolContext):
     pass
 
 @tool(args_schema=ToolAddBeatArgs)
@@ -330,6 +340,135 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
         "narrative_agent_validation_suggested_improvements": suggested_improvements,
     })
 
+
+@tool(args_schema=ToolGetBeatDetailsArgs)
+def get_narrative_beat_details(
+    beat_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) Get full details of a narrative beat by its ID."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    beat = simulated_state.get_narrative_beat(beat_id)
+    if not beat:
+        message = f"Beat with ID '{beat_id}' not found."
+        success = False
+    else:
+        details = beat.model_dump()
+        message = "\n" + "\n".join(_format_nested_dict(details))
+        success = True
+    return Command(update={
+        logs_field_to_update: [get_log_item("get_narrative_beat_details", args, True, success, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "get_narrative_beat_details", success, message), tool_call_id=tool_call_id)
+        ]
+    })
+
+
+@tool(args_schema=ToolGetFailureConditionDetailsArgs)
+def get_failure_condition_details(
+    condition_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) Get details of a failure condition by its ID."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    fc = simulated_state.get_failure_condition(condition_id)
+    if not fc:
+        message = f"Failure condition '{condition_id}' not found."
+        success = False
+    else:
+        details = fc.model_dump()
+        message = "\n" + "\n".join(_format_nested_dict(details))
+        success = True
+    return Command(update={
+        logs_field_to_update: [get_log_item("get_failure_condition_details", args, True, success, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "get_failure_condition_details", success, message), tool_call_id=tool_call_id)
+        ]
+    })
+
+
+@tool(args_schema=ToolListBeatsArgs)
+def list_active_beats(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) List all currently active beats."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    beats = simulated_state.list_active_beats()
+    if not beats:
+        message = "No active beats."
+    else:
+        message = "\n".join(f"{b.id}: {b.name} [{b.status}]" for b in beats)
+    return Command(update={
+        logs_field_to_update: [get_log_item("list_active_beats", args, True, True, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_active_beats", True, message), tool_call_id=tool_call_id)
+        ]
+    })
+
+
+@tool(args_schema=ToolListBeatsArgs)
+def list_pending_beats(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) List pending beats from the main narrative only."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    beats = simulated_state.list_pending_beats_main()
+    if not beats:
+        message = "No pending beats."
+    else:
+        message = "\n".join(f"{b.id}: {b.name} [{b.status}]" for b in beats)
+    return Command(update={
+        logs_field_to_update: [get_log_item("list_pending_beats", args, True, True, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_pending_beats", True, message), tool_call_id=tool_call_id)
+        ]
+    })
+
+
+@tool(args_schema=ToolListBeatsArgs)
+def list_current_and_next_stage_beats(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) List beats from the current and next narrative stages."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    current_beats = simulated_state.get_current_stage_beats()
+    try:
+        next_beats = simulated_state.get_next_stage_beats()
+    except Exception:
+        next_beats = []
+    lines = ["Current stage beats:"]
+    if current_beats:
+        lines.extend(f"- {b.id}: {b.name} [{b.status}]" for b in current_beats)
+    else:
+        lines.append("(none)")
+    lines.append("Next stage beats:")
+    if next_beats:
+        lines.extend(f"- {b.id}: {b.name} [{b.status}]" for b in next_beats)
+    else:
+        lines.append("(none)")
+    message = "\n".join(lines)
+    return Command(update={
+        logs_field_to_update: [get_log_item("list_current_and_next_stage_beats", args, True, True, message)],
+        messages_field_to_update: [
+            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_current_and_next_stage_beats", True, message), tool_call_id=tool_call_id)
+        ]
+    })
+
 EXECUTORTOOLS = [
     add_beat_current_stage,
     add_beat_next_stage,
@@ -344,5 +483,9 @@ VALIDATIONTOOLS = [
 ]
 
 QUERYTOOLS = [
-
+    get_narrative_beat_details,
+    get_failure_condition_details,
+    list_active_beats,
+    list_pending_beats,
+    list_current_and_next_stage_beats,
 ]
