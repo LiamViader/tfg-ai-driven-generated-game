@@ -82,7 +82,7 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int, deactiva
                             tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Associate beats to a failure condition triggered at certain risk level."""
     args = extract_tool_args(locals())
-    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority, origin="FAILURE_CONDITION")
+    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority, origin="FAILURE_CONDITION", status="PENDING")
     rtb = RiskTriggeredBeats(trigger_risk_level=trigger_risk_level, deactivate_risk_level=deactivate_risk_level, beats=[beat])
     SimulatedGameStateSingleton.get_instance().add_risk_triggered_beats(condition_id, rtb)
     message = f"Risk triggered beat '{beat_id}' added"
