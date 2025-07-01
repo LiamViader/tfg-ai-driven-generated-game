@@ -74,29 +74,47 @@ HUMAN_PROMPT = """
 Below is all the information you need to complete your objective. Act accordingly.
 
 ## 1. The World Context
+This is your **single initial source of truth** for the world's lore, tone, and context. ALL your actions and narrative designs must be deeply rooted in and consistent with this text. You must treat it as the project's "creative bible."
+
+### Foundational World Lore
+**This is the core creative document describing the world.** It represents the foundational seed used to generate everything. Your work must always be consistent with this lore.
+
 {foundational_lore_document}
 
 ### Recent Operations Summary
+**This is a log of the most recent actions taken by other agents in the world, just before your turn.** It tells you what has just changed in the world and how has expanded, providing immediate, unfolding context. **It is critical that you use this summary as a direct reference for your task to ensure your actions are coherent with the most recent world evolutions.**
+
 {recent_operations_summary}
 
 ### Relevant Entity Information
+**Below are details of specific entities (characters, locations, items, etc.) that may or not be relevant to your current task.** You can use this information directly to make informed decisions and to avoid making unnecessary queries with your tools. This section may be empty if no specific entities are deemed relevant.
+
 {relevant_entity_details}
 
 ### Additional Information (Optional)
+**This section contains any other specific context, or data for this particular task.** This section may be empty.
+
 {additional_information}
 
+
 ## 2. Supporting Information & Constraints
+This is additional or technical information that you must respect.
+
 ### Rules and Constraints (Mandatory):
+THIS IS YOUR MOST IMPORTANT GUIDING PRINCIPLE: The 'Zero Context' Principle: Write everything for a total stranger. All descriptions MUST be self-contained, assuming zero prior knowledge of lore or rules. For instance, even if all aliens in the lore had 3 eyes, when creating an alien you must explicitly state it in its description.
 {rules_and_constraints}
 
 ### Other Guidelines (Softer rules):
 {other_guidelines}
 
-### Initial Narrative State Summary (if applicable):
+### Initial Narrative State Summary:
 {initial_summary}
+
 
 ## 3. Your Primary Objective
 **{objective}**
+
+You must achieve this objective in a way that honors and/or expands upon the world detailed in the context above.
 
 Begin your reasoning process now.
 """
