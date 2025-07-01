@@ -51,7 +51,7 @@ def add_narrative_beat(stage_index: int, beat_id: str, description: str, priorit
                        tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Add a narrative beat to a stage."""
     args = extract_tool_args(locals())
-    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority)
+    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority, origin="NARRATIVE_STAGE", status="PENDING")
     SimulatedGameStateSingleton.get_instance().add_narrative_beat(stage_index, beat)
     message = f"Beat '{beat_id}' added"
     return Command(update={
@@ -66,7 +66,7 @@ def create_failure_condition(condition_id: str, description: str,
                              tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Create a new failure condition."""
     args = extract_tool_args(locals())
-    fc = FailureConditionModel(id=condition_id, description=description)
+    fc = FailureConditionModel(id=condition_id, description=description, is_active=False, risk_level=0)
     SimulatedGameStateSingleton.get_instance().add_failure_condition(fc)
     message = f"Failure condition '{condition_id}' created"
     return Command(update={
