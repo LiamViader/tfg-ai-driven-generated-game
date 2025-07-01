@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import BaseModel, Field
+from pydantic import Field
 from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langchain_core.messages import ToolMessage
@@ -14,21 +14,17 @@ from core_game.narrative.schemas import (
     RiskTriggeredBeats,
 )
 
-class ToolAddNarrativeBeatArgs(InjectedToolContext):
-    stage_index: int = Field(..., description="Stage index to add the beat")
-    beat_id: str = Field(..., description="Unique id for the beat")
+class ToolAddBeatArgs(InjectedToolContext):
     description: str = Field(..., description="Description of the beat")
     priority: int = Field(10, description="Beat priority")
 
 class ToolCreateFailureConditionArgs(InjectedToolContext):
-    condition_id: str = Field(..., description="Failure condition id")
     description: str = Field(..., description="Description")
 
 class ToolAddRiskTriggeredBeatArgs(InjectedToolContext):
     condition_id: str = Field(..., description="Failure condition id")
     trigger_risk_level: int = Field(..., ge=0, le=100)
     deactivate_risk_level: int = Field(..., ge=0, le=100)
-    beat_id: str = Field(..., description="Beat id")
     description: str = Field(..., description="Beat description")
     priority: int = Field(10)
 
@@ -44,50 +40,129 @@ class ToolValidateSimulatedNarrativeArgs(InjectedToolContext):
     assessment_reasoning: str
     suggested_improvements: str | None = None
 
-@tool(args_schema=ToolAddNarrativeBeatArgs)
-def add_narrative_beat(stage_index: int, beat_id: str, description: str, priority: int,
-                       messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-                       logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-                       tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-    """Add a narrative beat to a stage."""
+class ToolGetStructureDetailsArgs(InjectedToolContext):
+    pass
+
+
+@tool(args_schema=ToolAddBeatArgs)
+def add_beat_current_stage(
+    description: str,
+    priority: int,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Add a narrative beat to the current stage."""
     args = extract_tool_args(locals())
-    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority, origin="NARRATIVE_STAGE", status="PENDING")
-    SimulatedGameStateSingleton.get_instance().add_narrative_beat(stage_index, beat)
-    message = f"Beat '{beat_id}' added"
+    beat = NarrativeBeatModel(
+        description=description,
+        priority=priority,
+        origin="NARRATIVE_STAGE",
+        status="PENDING",
+    )
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        stage_index = simulated_state.get_current_stage_index()
+        simulated_state.add_narrative_beat(stage_index, beat)
+        message = f"Beat '{beat.id}' added to current stage"
+    except Exception as e:
+        success = False
+        message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("add_narrative_beat", args, False, True, message)],
+        logs_field_to_update: [get_log_item("add_beat_current_stage", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolAddBeatArgs)
+def add_beat_next_stage(
+    description: str,
+    priority: int,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Add a narrative beat to the next stage."""
+    args = extract_tool_args(locals())
+    beat = NarrativeBeatModel(
+        description=description,
+        priority=priority,
+        origin="NARRATIVE_STAGE",
+        status="PENDING",
+    )
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        stage_index = simulated_state.get_next_stage_index()
+        simulated_state.add_narrative_beat(stage_index, beat)
+        message = f"Beat '{beat.id}' added to next stage"
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("add_beat_next_stage", args, False, success, message)],
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolCreateFailureConditionArgs)
-def create_failure_condition(condition_id: str, description: str,
+def create_failure_condition(description: str,
                              messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
                              logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
                              tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Create a new failure condition."""
     args = extract_tool_args(locals())
-    fc = FailureConditionModel(id=condition_id, description=description, is_active=False, risk_level=0)
-    SimulatedGameStateSingleton.get_instance().add_failure_condition(fc)
-    message = f"Failure condition '{condition_id}' created"
+    fc = FailureConditionModel(
+        description=description,
+        is_active=False,
+        risk_level=0,
+    )
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        simulated_state.add_failure_condition(fc)
+        message = f"Failure condition '{fc.id}' created"
+    except Exception as e:
+        success = False
+        message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("create_failure_condition", args, False, True, message)],
+        logs_field_to_update: [get_log_item("create_failure_condition", args, False, success, message)],
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolAddRiskTriggeredBeatArgs)
 def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int, deactivate_risk_level: int,
-                            beat_id: str, description: str, priority: int,
+                            description: str, priority: int,
                             messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
                             logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
                             tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Associate beats to a failure condition triggered at certain risk level."""
     args = extract_tool_args(locals())
-    beat = NarrativeBeatModel(id=beat_id, description=description, priority=priority, origin="FAILURE_CONDITION", status="PENDING")
-    rtb = RiskTriggeredBeats(trigger_risk_level=trigger_risk_level, deactivate_risk_level=deactivate_risk_level, beats=[beat])
-    SimulatedGameStateSingleton.get_instance().add_risk_triggered_beats(condition_id, rtb)
-    message = f"Risk triggered beat '{beat_id}' added"
+    beat = NarrativeBeatModel(
+        description=description,
+        priority=priority,
+        origin="FAILURE_CONDITION",
+        status="PENDING",
+    )
+    rtb = RiskTriggeredBeats(
+        trigger_risk_level=trigger_risk_level,
+        deactivate_risk_level=deactivate_risk_level,
+        beats=[beat],
+    )
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        simulated_state.add_risk_triggered_beats(condition_id, rtb)
+        message = f"Risk triggered beat '{beat.id}' added"
+    except Exception as e:
+        success = False
+        message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("add_risk_triggered_beat", args, False, True, message)],
+        logs_field_to_update: [get_log_item("add_risk_triggered_beat", args, False, success, message)],
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
@@ -98,10 +173,17 @@ def set_failure_risk_level(condition_id: str, risk_level: int,
                            tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Set the risk level of a failure condition."""
     args = extract_tool_args(locals())
-    SimulatedGameStateSingleton.get_instance().set_failure_risk_level(condition_id, risk_level)
-    message = f"Risk level for '{condition_id}' set to {risk_level}"
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        simulated_state.set_failure_risk_level(condition_id, risk_level)
+        message = f"Risk level for '{condition_id}' set to {risk_level}"
+    except Exception as e:
+        success = False
+        message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("set_failure_risk_level", args, False, True, message)],
+        logs_field_to_update: [get_log_item("set_failure_risk_level", args, False, success, message)],
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
@@ -118,6 +200,29 @@ def finalize_simulation(justification: str,
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
         "narrative_task_finalized_by_agent": True,
         "narrative_task_finalized_justification": justification,
+    })
+
+
+@tool(args_schema=ToolGetStructureDetailsArgs)
+def get_narrative_structure_details(
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """(QUERY tool) Return all stages with descriptions, beats, and current-stage marker."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    success = True
+    try:
+        details = simulated_state.get_narrative_structure_details()
+        message = details
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("get_narrative_structure_details", args, True, success, message)],
+        messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolValidateSimulatedNarrativeArgs)
@@ -145,13 +250,20 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
     })
 
 EXECUTORTOOLS = [
-    add_narrative_beat,
+    add_beat_current_stage,
+    add_beat_next_stage,
     create_failure_condition,
     add_risk_triggered_beat,
     set_failure_risk_level,
+    get_narrative_structure_details,
     finalize_simulation,
 ]
 
 VALIDATIONTOOLS = [
+    get_narrative_structure_details,
     validate_simulated_narrative,
+]
+
+QUERYTOOLS = [
+    get_narrative_structure_details,
 ]

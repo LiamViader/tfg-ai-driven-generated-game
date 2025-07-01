@@ -218,6 +218,18 @@ class SimulatedGameState:
     def set_narrative_structure(self, structure_type: NarrativeStructureTypeModel) -> None:
         self._write_narrative.set_narrative_structure(structure_type)
 
+    def get_narrative_structure_details(self) -> str:
+        """Return overview of all stages with beats and highlight the current stage."""
+        return self._read_narrative.get_structure_details()
+
+    def get_current_stage_index(self) -> int:
+        """Return the index of the currently active narrative stage."""
+        return self._read_narrative.get_current_stage_index()
+
+    def get_next_stage_index(self) -> int:
+        """Return the index of the next narrative stage if available."""
+        return self._read_narrative.get_next_stage_index()
+
     def add_narrative_beat(self, stage_index: int, beat: NarrativeBeatModel) -> None:
         self._write_narrative.add_narrative_beat(stage_index, beat)
 

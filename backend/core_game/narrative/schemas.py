@@ -1,8 +1,10 @@
 from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
-# Internal counter to generate sequential ids for narrative structures
+# Internal counters to generate sequential ids for narrative elements
 _structure_id_counter = 0
+_beat_id_counter = 0
+_failure_condition_id_counter = 0
 
 def _generate_structure_id() -> str:
     """Return a sequential id of the form 'structure_001'."""
@@ -10,13 +12,27 @@ def _generate_structure_id() -> str:
     _structure_id_counter += 1
     return f"structure_{_structure_id_counter:03d}"
 
+
+def generate_beat_id() -> str:
+    """Return a sequential id of the form 'beat_001'."""
+    global _beat_id_counter
+    _beat_id_counter += 1
+    return f"beat_{_beat_id_counter:03d}"
+
+
+def generate_failure_condition_id() -> str:
+    """Return a sequential id of the form 'failure_001'."""
+    global _failure_condition_id_counter
+    _failure_condition_id_counter += 1
+    return f"failure_{_failure_condition_id_counter:03d}"
+
 class GoalModel(BaseModel):
     """Defines a main goal for the player in the narrative. This will guide the narrative."""
     description: str = Field(..., description="Clear description of the goal to be achieved.")
 
 class NarrativeBeatModel(BaseModel):
     """Represents a unit of narrative progress."""
-    id: str = Field(..., description="Unique identifier of the narrative beat.")
+    id: str = Field(default_factory=generate_beat_id, description="Unique identifier of the narrative beat.")
     description: str = Field(..., description="Description of the goal/s or event/s represented by the beat.")
     status: Literal["PENDING", "ACTIVE", "COMPLETED", "FAILED", "DISCARDED"] = Field("PENDING", description="Current status of the beat.")
     origin: Optional[Literal["NARRATIVE_STAGE", "FAILURE_CONDITION"]] = Field(None, description="Where this beat originates from (narrative stage or failure condition).")
@@ -29,7 +45,7 @@ class RiskTriggeredBeats(BaseModel):
 
 class FailureConditionModel(BaseModel):
     """Defines a condition that can lead to an undesired narrative ending."""
-    id: str = Field(...,description="Failure condition id")
+    id: str = Field(default_factory=generate_failure_condition_id, description="Failure condition id")
     description: str = Field(..., description="Description of the failure condition.")
     risk_level: int = Field(0, ge=0, le=100, description="Current risk level (0-100).")
     is_active: bool = Field(False, description="Indicates whether this failure condition has been fully triggered (risk level reached 100) and the narrative has failed as a result.")

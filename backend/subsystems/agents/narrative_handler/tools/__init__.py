@@ -1,6 +1,7 @@
 from .narrative_tools import (
     EXECUTORTOOLS,
     VALIDATIONTOOLS,
+    QUERYTOOLS,
     finalize_simulation,
     validate_simulated_narrative,
 )
@@ -8,6 +9,7 @@ from .narrative_tools import (
 __all__ = [
     "EXECUTORTOOLS",
     "VALIDATIONTOOLS",
+    "QUERYTOOLS",
     "finalize_simulation",
     "validate_simulated_narrative",
 ]
