@@ -142,4 +142,20 @@ class NarrativeState:
                 beats = "No beats"
             lines.append(f"  Beats: {beats}")
 
+        if self._data.failure_conditions:
+            lines.append("Failure conditions:")
+            for fc in self._data.failure_conditions:
+                total_beats = sum(len(rtb.beats) for rtb in fc.risk_triggered_beats)
+                not_triggered = sum(
+                    1
+                    for rtb in fc.risk_triggered_beats
+                    for beat in rtb.beats
+                    if beat.status == "PENDING"
+                )
+                lines.append(
+                    f"- {fc.id} (risk {fc.risk_level}%): {total_beats} beats, {not_triggered} not triggered"
+                )
+        else:
+            lines.append("No failure conditions")
+
         return "\n".join(lines)
