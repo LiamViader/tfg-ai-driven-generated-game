@@ -8,6 +8,7 @@ from core_game.narrative.schemas import (
     NarrativeStageModel,
     NarrativeStructureModel,
     NarrativeStructureTypeModel,
+    GoalModel,
 )
 from core_game.narrative.structures import AVAILABLE_NARRATIVE_STRUCTURES
 
@@ -42,6 +43,19 @@ class NarrativeState:
     @property
     def failure_conditions(self) -> list[FailureConditionModel]:
         return self._data.failure_conditions
+
+    # ------------------------------------------------------------------
+    # Main goal helpers
+    # ------------------------------------------------------------------
+    def set_main_goal(self, goal: str) -> None:
+        """Define the main goal of the narrative."""
+        self._data.main_goal = GoalModel(description=goal)
+
+    def get_main_goal(self) -> Optional[str]:
+        """Return the main goal description if defined."""
+        if self._data.main_goal is None:
+            return None
+        return self._data.main_goal.description
 
     # ------------------------------------------------------------------
     # Configuration methods

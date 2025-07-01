@@ -184,8 +184,8 @@ class SimulatedGameState:
     def set_refined_prompt(self, prompt: str) -> None:
         self._write_session.set_refined_prompt(prompt)
 
-    def set_player_main_goal(self, goal: str) -> None:
-        self._write_session.set_player_main_goal(goal)
+    def set_main_goal(self, goal: str) -> None:
+        self._write_narrative.set_main_goal(goal)
 
     def set_global_flag(self, key: str, value: Any) -> None:
         self._write_session.set_global_flag(key, value)
@@ -202,8 +202,8 @@ class SimulatedGameState:
     def get_refined_prompt(self):
         return self._read_session.get_refined_prompt()
 
-    def get_player_main_goal(self):
-        return self._read_session.get_player_main_goal()
+    def get_main_goal(self):
+        return self._read_narrative.get_main_goal()
 
     def get_global_flags(self):
         return self._read_session.get_global_flags()

@@ -14,7 +14,7 @@ def prepare_refinement(state: GenerationGraphState):
     refined_prompt = game_state.get_refined_prompt()
     assert refined_prompt is not None, "Refined prompt should not be None at prepare refinement"  
 
-    main_goal = game_state.get_player_main_goal()
+    main_goal = game_state.get_main_goal()
     assert main_goal is not None, "Player main goal should not be None at prepare refinement"
 
     foundational_info = refined_prompt + "\n In this narrative world, the player has the following goal/objective: " + main_goal
