@@ -25,9 +25,6 @@ class SimulatedNarrative:
         """Return summary info about the current narrative stage."""
         return self._working_state.get_initial_summary()
 
-    def get_structure_details(self) -> str:
-        """Return details of the narrative structure with beats and current stage."""
-        return self._working_state.get_structure_details()
 
     # ---- Main goal helpers ----
     def set_main_goal(self, goal: str) -> None:

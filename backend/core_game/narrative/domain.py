@@ -124,38 +124,10 @@ class NarrativeState:
 
         lines = []
         if goal_desc:
-            lines.append(f"(IMPORTANT) Main goal for the player (guides the narrative): {goal_desc}")
+            lines.append(f"(IMPORTANT) Main goal for the player (this guides the main plot): {goal_desc}")
 
         structure_name = self._data.narrative_structure.structure_type.name
         lines.append(f"Narrative structure: {structure_name}")
-
-        for i, stage in enumerate(stages, start=1):
-            marker = " (current)" if (i - 1) == current_index else ""
-            lines.append(f"- Stage {i}: {stage.name}{marker}")
-            if stage.stage_beats:
-                beats = ", ".join(
-                    f"{beat.id}: {beat.name} [{beat.status}]" for beat in stage.stage_beats
-                )
-            else:
-                beats = "No beats"
-            lines.append(f"  Beats: {beats}")
-
-        return "\n".join(lines)
-
-    def get_structure_details(self) -> str:
-        """Return all stage names, objectives, and beats, highlighting the current stage."""
-        if self._data.narrative_structure is None:
-            raise ValueError("No narrative structure selected")
-
-        structure = self._data.narrative_structure
-        stages = structure.stages
-        current_index = self._data.current_stage_index or 0
-
-        lines = [
-            f"Narrative structure: {structure.structure_type.name}",
-            f"Current stage: {current_index + 1}. {stages[current_index].name}",
-            "Stages:",
-        ]
 
         for i, stage in enumerate(stages, start=1):
             marker = " (current)" if (i - 1) == current_index else ""
