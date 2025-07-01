@@ -46,6 +46,10 @@ class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
         ...,
         description="Short name for the 60 risk beat. If omitted, the first words of the description will be used.",
     )
+    beat_description_risk_60: str = Field(
+        ...,
+        description="The creative brief for the beat that triggers at 60 risk. Should describe the escalating complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words).",
+    )
     beat_name_risk_100: str = Field(
         ...,
         description="Short name for the 100 risk beat. If omitted, the first words of the description will be used.",
@@ -347,6 +351,7 @@ def finalize_simulation(justification: str,
                         tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
     """Finalize the narrative executor."""
     args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
     message = justification
     return Command(update={
         logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, message)],
