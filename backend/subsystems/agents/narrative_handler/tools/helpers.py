@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 
 
-def get_observation(total_beats: int, tool_name: str, success: bool, message: str) -> str:
+def get_observation(tool_name: str, success: bool, message: str) -> str:
     """Generate a standardized observation string for narrative tools."""
     result = "" if success else "Error,"
     observation = (
