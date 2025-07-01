@@ -15,6 +15,10 @@ from core_game.narrative.schemas import (
 )
 
 class ToolAddBeatArgs(InjectedToolContext):
+    name: str = Field(
+        ...,
+        description="Short name (7-15 words) summarizing the beat. If omitted the first words of the description will be used.",
+    )
     description: str = Field(
         ..., 
         description="The 'creative brief' for this beat. A detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
@@ -29,13 +33,21 @@ class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
         ...,
         description="The high-level description for the overall Failure Condition. e.g., 'The player is exposed as an impostor'; 'The heist alarm is triggered'."
     )
+    beat_name_risk_30: str = Field(
+        ...,
+        description="Short name for the 30 risk beat. If omitted, the first words of the description will be used.",
+    )
     beat_description_risk_30: str = Field(
         ...,
         description="The creative brief for the beat that triggers at 30 risk. Should describe the 'early warning' or initial complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
     )
-    beat_description_risk_60: str = Field(
+    beat_name_risk_60: str = Field(
         ...,
-        description="The creative brief for the beat that triggers at 60 risk. Should describe a 'significant escalation' of the failure condition. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
+        description="Short name for the 60 risk beat. If omitted, the first words of the description will be used.",
+    )
+    beat_name_risk_100: str = Field(
+        ...,
+        description="Short name for the 100 risk beat. If omitted, the first words of the description will be used.",
     )
     beat_description_risk_100: str = Field(
         ...,
@@ -52,6 +64,10 @@ class ToolAddRiskTriggeredBeatArgs(InjectedToolContext):
         ge=0, 
         le=100,
         description="The risk percentage (0-100) at which this narrative beat becomes active and is added to the active beats list."
+    )
+    name: str = Field(
+        ...,
+        description="Short name for the beat. If omitted, the first words of the description will be used.",
     )
     description: str = Field(
         ..., 
@@ -95,6 +111,7 @@ class ToolGetStructureDetailsArgs(InjectedToolContext):
 
 @tool(args_schema=ToolAddBeatArgs)
 def add_beat_current_stage(
+    name: str,
     description: str,
     priority: int,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
@@ -108,6 +125,7 @@ def add_beat_current_stage(
         priority=priority,
         origin="NARRATIVE_STAGE",
         status="PENDING",
+        name=name
     )
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -127,6 +145,7 @@ def add_beat_current_stage(
 
 @tool(args_schema=ToolAddBeatArgs)
 def add_beat_next_stage(
+    name: str,
     description: str,
     priority: int,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
@@ -140,6 +159,7 @@ def add_beat_next_stage(
         priority=priority,
         origin="NARRATIVE_STAGE",
         status="PENDING",
+        name=name
     )
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -159,8 +179,11 @@ def add_beat_next_stage(
 @tool(args_schema=ToolCreateFailureConditionWithBeatsArgs)
 def create_failure_condition_with_beats(
     condition_description: str,
+    beat_name_risk_30: str,
     beat_description_risk_30: str,
+    beat_name_risk_60: str,
     beat_description_risk_60: str,
+    beat_name_risk_100: str,
     beat_description_risk_100: str,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
@@ -180,17 +203,18 @@ def create_failure_condition_with_beats(
         simulated_state.add_failure_condition(fc)
 
         beats_info = [
-            (beat_description_risk_30, 30),
-            (beat_description_risk_60, 60),
-            (beat_description_risk_100, 100)
+            (beat_name_risk_30, beat_description_risk_30, 30),
+            (beat_name_risk_60, beat_description_risk_60, 60),
+            (beat_name_risk_100, beat_description_risk_100, 100)
         ]
 
-        for desc, risk_level in beats_info:
+        for name, desc, risk_level in beats_info:
             beat = NarrativeBeatModel(
                 description=desc,
                 priority=risk_level, 
                 origin="FAILURE_CONDITION",
                 status="PENDING",
+                name=name
             )
             rtb = RiskTriggeredBeats(
                 trigger_risk_level=risk_level,
@@ -212,6 +236,7 @@ def create_failure_condition_with_beats(
 
 @tool(args_schema=ToolAddRiskTriggeredBeatArgs)
 def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
+                            name: str,
                             description: str,
                             messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
                             logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
@@ -223,6 +248,7 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
         priority=10,
         origin="FAILURE_CONDITION",
         status="PENDING",
+        name=name
     )
     rtb = RiskTriggeredBeats(
         trigger_risk_level=trigger_risk_level,

@@ -33,7 +33,7 @@ class GoalModel(BaseModel):
 class NarrativeBeatModel(BaseModel):
     """Represents a unit of narrative progress."""
     id: str = Field(default_factory=generate_beat_id, description="Unique identifier of the narrative beat.")
-    name: Optional[str] = Field(None, description="Short 10-20 word summary describing the beat.")
+    name: str = Field(description="Short 10-20 word summary describing the beat.")
     description: str = Field(..., description="Description of the goal/s or event/s represented by the beat.")
     status: Literal["PENDING", "ACTIVE", "COMPLETED", "FAILED", "DISCARDED"] = Field("PENDING", description="Current status of the beat.")
     origin: Optional[Literal["NARRATIVE_STAGE", "FAILURE_CONDITION"]] = Field(None, description="Where this beat originates from (narrative stage or failure condition).")
