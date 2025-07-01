@@ -124,7 +124,7 @@ class NarrativeState:
 
         lines = []
         if goal_desc:
-            lines.append(f"Main goal for the player: {goal_desc}")
+            lines.append(f"(IMPORTANT) Main goal for the player (guides the narrative): {goal_desc}")
 
         structure_name = self._data.narrative_structure.structure_type.name
         lines.append(f"Narrative structure: {structure_name}")

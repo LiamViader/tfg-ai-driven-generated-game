@@ -15,34 +15,83 @@ from core_game.narrative.schemas import (
 )
 
 class ToolAddBeatArgs(InjectedToolContext):
-    description: str = Field(..., description="Description of the beat")
-    priority: int = Field(10, description="Beat priority")
+    description: str = Field(
+        ..., 
+        description="A detailed, self-contained description (summary) of the narrative beat. Must explain what happens during the beat and its completion or resolution criteria. (Approx. 100-150 words)."
+    )
+    priority: int = Field(
+        10, 
+        description="Sets the execution priority for this beat within its stage. Higher numbers are executed sooner. Use this to order events logically."
+    )
 
-class ToolCreateFailureConditionArgs(InjectedToolContext):
-    description: str = Field(..., description="Description")
+class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
+    condition_description: str = Field(
+        ...,
+        description="A clear, concise description of the potential failure state. e.g., 'The player's stealth is compromised by the security system'."
+    )
+    beat_description_risk_30: str = Field(
+        ...,
+        description="Description for the narrative beat that triggers at 30 risk. This should represent an early warning or initial complication. Description must explain what happens during the beat and its completion or resolution criteria. (Approx. 100-150 words)."
+    )
+    beat_description_risk_60: str = Field(
+        ...,
+        description="Description for the narrative beat that triggers at 60 risk. This should represent a significant escalation of the failure condition. Description must explain what happens during the beat and its completion or resolution criteria. (Approx. 100-150 words)."
+    )
+    beat_description_risk_100: str = Field(
+        ...,
+        description="Description for the final climax/failure beat that triggers at 100 risk. This should represent the ultimate negative consequence (it should mean game over, mission failed). Description must explain what happens during the beat and its completion or resolution criteria. (Approx. 100-150 words)."
+    )
 
 class ToolAddRiskTriggeredBeatArgs(InjectedToolContext):
-    condition_id: str = Field(..., description="Failure condition id")
-    trigger_risk_level: int = Field(..., ge=0, le=100)
-    deactivate_risk_level: int = Field(..., ge=0, le=100)
-    description: str = Field(..., description="Beat description")
-    priority: int = Field(10)
+    condition_id: str = Field(
+        ...,
+        description="The ID of the `FailureCondition` to which this beat will be linked."
+    )
+    trigger_risk_level: int = Field(
+        ..., 
+        ge=0, 
+        le=100,
+        description="The risk percentage (0-100) at which this narrative beat becomes active and is added to the active beats list."
+    )
+    description: str = Field(
+        ..., 
+        description="A detailed, self-contained description (summary) of the narrative beat that will be triggered when risk evel is met. Must explain what happens during the beat and its completion or resolution criteria. (Approx. 100-150 words)."
+    )
 
 class ToolSetFailureRiskLevelArgs(InjectedToolContext):
-    condition_id: str = Field(...)
-    risk_level: int = Field(..., ge=0, le=100)
+    condition_id: str = Field(
+        ...,
+        description="The ID of the `FailureCondition` whose risk level is being updated."
+    )
+    risk_level: int = Field(
+        ..., 
+        ge=0, 
+        le=100,
+        description="The new risk value (0-100) to set for the specified failure condition."
+    )
 
 class ToolFinalizeSimulationArgs(InjectedToolContext):
-    justification: str
+    justification: str = Field(
+        ...,
+        description="A detailed justification explaining why the current narrative state fully satisfies the objective and is ready to be finalized."
+    )
 
 class ToolValidateSimulatedNarrativeArgs(InjectedToolContext):
-    does_narrative_meet_criteria: bool
-    assessment_reasoning: str
-    suggested_improvements: str | None = None
+    does_narrative_meet_criteria: bool = Field(
+        ...,
+        description="Set to 'true' if the narrative fulfills all objectives and constraints, 'false' otherwise."
+    )
+    assessment_reasoning: str = Field(
+        ...,
+        description="A detailed, step-by-step explanation of your reasoning for the 'true' or 'false' assessment."
+    )
+    suggested_improvements: str | None = Field(
+        None,
+        description="If 'false', provide specific, actionable suggestions for what the other agent should do next to fix the narrative."
+    )
 
 class ToolGetStructureDetailsArgs(InjectedToolContext):
     pass
-
 
 @tool(args_schema=ToolAddBeatArgs)
 def add_beat_current_stage(
@@ -52,7 +101,7 @@ def add_beat_current_stage(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Add a narrative beat to the current stage."""
+    """Creates and adds a new narrative beat to the game's *current* narrative stage. Use this to add events that should happen soon. Beats should match the current stage description. The added beat will be on pending status"""
     args = extract_tool_args(locals())
     beat = NarrativeBeatModel(
         description=description,
@@ -84,7 +133,7 @@ def add_beat_next_stage(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Add a narrative beat to the next stage."""
+    """Creates and adds a new narrative beat to the game's *next* narrative stage. Use this to set up future events that will or could occur after the current stage is complete.  Beats should match the current stage description. The added beat will be on pending status"""
     args = extract_tool_args(locals())
     beat = NarrativeBeatModel(
         description=description,
@@ -107,49 +156,77 @@ def add_beat_next_stage(
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
-@tool(args_schema=ToolCreateFailureConditionArgs)
-def create_failure_condition(description: str,
-                             messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-                             logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-                             tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-    """Create a new failure condition."""
+@tool(args_schema=ToolCreateFailureConditionWithBeatsArgs)
+def create_failure_condition_with_beats(
+    condition_description: str,
+    beat_description_risk_30: str,
+    beat_description_risk_60: str,
+    beat_description_risk_100: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command:
+    """Creates a new, trackable failure condition and simultaneously attaches three mandatory risk-triggered beats at 30%, 60%, and 100% risk."""
     args = extract_tool_args(locals())
-    fc = FailureConditionModel(
-        description=description,
-        is_active=False,
-        risk_level=0,
-    )
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
+    
     try:
+        fc = FailureConditionModel(
+            description=condition_description,
+            is_active=False,
+            risk_level=0,
+        )
         simulated_state.add_failure_condition(fc)
-        message = f"Failure condition '{fc.id}' created"
+
+        beats_info = [
+            (beat_description_risk_30, 30),
+            (beat_description_risk_60, 60),
+            (beat_description_risk_100, 100)
+        ]
+
+        for desc, risk_level in beats_info:
+            beat = NarrativeBeatModel(
+                description=desc,
+                priority=risk_level, 
+                origin="FAILURE_CONDITION",
+                status="PENDING",
+            )
+            rtb = RiskTriggeredBeats(
+                trigger_risk_level=risk_level,
+                deactivate_risk_level=risk_level -1 if risk_level > 0 else 0,
+                beats=[beat],
+            )
+            simulated_state.add_risk_triggered_beats(fc.id, rtb)
+
+        message = f"Failure condition '{fc.id}' created successfully with 3 mandatory beats at risks 30, 60, and 100."
+
     except Exception as e:
         success = False
         message = str(e)
 
     return Command(update={
-        logs_field_to_update: [get_log_item("create_failure_condition", args, False, success, message)],
+        logs_field_to_update: [get_log_item("create_failure_condition_with_beats", args, False, success, message)],
         messages_field_to_update: [ToolMessage(message, tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolAddRiskTriggeredBeatArgs)
-def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int, deactivate_risk_level: int,
-                            description: str, priority: int,
+def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
+                            description: str,
                             messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
                             logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
                             tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-    """Associate beats to a failure condition triggered at certain risk level."""
+    """Links a new risk triggered beat to a specific failure condition. This beat will automatically activate when the condition's risk level reaches the 'trigger_risk_level'."""
     args = extract_tool_args(locals())
     beat = NarrativeBeatModel(
         description=description,
-        priority=priority,
+        priority=10,
         origin="FAILURE_CONDITION",
         status="PENDING",
     )
     rtb = RiskTriggeredBeats(
         trigger_risk_level=trigger_risk_level,
-        deactivate_risk_level=deactivate_risk_level,
+        deactivate_risk_level=trigger_risk_level-1,
         beats=[beat],
     )
     simulated_state = SimulatedGameStateSingleton.get_instance()
@@ -171,7 +248,7 @@ def set_failure_risk_level(condition_id: str, risk_level: int,
                            messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
                            logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
                            tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-    """Set the risk level of a failure condition."""
+    """Updates the current risk percentage (0-100) of a specific failure condition. This can trigger or deactivate associated beats."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -209,7 +286,7 @@ def get_narrative_structure_details(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """(QUERY tool) Return all stages with descriptions, beats, and current-stage marker."""
+    """(QUERY) Retrieves a detailed overview of the entire narrative structure, including all stages, their descriptions, and the beats within each. Also indicates which stage is currently active."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
@@ -252,7 +329,7 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
 EXECUTORTOOLS = [
     add_beat_current_stage,
     add_beat_next_stage,
-    create_failure_condition,
+    create_failure_condition_with_beats, 
     add_risk_triggered_beat,
     set_failure_risk_level,
     get_narrative_structure_details,
