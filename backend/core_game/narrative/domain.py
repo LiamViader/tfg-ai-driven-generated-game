@@ -134,7 +134,7 @@ class NarrativeState:
             lines.append(f"- Stage {i}: {stage.name}{marker}")
             if stage.stage_beats:
                 beats = ", ".join(
-                    f"{beat.id} [{beat.status}]" for beat in stage.stage_beats
+                    f"{beat.id}: {beat.name} [{beat.status}]" for beat in stage.stage_beats
                 )
             else:
                 beats = "No beats"
@@ -164,7 +164,7 @@ class NarrativeState:
             )
             if stage.stage_beats:
                 beats = ", ".join(
-                    f"{beat.id} [{beat.status}]" for beat in stage.stage_beats
+                    f"{beat.id}: {beat.name} [{beat.status}]" for beat in stage.stage_beats
                 )
             else:
                 beats = "No beats"
