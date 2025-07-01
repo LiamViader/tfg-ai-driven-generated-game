@@ -153,9 +153,9 @@ class NarrativeState:
                     if beat.status == "PENDING"
                 )
                 lines.append(
-                    f"- {fc.id} (risk {fc.risk_level}%): {total_beats} beats, {not_triggered} not triggered"
+                    f"- {fc.id} (risk {fc.risk_level}%): {total_beats} beats, {not_triggered} not triggered yet"
                 )
         else:
-            lines.append("No failure conditions")
+            lines.append("No failure conditions yet")
 
         return "\n".join(lines)
