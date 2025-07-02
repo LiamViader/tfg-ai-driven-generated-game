@@ -19,6 +19,14 @@ def rollback_event_id() -> None:
 class GameEventModel(BaseModel):
     """Base class for all game events."""
     id: str = Field(default_factory=generate_event_id, description="Unique identifier of the game event.")
+    title: str = Field(
+        ...,
+        description="A short, descriptive title for the event (7-15 words). This acts as a human-readable headline. e.g., 'The King reveals the secret of the stolen artifact to the player'."
+    )
+    description: str = Field(
+        ...,
+        description="The detailed creative brief for this event, guiding the generation of its final content (dialogues, actions). The nature of this brief can be 'open' (e.g., 'Character X asks the player for their opinion on Y') or 'closed' and more prescriptive (e.g., 'The king tells his servant he hates his treatment' in a cutscene). You decide if it must be open or closed based on the narrative and the dependance of other beats and events. Up to 150 words max"
+    )
     type: Literal[
         "npc_conversation",
         "player_npc_conversation",
