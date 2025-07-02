@@ -145,7 +145,7 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Create Relationships",
                 agent_name=AgentName.RELATIONSHIP,
-                objective_prompt="Create relationships between the characters.",
+                objective_prompt="Create 2-4 relationships between characters.",
                 rules_and_constraints=[],
                 other_guidelines="Ensure the relationships make sense with the character backgrounds and map.",
                 max_executor_iterations=3,
