@@ -9,6 +9,7 @@ from subsystems.agents.map_handler.orchestrator import get_map_graph_app
 from subsystems.agents.character_handler.orchestrator import get_character_graph_app
 from subsystems.agents.relationship_handler.orchestrator import get_relationship_graph_app
 from subsystems.agents.narrative_handler.orchestrator import get_narrative_graph_app
+from subsystems.agents.game_event_handler.orchestrator import get_game_event_graph_app
 
 def go_to_next_agent_or_finish(state: RefinementLoopGraphState) -> Union[AgentName, Literal["finalize"]]:
     """
@@ -40,6 +41,7 @@ def get_refinement_loop_graph_app():
     characters_agent_sub_graph = get_character_graph_app()
     relationship_agent_sub_graph = get_relationship_graph_app()
     narrative_agent_sub_graph = get_narrative_graph_app()
+    events_agent_sub_graph = get_game_event_graph_app()
 
     workflow.add_node("start_refinement_loop", start_refinement_loop)
     workflow.add_node("map_agent", map_agent_sub_graph)
@@ -54,6 +56,9 @@ def get_refinement_loop_graph_app():
     workflow.add_node("narrative_agent", narrative_agent_sub_graph)
     workflow.add_node("narrative_step_start", narrative_step_start)
     workflow.add_node("narrative_step_finish", narrative_step_finish)
+    workflow.add_node("events_agent", events_agent_sub_graph)
+    workflow.add_node("events_step_start", events_step_start)
+    workflow.add_node("events_step_finish", events_step_finish)
     workflow.add_node("finalize_step", finalize_step)
     workflow.add_node("prepare_next_step", prepare_next_step)
     workflow.add_node("summarize_agent_logs", summarize_sub_graph)
@@ -70,6 +75,7 @@ def get_refinement_loop_graph_app():
             AgentName.CHARACTERS: "characters_step_start",
             AgentName.RELATIONSHIP: "relationship_step_start",
             AgentName.NARRATIVE: "narrative_step_start",
+            AgentName.EVENTS: "events_step_start",
             "finalize": END,
         }
     )
@@ -82,6 +88,7 @@ def get_refinement_loop_graph_app():
             AgentName.CHARACTERS: "characters_step_start",
             AgentName.RELATIONSHIP: "relationship_step_start",
             AgentName.NARRATIVE: "narrative_step_start",
+            AgentName.EVENTS: "events_step_start",
             "finalize": END,
         }
     )
@@ -102,6 +109,10 @@ def get_refinement_loop_graph_app():
     workflow.add_edge("narrative_step_start", "narrative_agent")
     workflow.add_edge("narrative_agent", "narrative_step_finish")
     workflow.add_edge("narrative_step_finish", "finalize_step")
+
+    workflow.add_edge("events_step_start", "events_agent")
+    workflow.add_edge("events_agent", "events_step_finish")
+    workflow.add_edge("events_step_finish", "finalize_step")
 
     workflow.add_conditional_edges(
         "finalize_step",
