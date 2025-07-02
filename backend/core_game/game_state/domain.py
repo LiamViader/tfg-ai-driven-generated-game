@@ -7,7 +7,7 @@ from core_game.character.domain import Characters
 from core_game.game_state.schemas import GameStateModel
 from core_game.time.domain import GameTime
 from core_game.narrative.domain import NarrativeState
-from core_game.game_event.schemas import GameEventModel
+from core_game.game_event.domain import GameEventsManager
 from core_game.relationship.domain import Relationships
 from core_game.game_session.domain import GameSession
 
@@ -20,7 +20,7 @@ class GameState:
         self._characters: Characters
         self._relationships: Relationships
         self._narrative_state: NarrativeState
-        self._game_event_log: List[GameEventModel]
+        self._game_events: GameEventsManager
 
         if game_state_model is not None:
             self._populate_from_model(game_state_model)
@@ -30,7 +30,7 @@ class GameState:
             self._characters = Characters()
             self._relationships = Relationships()
             self._narrative_state = NarrativeState()
-            self._game_event_log = []
+            self._game_events = GameEventsManager()
 
 
     @property
@@ -62,7 +62,7 @@ class GameState:
         self._characters = Characters(game_state_model.characters)
         self._relationships = Relationships(game_state_model.relationships)
         self._narrative_state = NarrativeState(game_state_model.narrative_state)
-        self._game_event_log = game_state_model.game_event_log
+        self._game_events = GameEventsManager(game_state_model.game_events)
 
     def load_from_file(self, file_path: str = "game_state.json") -> None:
         """Load game state data from a JSON file."""

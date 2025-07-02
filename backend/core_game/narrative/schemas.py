@@ -49,10 +49,10 @@ class NarrativeBeatModel(BaseModel):
             values["name"] = " ".join(words[:20])
         return values
 
-class RiskTriggeredBeats(BaseModel):
+class RiskTriggeredBeat(BaseModel):
     trigger_risk_level: int = Field(..., ge=0, le=100, description="Risk level at which the beats become active.")
     deactivate_risk_level: int = Field(..., ge=0, le=100, description="Risk level below which the beats become inactive again.")
-    beats: List[NarrativeBeatModel] = Field(default_factory=list, description="Narrative beat to trigger.")
+    beat: NarrativeBeatModel = Field(..., description="Narrative beat to trigger.")
 
 class FailureConditionModel(BaseModel):
     """Defines a condition that can lead to an undesired narrative ending."""
@@ -60,7 +60,7 @@ class FailureConditionModel(BaseModel):
     description: str = Field(..., description="Description of the failure condition.")
     risk_level: int = Field(0, ge=0, le=100, description="Current risk level (0-100).")
     is_active: bool = Field(False, description="Indicates whether this failure condition has been fully triggered (risk level reached 100) and the narrative has failed as a result.")
-    risk_triggered_beats: List[RiskTriggeredBeats] = Field(default_factory=list, description="List of risk level ranges mapped to narrative beats that should be triggered when the risk is within those ranges.")
+    risk_triggered_beats: List[RiskTriggeredBeat] = Field(default_factory=list, description="List of risk level ranges mapped to narrative beats that should be triggered when the risk is within those ranges.")
 
 class NarrativeStageTypeModel(BaseModel):
     """Defines a stage in a narrative structure type (static info only)."""

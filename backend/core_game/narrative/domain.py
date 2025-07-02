@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, List
 from core_game.narrative.schemas import (
     NarrativeStateModel,
     NarrativeBeatModel,
     FailureConditionModel,
-    RiskTriggeredBeats,
+    RiskTriggeredBeat,
     NarrativeStageModel,
     NarrativeStructureModel,
     NarrativeStructureTypeModel,
@@ -41,7 +41,7 @@ class NarrativeState:
         return self._data.narrative_structure
 
     @property
-    def failure_conditions(self) -> list[FailureConditionModel]:
+    def failure_conditions(self) -> List[FailureConditionModel]:
         return self._data.failure_conditions
 
     # ------------------------------------------------------------------
@@ -91,7 +91,7 @@ class NarrativeState:
                 return cond
         raise KeyError(f"Failure condition '{condition_id}' not found")
 
-    def add_risk_triggered_beats(self, condition_id: str, risk_triggered: RiskTriggeredBeats) -> None:
+    def add_risk_triggered_beats(self, condition_id: str, risk_triggered: RiskTriggeredBeat) -> None:
         cond = self._find_failure(condition_id)
         cond.risk_triggered_beats.append(risk_triggered)
 
@@ -101,11 +101,10 @@ class NarrativeState:
         cond.risk_level = risk_level
         cond.is_active = risk_level >= 100
         for rtb in cond.risk_triggered_beats:
-            for beat in rtb.beats:
-                if risk_level >= rtb.trigger_risk_level:
-                    beat.status = "ACTIVE"
-                if risk_level <= rtb.deactivate_risk_level:
-                    beat.status = "PENDING"
+            if risk_level >= rtb.trigger_risk_level:
+                rtb.beat.status = "ACTIVE"
+            if risk_level <= rtb.deactivate_risk_level:
+                rtb.beat.status = "PENDING"
 
     # ------------------------------------------------------------------
     # Summary helpers
@@ -145,12 +144,11 @@ class NarrativeState:
         if self._data.failure_conditions:
             lines.append("Failure conditions:")
             for fc in self._data.failure_conditions:
-                total_beats = sum(len(rtb.beats) for rtb in fc.risk_triggered_beats)
+                total_beats = len(fc.risk_triggered_beats)
                 not_triggered = sum(
                     1
                     for rtb in fc.risk_triggered_beats
-                    for beat in rtb.beats
-                    if beat.status == "PENDING"
+                    if rtb.beat.status == "PENDING"
                 )
                 lines.append(
                     f"- {fc.id} (risk {fc.risk_level}%): {total_beats} beats, {not_triggered} not triggered yet"

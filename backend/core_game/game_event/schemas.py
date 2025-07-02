@@ -1,13 +1,19 @@
 """Data models for describing game events and in-game messages."""
 
-from typing import List, Optional, Literal, Union
+from typing import List, Optional, Literal, Union, Dict
 from pydantic import BaseModel, Field
+
 
 
 class GameEventModel(BaseModel):
     """Base class for all game events."""
     id: str = Field(..., description="Unique identifier of the game event.")
-
+    type: Literal[
+        "npc_conversation",
+        "player_npc_conversation",
+        "narrator_intervention",
+        "cutscene",
+    ]
 
 # ---------- Message Schemas ----------
 
@@ -155,3 +161,8 @@ class CutsceneEventModel(GameEventModel):
         default_factory=list,
         description="Ordered sequence of frames composing the cutscene.",
     )
+
+class GameEventsManagerModel(BaseModel):
+    """Stores game events and related info"""
+    all_events: Dict[str, GameEventModel] = Field(default_factory=dict, description="Stores all existing events, keyed by id")
+    

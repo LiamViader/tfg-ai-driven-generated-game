@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from pydantic import Field
 from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
@@ -12,7 +12,7 @@ from .helpers import get_observation, _format_nested_dict
 from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
-    RiskTriggeredBeats,
+    RiskTriggeredBeat,
 )
 
 class ToolAddBeatArgs(InjectedToolContext):
@@ -146,7 +146,7 @@ def add_beat_current_stage(
     try:
         stage_index = simulated_state.get_current_stage_index()
         simulated_state.add_narrative_beat(stage_index, beat)
-        message = f"Beat '{beat.id}' added to current stage"
+        message = f"Beat {beat.id} with status {beat.status} added to current narrative stage"
     except Exception as e:
         success = False
         message = str(e)
@@ -188,7 +188,7 @@ def add_beat_next_stage(
     try:
         stage_index = simulated_state.get_next_stage_index()
         simulated_state.add_narrative_beat(stage_index, beat)
-        message = f"Beat '{beat.id}' added to next stage"
+        message = f"Beat {beat.id} with status {beat.status} added to next narrative stage"
     except Exception as e:
         success = False
         message = str(e)
@@ -237,7 +237,7 @@ def create_failure_condition_with_beats(
             (beat_name_risk_60, beat_description_risk_60, 60),
             (beat_name_risk_100, beat_description_risk_100, 100)
         ]
-
+        beats: List[NarrativeBeatModel] = []
         for name, desc, risk_level in beats_info:
             beat = NarrativeBeatModel(
                 description=desc,
@@ -246,14 +246,15 @@ def create_failure_condition_with_beats(
                 status="PENDING",
                 name=name
             )
-            rtb = RiskTriggeredBeats(
+            rtb = RiskTriggeredBeat(
                 trigger_risk_level=risk_level,
                 deactivate_risk_level=risk_level -1 if risk_level > 0 else 0,
-                beats=[beat],
+                beat=beat,
             )
+            beats.append(beat)
             simulated_state.add_risk_triggered_beats(fc.id, rtb)
 
-        message = f"Failure condition '{fc.id}' created successfully with 3 mandatory beats at risks 30, 60, and 100."
+        message = f"Failure condition '{fc.id}' created successfully with {beats[0].id}: {beats[0].name} at risk 30, {beats[1].id}: {beats[1].name} at risk 60, and {beats[2].id}: {beats[2].name} at risk 100."
 
     except Exception as e:
         success = False
@@ -288,16 +289,16 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
         status="PENDING",
         name=name
     )
-    rtb = RiskTriggeredBeats(
+    rtb = RiskTriggeredBeat(
         trigger_risk_level=trigger_risk_level,
         deactivate_risk_level=trigger_risk_level-1,
-        beats=[beat],
+        beat=beat,
     )
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
         simulated_state.add_risk_triggered_beats(condition_id, rtb)
-        message = f"Risk triggered beat '{beat.id}' added"
+        message = f"Risk triggered beat {beat.id}: {beat.name} added"
     except Exception as e:
         success = False
         message = str(e)

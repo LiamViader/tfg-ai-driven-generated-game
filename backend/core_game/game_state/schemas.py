@@ -4,7 +4,7 @@ from core_game.time.schemas import GameTimeModel
 from core_game.map.schemas import ScenarioModel, GameMapModel
 from core_game.character.schemas import CharacterBaseModel, PlayerCharacterModel, CharactersModel
 from core_game.narrative.schemas import NarrativeStateModel
-from core_game.game_event.schemas import GameEventModel
+from core_game.game_event.schemas import GameEventsManagerModel
 from core_game.relationship.schemas import RelationshipsModel
 from core_game.game_session.schemas import GameSessionModel
 
@@ -26,9 +26,9 @@ class GameStateModel(BaseModel):
         description="The current state of the narrative, goals, and progression."
     )
 
-    game_event_log: List[GameEventModel] = Field(
-        default_factory=list,
-        description="A chronological log of all events that have occurred."
+    game_events: GameEventsManagerModel = Field(
+        ...,
+        description="Game events component."
     )
 
     #ATRIBUTS QUE GUARDIN RESUMS DEL QUE HA PASSAT FINS ARA
