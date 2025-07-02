@@ -3,7 +3,7 @@ from typing import List
 from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
-    RiskTriggeredBeats,
+    RiskTriggeredBeat,
     NarrativeStructureTypeModel,
 )
 from core_game.narrative.domain import NarrativeState
@@ -84,7 +84,7 @@ class SimulatedNarrative:
     def add_risk_triggered_beats(
         self,
         condition_id: str,
-        risk_triggered: RiskTriggeredBeats,
+        risk_triggered: RiskTriggeredBeat,
     ) -> None:
         cond = self._find_failure(condition_id)
         cond.risk_triggered_beats.append(risk_triggered)
@@ -95,11 +95,10 @@ class SimulatedNarrative:
         cond.risk_level = risk_level
         cond.is_active = risk_level >= 100
         for rtb in cond.risk_triggered_beats:
-            for beat in rtb.beats:
-                if risk_level >= rtb.trigger_risk_level:
-                    beat.status = "ACTIVE"
-                if risk_level <= rtb.deactivate_risk_level:
-                    beat.status = "PENDING"
+            if risk_level >= rtb.trigger_risk_level:
+                rtb.beat.status = "ACTIVE"
+            if risk_level <= rtb.deactivate_risk_level:
+                rtb.beat.status = "PENDING"
     def get_beat(self, beat_id: str) -> NarrativeBeatModel | None:
         """Return a beat by id from any source if found."""
         if self._working_state.narrative_structure:
@@ -109,9 +108,8 @@ class SimulatedNarrative:
                         return beat
         for fc in self._working_state.failure_conditions:
             for rtb in fc.risk_triggered_beats:
-                for beat in rtb.beats:
-                    if beat.id == beat_id:
-                        return beat
+                if rtb.beat.id == beat_id:
+                    return beat
         return None
 
     def get_failure_condition(self, condition_id: str) -> FailureConditionModel | None:
@@ -129,7 +127,8 @@ class SimulatedNarrative:
                 beats.extend([b for b in stage.stage_beats if b.status == "ACTIVE"])
         for fc in self._working_state.failure_conditions:
             for rtb in fc.risk_triggered_beats:
-                beats.extend([b for b in rtb.beats if b.status == "ACTIVE"])
+                if rtb.beat.status == "ACTIVE":
+                    beats.append(rtb.beat)
         return beats
 
     def list_pending_beats_main(self) -> List[NarrativeBeatModel]:
