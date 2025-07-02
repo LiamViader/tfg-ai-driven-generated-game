@@ -11,7 +11,7 @@ from .schemas import (
     GameEventModel,
     GameEventsManagerModel,
 )
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Set
 
 class BaseGameEvent:
     """Common functionality for domain event wrappers.
@@ -25,6 +25,9 @@ class BaseGameEvent:
         """Return the unique identifier of the underlying event model."""
         return self._data.id
 
+    def get_model(self) -> GameEventModel:
+        """Return the underlying Pydantic model."""
+        return self._data
 
 class NPCConversationEvent(BaseGameEvent):
     """Domain logic for an NPC-only conversation."""
@@ -90,11 +93,15 @@ class GameEventsManager:
     """Domain class for managing and storing events"""
     def __init__(self, model: Optional[GameEventsManagerModel] = None):
         self._all_events: Dict[str, BaseGameEvent]
+        self.events_by_beat_id: Dict[str, Set[str]]
+        self.beatless_event_ids: Set[str]
 
         if model:
             self._populate_from_model(model)
         else:
             self._all_events = {}
+            self.events_by_beat_id = {}
+            self.beatless_event_ids = set()
 
     def _populate_from_model(self, model: GameEventsManagerModel):
         """
@@ -102,6 +109,8 @@ class GameEventsManager:
         domain wrapper for each, and populates the internal event dictionary.
         """
         self._all_events = {}
+        self.events_by_beat_id = {}
+        self.beatless_event_ids = set()
         for event_id, event_model in model.all_events.items():
             wrapper_class = WRAPPER_MAP.get(event_model.type)
 
@@ -110,3 +119,23 @@ class GameEventsManager:
                 self._all_events[event_id] = domain_event
             else:
                 print(f"Warning: Unknown event type '{event_model.type}' with ID '{event_id}' encountered. Skipping.")
+
+    #PER FER DE MANERA CORRECTA
+    def add_event(self, event: BaseGameEvent) -> BaseGameEvent:
+        if event.id in self._all_events:
+            raise ValueError(f"Event with ID '{event.id}' already exists.")
+        self._all_events[event.id] = event
+        return event
+
+    def to_model(self) -> GameEventsManagerModel:
+        return GameEventsManagerModel(
+            all_events={eid: ev.get_model() for eid, ev in self._all_events.items()}
+        )
+
+
+    #PER FER
+    def get_initial_summary(self) -> str:
+        if not self._all_events:
+            return "No game events created yet."
+        lines = [f"{eid} ({ev.get_model().type})" for eid, ev in self._all_events.items()]
+        return f"Game events ({len(self._all_events)} total): " + ", ".join(lines)

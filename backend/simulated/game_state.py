@@ -6,6 +6,7 @@ from simulated.components.relationships import SimulatedRelationships
 from simulated.components.narrative import SimulatedNarrative
 from typing import List, Tuple, Optional, Any
 from core_game.character.schemas import PlayerCharacterModel, rollback_character_id
+from simulated.components.game_events import SimulatedGameEvents
 from core_game.character.domain import PlayerCharacter, BaseCharacter
 from core_game.character.schemas import (
     IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
@@ -14,7 +15,7 @@ from core_game.map.domain import Scenario
 from core_game.narrative.schemas import (
     NarrativeBeatModel,
     FailureConditionModel,
-    RiskTriggeredBeats,
+    RiskTriggeredBeat,
     NarrativeStructureTypeModel
 )
 from simulated.versioning.manager import GameStateVersionManager
@@ -68,6 +69,14 @@ class SimulatedGameState:
     @property
     def _write_session(self) -> SimulatedGameSession:
         return self._version_manager.get_current_session(for_writing=True)
+
+    @property
+    def _read_events(self) -> SimulatedGameEvents:
+        return self._version_manager.get_current_game_events(for_writing=False)
+
+    @property
+    def _write_events(self) -> SimulatedGameEvents:
+        return self._version_manager.get_current_game_events(for_writing=True)
 
     # ---- MAP METHODS ------
 
@@ -232,7 +241,7 @@ class SimulatedGameState:
     def add_failure_condition(self, failure_condition: FailureConditionModel) -> None:
         self._write_narrative.add_failure_condition(failure_condition)
 
-    def add_risk_triggered_beats(self, condition_id: str, risk_triggered: RiskTriggeredBeats) -> None:
+    def add_risk_triggered_beats(self, condition_id: str, risk_triggered: RiskTriggeredBeat) -> None:
         self._write_narrative.add_risk_triggered_beats(condition_id, risk_triggered)
 
     def set_failure_risk_level(self, condition_id: str, risk_level: int) -> None:
@@ -260,8 +269,8 @@ class SimulatedGameState:
             for stage in structure.stages:
                 count += len(stage.stage_beats)
         for fc in self._read_narrative.get_state().failure_conditions:
-            for rtb in fc.risk_triggered_beats:
-                count += len(rtb.beats)
+            count+= len(fc.risk_triggered_beats)
+
         return count
 
     def get_narrative_beat(self, beat_id: str) -> NarrativeBeatModel | None:
@@ -277,6 +286,12 @@ class SimulatedGameState:
 
     def list_pending_beats_main(self) -> List[NarrativeBeatModel]:
         return self._read_narrative.list_pending_beats_main()
+
+
+    # ---- GAME EVENTS METHODS ----
+    def get_initial_events_summary(self) -> str:
+        return self._read_events.get_initial_summary()
+
 
     # ---- MAP AND CHARACTER METHODS ----
     

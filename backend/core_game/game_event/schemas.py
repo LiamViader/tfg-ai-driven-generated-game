@@ -1,19 +1,47 @@
 """Data models for describing game events and in-game messages."""
 
-from typing import List, Optional, Literal, Union, Dict
+from typing import List, Optional, Literal, Union, Dict, Set
 from pydantic import BaseModel, Field
+from core_game.game_event.triggers.schemas import GameEventTrigger
 
+_event_id_counter = 0
 
+def generate_event_id() -> str:
+    """Return a sequential id of the form 'event_001'."""
+    global _event_id_counter
+    _event_id_counter += 1
+    return f"event_{_event_id_counter:03d}"
+
+def rollback_event_id() -> None:
+    global _event_id_counter
+    _event_id_counter -= 1
 
 class GameEventModel(BaseModel):
     """Base class for all game events."""
-    id: str = Field(..., description="Unique identifier of the game event.")
+    id: str = Field(default_factory=generate_event_id, description="Unique identifier of the game event.")
     type: Literal[
         "npc_conversation",
         "player_npc_conversation",
         "narrator_intervention",
         "cutscene",
     ]
+    status: Literal[
+        "DRAFT",       # The event is defined but its trigger condition has not been set yet.
+        "AVAILABLE",   # Ready to be triggered in the active game world.
+        "RUNNING",     # Currently being executed.
+        "COMPLETED"    # Finished and part of the historical record.
+    ] = Field("DRAFT", description="The current lifecycle state of the event.")
+
+    triggered_by: List[GameEventTrigger] = Field(
+        default_factory=list,
+        description="The specific condition/s that activates this event. Its structure depends on its 'type'. When any trigger is set, the event moves from 'DRAFT' to 'AVAILABLE'."
+    )
+
+    source_beat_id: Optional[str] = Field(..., description="The ID of the Narrative Beat that originated this game event. None if it was not originated by a narrative beat")
+    outcome_summary: Optional[str] = Field(
+        None, 
+        description="A summary of the event's final outcome, generated upon its completion. This field is ONLY populated when the event's status moves to 'COMPLETED'. It remains none for all other statuses."
+    )
 
 # ---------- Message Schemas ----------
 
@@ -165,4 +193,12 @@ class CutsceneEventModel(GameEventModel):
 class GameEventsManagerModel(BaseModel):
     """Stores game events and related info"""
     all_events: Dict[str, GameEventModel] = Field(default_factory=dict, description="Stores all existing events, keyed by id")
+    events_by_beat_id: Dict[str, Set[str]] = Field(
+        default_factory=dict,
+        description="An index that maps a Narrative Beat ID to the set of Game Event IDs that were originated from it. Allows for quick lookups of all events that compose a beat."
+    )
     
+    beatless_event_ids: Set[str] = Field(
+        default_factory=set,
+        description="A set of IDs for game events that were not originated from any Narrative Beat (e.g., random events, direct player actions)."
+    )

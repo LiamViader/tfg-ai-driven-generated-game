@@ -4,6 +4,7 @@ from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
 from simulated.components.relationships import SimulatedRelationships
 from simulated.components.narrative import SimulatedNarrative
+from simulated.components.game_events import SimulatedGameEvents
 if TYPE_CHECKING:
     from simulated.versioning.manager import GameStateVersionManager
     from simulated.game_state import SimulatedGameState
@@ -22,6 +23,7 @@ class SimulationLayer:
         self._relationships: Optional[SimulatedRelationships] = None
         self._session: Optional[SimulatedGameSession] = None
         self._narrative: Optional[SimulatedNarrative] = None
+        self._game_events: Optional[SimulatedGameEvents] = None
 
     @property
     def map(self) -> SimulatedMap:
@@ -68,6 +70,15 @@ class SimulationLayer:
         else:
             return self._version_manager.base_narrative
         
+    @property
+    def game_events(self) -> SimulatedGameEvents:
+        if self._game_events:
+            return self._game_events
+        elif self.parent:
+            return self.parent.game_events
+        else:
+            return self._version_manager.base_game_events
+        
     def modify_map(self) -> SimulatedMap:
         if self._map is None:
             self._map = deepcopy(self.map)
@@ -93,6 +104,11 @@ class SimulationLayer:
             self._narrative = deepcopy(self.narrative)
         return self._narrative
     
+    def modify_game_events(self) -> SimulatedGameEvents:
+        if self._game_events is None:
+            self._game_events = deepcopy(self.game_events)
+        return self._game_events
+
     def has_modified_map(self) -> bool:
         return self._map is not None
 
@@ -114,6 +130,9 @@ class SimulationLayer:
     def has_modified_narrative(self) -> bool:
         return self._narrative is not None
 
+    def has_modified_game_events(self) -> bool:
+        return self._game_events is not None
+
     def get_modified_characters(self) -> SimulatedCharacters:
         return self._characters or self.characters
 
@@ -125,6 +144,9 @@ class SimulationLayer:
 
     def get_modified_narrative(self) -> SimulatedNarrative:
         return self._narrative or self.narrative
+    
+    def get_modified_game_events(self) -> SimulatedGameEvents:
+        return self._game_events or self.game_events
 
     def set_modified_characters(self, new_characters: SimulatedCharacters):
         self._characters = new_characters
@@ -137,3 +159,6 @@ class SimulationLayer:
 
     def set_modified_narrative(self, new_narrative: SimulatedNarrative):
         self._narrative = new_narrative
+
+    def set_modified_game_events(self, new_events: SimulatedGameEvents):
+        self._game_events = new_events

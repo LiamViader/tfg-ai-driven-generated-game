@@ -53,6 +53,9 @@ class GameState:
     def narrative_state(self) -> NarrativeState:
         return self._narrative_state
 
+    @property
+    def game_events(self) -> GameEventsManager:
+        return self._game_events
 
     def _populate_from_model(self, game_state_model: GameStateModel) -> None:
         """Populate the domain state from a :class:`GameStateModel`."""
@@ -92,7 +95,10 @@ class GameState:
     def update_narrative_state(self, narrative_state: NarrativeState) -> None:
         self._narrative_state = narrative_state
 
+    def update_game_events(self, events: GameEventsManager) -> None:
+        self._game_events = events
 
+    
 
 
 
