@@ -165,6 +165,66 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
         ],
     )
 
+
+def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
+    """Pipeline that generates a map, characters, relationships, narrative and game events."""
+    return PipelineConfig(
+        name="map_characters_relationships_narrative_events",
+        description="Generates map, characters, relationships, a basic narrative and then game events.",
+        steps=[
+            PipelineStep(
+                step_name="Initial Map",
+                agent_name=AgentName.MAP,
+                objective_prompt="Create a concise map with three connected scenarios.",
+                rules_and_constraints=[],
+                other_guidelines="",
+                max_executor_iterations=4,
+                max_validation_iterations=1,
+                max_retries=1,
+            ),
+            PipelineStep(
+                step_name="Add Characters",
+                agent_name=AgentName.CHARACTERS,
+                objective_prompt="Introduce two characters placed in the generated scenarios.",
+                rules_and_constraints=[],
+                other_guidelines="",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=1,
+            ),
+            PipelineStep(
+                step_name="Create Relationships",
+                agent_name=AgentName.RELATIONSHIP,
+                objective_prompt="Create 2-4 relationships between characters.",
+                rules_and_constraints=[],
+                other_guidelines="Ensure the relationships make sense with the character backgrounds and map.",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=1,
+            ),
+            PipelineStep(
+                step_name="Create Narrative",
+                agent_name=AgentName.NARRATIVE,
+                objective_prompt="Create 2-3 narrative beats for the current stage and 1 failure condition.",
+                rules_and_constraints=[],
+                other_guidelines="",
+                max_executor_iterations=5,
+                max_validation_iterations=1,
+                max_retries=1,
+            ),
+            PipelineStep(
+                step_name="Create Game Events",
+                agent_name=AgentName.EVENTS,
+                objective_prompt="Generate 2-3 key game events based on the narrative and world so far.",
+                rules_and_constraints=[],
+                other_guidelines="",
+                max_executor_iterations=4,
+                max_validation_iterations=1,
+                max_retries=1,
+            ),
+        ],
+    )
+
 def alternating_expansion_pipeline() -> PipelineConfig:
     """Pipeline with six steps alternating between map and characters."""
 
@@ -214,4 +274,5 @@ __all__ = [
     "alternating_expansion_pipeline",
     "map_characters_relationships_pipeline",
     "map_characters_relationships_narrative_pipeline",
+    "map_characters_relationships_narrative_events_pipeline",
 ]

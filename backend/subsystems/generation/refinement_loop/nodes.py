@@ -163,6 +163,35 @@ def narrative_step_finish(state: RefinementLoopGraphState):
         "last_step_succeeded": state.narrative_task_succeeded_final,
     }
 
+def events_step_start(state: RefinementLoopGraphState):
+    """Sets up the state for the pass to refine the game events"""
+
+    applied_operations_log = "Old operations summary: " + state.changelog_old_operations_summary + "Most recent operations:" + format_window(6, state.refinement_pass_changelog)
+    relevant_entities_str = ""
+    additional_info_str = ""
+    current_step = state.refinement_pipeline_config.steps[state.refinement_current_pass]
+    return {
+        "events_foundational_lore_document": state.refinement_foundational_world_info,
+        "events_recent_operations_summary": applied_operations_log,
+        "events_relevant_entity_details": relevant_entities_str,
+        "events_additional_information": additional_info_str,
+        "events_rules_and_constraints": current_step.rules_and_constraints,
+        "events_other_guidelines": current_step.other_guidelines,
+        "events_current_objective": current_step.objective_prompt,
+        "events_max_executor_iterations": current_step.max_executor_iterations,
+        "events_max_validation_iterations": current_step.max_validation_iterations,
+        "events_max_retries": current_step.max_retries,
+        "events_executor_applied_operations_log": ClearLogs(),
+        "events_validator_applied_operations_log": ClearLogs(),
+    }
+
+def events_step_finish(state: RefinementLoopGraphState):
+    """Postprocesses the finished events step."""
+    return {
+        "operations_log_to_summarize": state.events_executor_applied_operations_log,
+        "last_step_succeeded": state.events_task_succeeded_final,
+    }
+
 
 def finalize_step(state: RefinementLoopGraphState):
     """
