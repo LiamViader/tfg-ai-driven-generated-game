@@ -12,7 +12,7 @@ def print_scenarios(state: SimulatedGameState, label: str):
     print(f"\n--- {label} ---")
     count = state.get_scenario_count()
     print(f"Scenario count: {count}")
-    print(state.get_map_summary_list())
+    print(state.read_only_map.get_summary_list())
     print("--------------------------")
 
 def random_scenario_name():
@@ -25,7 +25,7 @@ def run_manual_simulation_test():
 
     # --- BASE MODIFICATION (no layers yet) ---
     print(">>> [BASE] Creating scenario before any layers are created (direct modification of domain copy)")
-    scenario1 = state.create_scenario(
+    scenario1 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="A simple place",
         visual_description="Looks calm and empty.",
@@ -41,7 +41,7 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 1] Layer created")
 
-    scenario1 = state.create_scenario(
+    scenario1 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="A second place",
         visual_description="Also calm and indoors.",
@@ -56,7 +56,7 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 2] Layer created")
 
-    scenario2 = state.create_scenario(
+    scenario2 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="A third place",
         visual_description="Bright and open.",
@@ -73,7 +73,7 @@ def run_manual_simulation_test():
     print_scenarios(state, "[LAYER 1] After rollback of Layer 2")
 
     # --- CONTINUE IN LAYER 1 ---
-    scenario3 = state.create_scenario(
+    scenario3 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="Replacement scenario",
         visual_description="Shadowy and strange.",
@@ -95,7 +95,7 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 1] New simulation layer created")
 
-    scenario4 = state.create_scenario(
+    scenario4 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="Desert zone",
         visual_description="Hot and dry.",
@@ -110,7 +110,7 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 2] Nested simulation layer created")
 
-    scenario5 = state.create_scenario(
+    scenario5 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="Mountain area",
         visual_description="Rocky and elevated.",
@@ -125,7 +125,7 @@ def run_manual_simulation_test():
     SimulatedGameStateSingleton.begin_transaction()
     print(">>> [LAYER 3] Deepest simulation layer created")
 
-    scenario6 = state.create_scenario(
+    scenario6 = state.map.create_scenario(
         name=random_scenario_name(),
         summary_description="Final encounter",
         visual_description="Ruins and silence.",

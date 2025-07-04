@@ -59,7 +59,7 @@ class EventCompletionCondition(ActivationCondition):
         self._model: EventCompletionConditionModel
 
     def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
-        completed_ids = game_state.get_completed_event_ids()
+        completed_ids = game_state.read_only_events.get_completed_event_ids()
         return self._model.source_event_id in completed_ids
 
 

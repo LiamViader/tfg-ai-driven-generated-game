@@ -132,4 +132,4 @@ if __name__ == "__main__":
     )
     print("Final Justification:", final_result.update["map_task_finalized_justification"])
     print("Scenarios in Final Map:", state.get_scenario_count())
-    print("Clusters:", state.get_map_cluster_summary(list_all_scenarios_in_each_cluster=True))
+    print("Clusters:", state.read_only_map.get_cluster_summary(list_all_scenarios_in_each_cluster=True))

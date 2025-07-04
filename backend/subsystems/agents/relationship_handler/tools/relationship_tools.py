@@ -109,14 +109,14 @@ def create_relationship_type(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.create_relationship_type(name=name, explanation=explanation)
+        simulated_state.relationships.create_relationship_type(name=name, explanation=explanation)
         message = f"Relationship type '{name}' created."
     except ValueError as e:
         success = False
         message = str(e)
     return Command(update={
         logs_field_to_update: [get_log_item("create_relationship_type", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "create_relationship_type", success, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "create_relationship_type", success, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolCreateDirectedRelationshipArgs)
@@ -134,7 +134,7 @@ def create_directed_relationship(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.create_directed_relationship(
+        simulated_state.relationships.create_directed_relationship(
             source_character_id=source_character_id,
             target_character_id=target_character_id,
             relationship_type=relationship_type,
@@ -146,7 +146,7 @@ def create_directed_relationship(
         message = str(e)
     return Command(update={
         logs_field_to_update: [get_log_item("create_directed_relationship", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "create_directed_relationship", success, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "create_directed_relationship", success, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolCreateUndirectedRelationshipArgs)
@@ -164,7 +164,7 @@ def create_undirected_relationship(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.create_undirected_relationship(
+        simulated_state.relationships.create_undirected_relationship(
             character_a_id=character_a_id,
             character_b_id=character_b_id,
             relationship_type=relationship_type,
@@ -176,7 +176,7 @@ def create_undirected_relationship(
         message = str(e)
     return Command(update={
         logs_field_to_update: [get_log_item("create_undirected_relationship", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "create_undirected_relationship", success, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "create_undirected_relationship", success, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolModifyRelationshipIntensityArgs)
@@ -194,7 +194,7 @@ def modify_relationship_intensity(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.modify_relationship_intensity(
+        simulated_state.relationships.modify_relationship_intensity(
             source_character_id=source_character_id,
             target_character_id=target_character_id,
             relationship_type=relationship_type,
@@ -206,7 +206,7 @@ def modify_relationship_intensity(
         message = str(e)
     return Command(update={
         logs_field_to_update: [get_log_item("modify_relationship_intensity", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "modify_relationship_intensity", success, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "modify_relationship_intensity", success, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolGetRelationshipDetailsArgs)
@@ -220,7 +220,7 @@ def get_relationship_details(
     """Retrieve details of relationships from one character to another."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    rels = simulated_state.get_relationship_details(source_character_id, target_character_id)
+    rels = simulated_state.read_only_relationships.get_relationship_details(source_character_id, target_character_id)
     if not rels:
         message = "No relationship found."
         success = False
@@ -231,7 +231,7 @@ def get_relationship_details(
         success = True
     return Command(update={
         logs_field_to_update: [get_log_item("get_relationship_details", args, True, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "get_relationship_details", success, message), tool_call_id=tool_call_id)]
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "get_relationship_details", success, message), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolFinalizeSimulationArgs)
@@ -247,7 +247,7 @@ def finalize_simulation(
     message = "Simulation finalized."
     return Command(update={
         logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.get_relationship_count(), "finalize_simulation", True, message), tool_call_id=tool_call_id)],
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_relationships.relationship_count(), "finalize_simulation", True, message), tool_call_id=tool_call_id)],
         "relationships_task_finalized_by_agent": True,
         "relationships_task_finalized_justification": justification,
     })
@@ -282,7 +282,7 @@ def validate_simulated_relationships(
         logs_field_to_update: [get_log_item("validate_simulated_relationships", args, False, True, message)],
         messages_field_to_update: [
             ToolMessage(
-                get_observation(simulated_state.get_relationship_count(), "validate_simulated_relationships", True, message),
+                get_observation(simulated_state.read_only_relationships.relationship_count(), "validate_simulated_relationships", True, message),
                 tool_call_id=tool_call_id,
             )
         ],

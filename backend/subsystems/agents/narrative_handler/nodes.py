@@ -19,7 +19,7 @@ def receive_objective_node(state: NarrativeGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
     SimulatedGameStateSingleton.begin_transaction()
     initial_summary = (
-        SimulatedGameStateSingleton.get_instance().get_initial_narrative_summary()
+        SimulatedGameStateSingleton.get_instance().read_only_narrative.get_initial_summary()
     )
     return {
         "narrative_current_try": 0,

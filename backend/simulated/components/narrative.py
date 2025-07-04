@@ -99,6 +99,7 @@ class SimulatedNarrative:
                 rtb.beat.status = "ACTIVE"
             if risk_level <= rtb.deactivate_risk_level:
                 rtb.beat.status = "PENDING"
+                
     def get_beat(self, beat_id: str) -> NarrativeBeatModel | None:
         """Return a beat by id from any source if found."""
         if self._working_state.narrative_structure:
@@ -147,3 +148,26 @@ class SimulatedNarrative:
         if stage_index < 0 or stage_index >= len(stages):
             raise IndexError("Stage index out of range")
         return stages[stage_index].stage_beats
+
+
+    def get_current_stage_beats(self):
+        """Return beats of the current narrative stage."""
+        index = self.get_current_stage_index()
+        return self.get_stage_beats(index)
+
+    def get_next_stage_beats(self):
+        """Return beats of the next narrative stage if available."""
+        index = self.get_next_stage_index()
+        return self.get_stage_beats(index)
+
+    def beats_count(self) -> int:
+        """Return the total number of beats tracked in the narrative."""
+        count = 0
+        structure = self._working_state.narrative_structure
+        if structure:
+            for stage in structure.stages:
+                count += len(stage.stage_beats)
+        for fc in self._working_state.failure_conditions:
+            count+= len(fc.risk_triggered_beats)
+
+        return count

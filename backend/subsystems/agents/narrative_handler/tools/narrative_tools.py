@@ -144,8 +144,8 @@ def add_beat_current_stage(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        stage_index = simulated_state.get_current_stage_index()
-        simulated_state.add_narrative_beat(stage_index, beat)
+        stage_index = simulated_state.read_only_narrative.get_current_stage_index()
+        simulated_state.narrative.add_narrative_beat(stage_index, beat)
         message = f"Beat {beat.id} with status {beat.status} added to current narrative stage"
     except Exception as e:
         success = False
@@ -155,7 +155,7 @@ def add_beat_current_stage(
         logs_field_to_update: [get_log_item("add_beat_current_stage", args, False, success, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "add_beat_current_stage",
                 success,
                 message,
@@ -186,8 +186,8 @@ def add_beat_next_stage(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        stage_index = simulated_state.get_next_stage_index()
-        simulated_state.add_narrative_beat(stage_index, beat)
+        stage_index = simulated_state.read_only_narrative.get_next_stage_index()
+        simulated_state.narrative.add_narrative_beat(stage_index, beat)
         message = f"Beat {beat.id} with status {beat.status} added to next narrative stage"
     except Exception as e:
         success = False
@@ -197,7 +197,7 @@ def add_beat_next_stage(
         logs_field_to_update: [get_log_item("add_beat_next_stage", args, False, success, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "add_beat_next_stage",
                 success,
                 message,
@@ -230,7 +230,7 @@ def create_failure_condition_with_beats(
             is_active=False,
             risk_level=0,
         )
-        simulated_state.add_failure_condition(fc)
+        simulated_state.narrative.add_failure_condition(fc)
 
         beats_info = [
             (beat_name_risk_30, beat_description_risk_30, 30),
@@ -252,7 +252,7 @@ def create_failure_condition_with_beats(
                 beat=beat,
             )
             beats.append(beat)
-            simulated_state.add_risk_triggered_beats(fc.id, rtb)
+            simulated_state.narrative.add_risk_triggered_beats(fc.id, rtb)
 
         message = f"Failure condition '{fc.id}' created successfully with {beats[0].id}: {beats[0].name} at risk 30, {beats[1].id}: {beats[1].name} at risk 60, and {beats[2].id}: {beats[2].name} at risk 100."
 
@@ -264,7 +264,7 @@ def create_failure_condition_with_beats(
         logs_field_to_update: [get_log_item("create_failure_condition_with_beats", args, False, success, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "create_failure_condition_with_beats",
                 success,
                 message,
@@ -297,7 +297,7 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.add_risk_triggered_beats(condition_id, rtb)
+        simulated_state.narrative.add_risk_triggered_beats(condition_id, rtb)
         message = f"Risk triggered beat {beat.id}: {beat.name} added"
     except Exception as e:
         success = False
@@ -307,7 +307,7 @@ def add_risk_triggered_beat(condition_id: str, trigger_risk_level: int,
         logs_field_to_update: [get_log_item("add_risk_triggered_beat", args, False, success, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "add_risk_triggered_beat",
                 success,
                 message,
@@ -326,7 +326,7 @@ def set_failure_risk_level(condition_id: str, risk_level: int,
     simulated_state = SimulatedGameStateSingleton.get_instance()
     success = True
     try:
-        simulated_state.set_failure_risk_level(condition_id, risk_level)
+        simulated_state.narrative.set_failure_risk_level(condition_id, risk_level)
         message = f"Risk level for '{condition_id}' set to {risk_level}"
     except Exception as e:
         success = False
@@ -336,7 +336,7 @@ def set_failure_risk_level(condition_id: str, risk_level: int,
         logs_field_to_update: [get_log_item("set_failure_risk_level", args, False, success, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "set_failure_risk_level",
                 success,
                 message,
@@ -358,7 +358,7 @@ def finalize_simulation(justification: str,
         logs_field_to_update: [get_log_item("finalize_simulation", args, False, True, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "finalize_simulation",
                 True,
                 message,
@@ -390,7 +390,7 @@ def validate_simulated_narrative(messages_field_to_update: Annotated[str, Inject
         logs_field_to_update: [get_log_item("validate_simulated_narrative", args, False, True, message)],
         messages_field_to_update: [ToolMessage(
             get_observation(
-                simulated_state.narrative_beats_count(),
+                simulated_state.read_only_narrative.beats_count(),
                 "validate_simulated_narrative",
                 True,
                 message,
@@ -414,7 +414,7 @@ def get_narrative_beat_details(
     """(QUERY tool) Get full details of a narrative beat by its ID."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    beat = simulated_state.get_narrative_beat(beat_id)
+    beat = simulated_state.read_only_narrative.get_beat(beat_id)
     if not beat:
         message = f"Beat with ID '{beat_id}' not found."
         success = False
@@ -425,7 +425,7 @@ def get_narrative_beat_details(
     return Command(update={
         logs_field_to_update: [get_log_item("get_narrative_beat_details", args, True, success, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "get_narrative_beat_details", success, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.read_only_narrative.beats_count(), "get_narrative_beat_details", success, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -440,7 +440,7 @@ def get_failure_condition_details(
     """(QUERY tool) Get details of a failure condition by its ID."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    fc = simulated_state.get_failure_condition(condition_id)
+    fc = simulated_state.read_only_narrative.get_failure_condition(condition_id)
     if not fc:
         message = f"Failure condition '{condition_id}' not found."
         success = False
@@ -451,7 +451,7 @@ def get_failure_condition_details(
     return Command(update={
         logs_field_to_update: [get_log_item("get_failure_condition_details", args, True, success, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "get_failure_condition_details", success, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.read_only_narrative.beats_count(), "get_failure_condition_details", success, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -465,7 +465,7 @@ def list_active_beats(
     """(QUERY tool) List all currently active beats."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    beats = simulated_state.list_active_beats()
+    beats = simulated_state.read_only_narrative.list_active_beats()
     if not beats:
         message = "No active beats."
     else:
@@ -473,7 +473,7 @@ def list_active_beats(
     return Command(update={
         logs_field_to_update: [get_log_item("list_active_beats", args, True, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_active_beats", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.read_only_narrative.beats_count(), "list_active_beats", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -487,7 +487,7 @@ def list_pending_beats(
     """(QUERY tool) List pending beats from the main narrative only."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    beats = simulated_state.list_pending_beats_main()
+    beats = simulated_state.read_only_narrative.list_pending_beats_main()
     if not beats:
         message = "No pending beats."
     else:
@@ -495,7 +495,7 @@ def list_pending_beats(
     return Command(update={
         logs_field_to_update: [get_log_item("list_pending_beats", args, True, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_pending_beats", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.read_only_narrative.beats_count(), "list_pending_beats", True, message), tool_call_id=tool_call_id)
         ]
     })
 
@@ -509,9 +509,9 @@ def list_current_and_next_stage_beats(
     """(QUERY tool) List beats from the current and next narrative stages."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    current_beats = simulated_state.get_current_stage_beats()
+    current_beats = simulated_state.read_only_narrative.get_current_stage_beats()
     try:
-        next_beats = simulated_state.get_next_stage_beats()
+        next_beats = simulated_state.read_only_narrative.get_next_stage_beats()
     except Exception:
         next_beats = []
     lines = ["Current stage beats:"]
@@ -528,7 +528,7 @@ def list_current_and_next_stage_beats(
     return Command(update={
         logs_field_to_update: [get_log_item("list_current_and_next_stage_beats", args, True, True, message)],
         messages_field_to_update: [
-            ToolMessage(get_observation(simulated_state.narrative_beats_count(), "list_current_and_next_stage_beats", True, message), tool_call_id=tool_call_id)
+            ToolMessage(get_observation(simulated_state.read_only_narrative.beats_count(), "list_current_and_next_stage_beats", True, message), tool_call_id=tool_call_id)
         ]
     })
 

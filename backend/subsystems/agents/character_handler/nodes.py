@@ -19,7 +19,7 @@ from subsystems.agents.utils.logs import ToolLog
 def receive_objective_node(state: CharacterGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
     SimulatedGameStateSingleton.begin_transaction()
-    initial_summary = SimulatedGameStateSingleton.get_instance().get_initial_characters_summary()
+    initial_summary = SimulatedGameStateSingleton.get_instance().read_only_characters.get_initial_summary()
     return {
         "characters_current_try": 0,
         "messages_field_to_update": "characters_executor_messages",

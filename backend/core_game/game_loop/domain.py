@@ -31,7 +31,7 @@ class GameLoopManager:
         It manages the flow between processing an active event and looking for a new one.
         """
         self._check_passive_conditions()
-        current_active_event = self.game_state.get_current_running_event()
+        current_active_event = self.game_state.events.get_current_running_event()
         if current_active_event:
             self._process_active_event(current_active_event)
 

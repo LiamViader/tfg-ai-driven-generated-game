@@ -22,8 +22,8 @@ def print_step(title: str) -> None:
 if __name__ == "__main__":
     SimulatedGameStateSingleton.reset_instance()
     state = SimulatedGameStateSingleton.get_instance()
-    state.create_relationship_type(name="friend")
-    state.create_relationship_type(name="enemy")
+    state.relationships.create_relationship_type(name="friend")
+    state.relationships.create_relationship_type(name="enemy")
 
     print_step("Create Relationship Type")
     print(create_relationship_type(

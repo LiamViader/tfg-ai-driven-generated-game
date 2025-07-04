@@ -24,7 +24,7 @@ def receive_generation_prompt(state: SeedGenerationGraphState):
 
     SimulatedGameStateSingleton.begin_transaction()
     game_state = SimulatedGameStateSingleton.get_instance()
-    game_state.set_user_prompt(state.initial_prompt)
+    game_state.session.set_user_prompt(state.initial_prompt)
     print("---ENTERING: RECEIVE USER PROMPT NODE---")
     return {}
 
@@ -130,7 +130,7 @@ def generate_main_goal(state: SeedGenerationGraphState):
     """
     #save the refined prompt
     game_state = SimulatedGameStateSingleton.get_instance()
-    game_state.set_refined_prompt(state.refined_prompt)
+    game_state.session.set_refined_prompt(state.refined_prompt)
 
     print("---ENTERING: GENERATE MAIN GOAL NODE---")
 
@@ -203,7 +203,7 @@ def narrative_structure_reason_node(state: SeedGenerationGraphState):
 
     #save the main goal
     game_state = SimulatedGameStateSingleton.get_instance()
-    game_state.set_main_goal(state.main_goal)
+    game_state.narrative.set_main_goal(state.main_goal)
 
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
 
@@ -240,7 +240,7 @@ def final_success_node(state: SeedGenerationGraphState):
     """Last step if all succeeded."""
     game_state = SimulatedGameStateSingleton.get_instance()
     if state.selected_structure is not None:
-        game_state.set_narrative_structure(state.selected_structure)
+        game_state.narrative.set_narrative_structure(state.selected_structure)
     SimulatedGameStateSingleton.commit()
     return {
         "seed_generation_succeeded": True
