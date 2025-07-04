@@ -197,15 +197,6 @@ class CutsceneEventModel(GameEventModel):
 class GameEventsManagerModel(BaseModel):
     """Stores game events and related info"""
     all_events: Dict[str, GameEventModel] = Field(default_factory=dict, description="Stores all existing events, keyed by id")
-    events_by_beat_id: Dict[str, Set[str]] = Field(
-        default_factory=dict,
-        description="An index that maps a Narrative Beat ID to the set of Game Event IDs that were originated from it. Allows for quick lookups of all events that compose a beat."
-    )
-    
-    beatless_event_ids: Set[str] = Field(
-        default_factory=set,
-        description="A set of IDs for game events that were not originated from any Narrative Beat (e.g., random events, direct player actions)."
-    )
 
     running_event_stack: List[str] = Field(
         default_factory=list,

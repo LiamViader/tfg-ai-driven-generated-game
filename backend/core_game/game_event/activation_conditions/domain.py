@@ -45,7 +45,7 @@ class AreaEntryCondition(ActivationCondition):
         self._model: AreaEntryConditionModel 
 
     def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
-        player = game_state.get_player()
+        player = game_state.read_only_characters.get_player()
         if not player:
             return False
         return player.id == self._model.scenario_id
@@ -97,7 +97,6 @@ class ImmediateActivation(ActivationCondition):
 
     def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
         # This trigger is automatic.
-        # If the event is 'AVAILABLE', this method returns True,
         # causing it to be executed on the next game cycle.
         return True
 

@@ -12,13 +12,10 @@ from .schemas import (
     GameEventsManagerModel,
 )
 from typing import Optional, Dict, List, Set
-
+from collections import defaultdict
 from .constants import EVENT_STATUSES, EVENT_STATUS_LITERAL
 from core_game.game_event.activation_conditions.domain import (
     ActivationCondition,
-    AreaEntryCondition,
-    EventCompletionCondition,
-    ImmediateActivation,
     CharacterInteractionOption,
     WRAPPER_MAP as CONDITION_WRAPPER_MAP
 )
@@ -48,6 +45,16 @@ class BaseGameEvent:
     def status(self) -> str:
         """Returns the status"""
         return self._data.status
+    
+    @property
+    def title(self) -> str:
+        """Returns the title"""
+        return self._data.title
+    
+    @property
+    def description(self) -> str:
+        """Returns the description"""
+        return self._data.description
     
     def get_activation_conditions(self) -> List[ActivationCondition]:
         return self.activation_conditions
@@ -109,7 +116,7 @@ class CutsceneEvent(BaseGameEvent):
         self._data.frames.append(frame)
 
 
-WRAPPER_MAP = {
+WRAPPER_MAP: Dict[str, type[BaseGameEvent]] = {
     "npc_conversation": NPCConversationEvent,
     "player_npc_conversation": PlayerNPCConversationEvent,
     "narrator_intervention": NarratorInterventionEvent,
@@ -119,50 +126,53 @@ WRAPPER_MAP = {
 class GameEventsManager:
     """Domain class for managing and storing events"""
     def __init__(self, model: Optional[GameEventsManagerModel] = None):
-        self._all_events: Dict[str, BaseGameEvent]
+        self._all_events: Dict[str, BaseGameEvent] = {}
+        self._running_event_stack: List[str] = []
 
-        self._status_indexes: Dict[str, Set[str]]
-
-        self.events_by_beat_id: Dict[str, Set[str]]
-        self.beatless_event_ids: Set[str]
-
-        self._running_event_stack: List[str]
-
+        self._status_indexes: Dict[str, Set[str]] = {status: set() for status in EVENT_STATUSES}
+        self._events_by_beat_id: Dict[str, Set[str]] = defaultdict(set)
+        self._beatless_event_ids: Set[str] = set()
+        self._interaction_options_by_character: Dict[str, Set[str]] = defaultdict(set)
+        
         if model:
-            self._populate_from_model(model)
-        else:
-            self._all_events = {}
-            self.events_by_beat_id = {}
-            self.beatless_event_ids = set()
-            self._status_indexes = {status: set() for status in EVENT_STATUSES}
-            self._running_event_stack = []
+            self._populate_and_reindex(model)
 
-    def _populate_from_model(self, model: GameEventsManagerModel):
+    def _populate_and_reindex(self, model: GameEventsManagerModel):
         """
-        Populates the manager from data models and builds the initial indexes.
+        Populates the manager from the data model and REBUILDS all
+        indexes from the primary data source (`all_events`).
         """
-        self._all_events = {}
-        self._status_indexes = {status: set() for status in EVENT_STATUSES}
-        self.events_by_beat_id = model.events_by_beat_id.copy()
-        self.beatless_event_ids = model.beatless_event_ids.copy()
         self._running_event_stack = model.running_event_stack.copy()
+        
+        self._status_indexes = {status: set() for status in EVENT_STATUSES}
+        self._events_by_beat_id = defaultdict(set)
+        self._beatless_event_ids = set()
+        self._interaction_options_by_character = defaultdict(set)
+        self._all_events = {}
+
         for event_id, event_model in model.all_events.items():
             wrapper_class = WRAPPER_MAP.get(event_model.type)
-            if wrapper_class:
-                domain_event = wrapper_class(model=event_model)
-                self._all_events[event_id] = domain_event
-                
-                if event_model.status in self._status_indexes:
-                    self._status_indexes[event_model.status].add(event_id)
+            if not wrapper_class: continue
+            
+            domain_event = wrapper_class(model=event_model)
+            self._all_events[event_id] = domain_event
+
+            self._status_indexes[event_model.status].add(event_id)
+
+            if event_model.source_beat_id:
+                self._events_by_beat_id[event_model.source_beat_id].add(event_id)
             else:
-                print(f"Warning: Unknown event type '{event_model.type}' for ID '{event_id}'.")
+                self._beatless_event_ids.add(event_id)
+
+            for condition in domain_event.get_activation_conditions():
+                if isinstance(condition, CharacterInteractionOption):
+                    self._interaction_options_by_character[condition.character_id].add(event_id)
+
 
 
     def to_model(self) -> GameEventsManagerModel:
         return GameEventsManagerModel(
             all_events={eid: ev.get_model() for eid, ev in self._all_events.items()},
-            events_by_beat_id=self.events_by_beat_id,
-            beatless_event_ids=self.beatless_event_ids,
             running_event_stack=self._running_event_stack
         )
     
