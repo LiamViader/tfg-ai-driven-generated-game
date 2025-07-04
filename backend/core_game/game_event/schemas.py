@@ -2,7 +2,8 @@
 
 from typing import List, Optional, Literal, Union, Dict, Set
 from pydantic import BaseModel, Field
-from core_game.game_event.triggers.schemas import GameEventTrigger
+from core_game.game_event.activation_conditions.schemas import ActivationConditionModel
+from core_game.game_event.constants import EVENT_STATUS_LITERAL
 
 _event_id_counter = 0
 
@@ -33,21 +34,16 @@ class GameEventModel(BaseModel):
         "narrator_intervention",
         "cutscene",
     ]
-    status: Literal[
-        "DRAFT",       # The event is defined but its trigger condition has not been set yet.
-        "AVAILABLE",   # Ready to be triggered in the active game world.
-        "RUNNING",     # Currently being executed.
-        "COMPLETED"    # Finished and part of the historical record.
-    ] = Field("DRAFT", description="The current lifecycle state of the event.")
+    status: EVENT_STATUS_LITERAL = Field("DRAFT", description="The current lifecycle state of the event.")
 
-    triggered_by: List[GameEventTrigger] = Field(
+    activation_conditions: List[ActivationConditionModel] = Field(
         default_factory=list,
         description="The specific condition/s that activates this event. Its structure depends on its 'type'. When any trigger is set, the event moves from 'DRAFT' to 'AVAILABLE'."
     )
 
     source_beat_id: Optional[str] = Field(..., description="The ID of the Narrative Beat that originated this game event. None if it was not originated by a narrative beat")
     outcome_summary: Optional[str] = Field(
-        None, 
+        default=None, 
         description="A summary of the event's final outcome, generated upon its completion. This field is ONLY populated when the event's status moves to 'COMPLETED'. It remains none for all other statuses."
     )
 
@@ -127,7 +123,7 @@ NarratorMessage = Union[NarratorSpokenMessage, NarratorObservationMessage]
 class NPCConversationEventModel(GameEventModel):
     """Conversation between several NPCs."""
     type: Literal["npc_conversation"] = Field(
-        "npc_conversation", description="Type discriminator for this event."
+        default="npc_conversation", description="Type discriminator for this event."
     )
     npc_ids: List[str] = Field(
         ..., description="IDs of the NPCs participating in the conversation."
@@ -141,7 +137,7 @@ class NPCConversationEventModel(GameEventModel):
 class PlayerNPCConversationEventModel(GameEventModel):
     """Conversation between the player and one or more NPCs."""
     type: Literal["player_npc_conversation"] = Field(
-        "player_npc_conversation",
+        default="player_npc_conversation",
         description="Type discriminator for this event.",
     )
     npc_ids: List[str] = Field(
@@ -162,7 +158,7 @@ class PlayerNPCConversationEventModel(GameEventModel):
 class NarratorInterventionEventModel(GameEventModel):
     """Event containing narration addressed to the player or scene observations."""
     type: Literal["narrator_intervention"] = Field(
-        "narrator_intervention", description="Type discriminator for this event."
+        default="narrator_intervention", description="Type discriminator for this event."
     )
     messages: List[NarratorMessage] = Field(
         default_factory=list,
@@ -191,7 +187,7 @@ class CutsceneFrameModel(BaseModel):
 class CutsceneEventModel(GameEventModel):
     """Cinematic event composed of multiple frames."""
     type: Literal["cutscene"] = Field(
-        "cutscene", description="Type discriminator for this event."
+        default="cutscene", description="Type discriminator for this event."
     )
     frames: List[CutsceneFrameModel] = Field(
         default_factory=list,
@@ -209,4 +205,9 @@ class GameEventsManagerModel(BaseModel):
     beatless_event_ids: Set[str] = Field(
         default_factory=set,
         description="A set of IDs for game events that were not originated from any Narrative Beat (e.g., random events, direct player actions)."
+    )
+
+    running_event_stack: List[str] = Field(
+        default_factory=list,
+        description="Stack of running events, top is the one running currently"
     )

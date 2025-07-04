@@ -22,7 +22,7 @@ class ToolAddBeatArgs(InjectedToolContext):
     )
     description: str = Field(
         ..., 
-        description="The 'creative brief' for this beat. A detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
+        description="The 'creative brief' for this beat. A detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-250 words)."
     )
     priority: int = Field(
         10, 
@@ -40,7 +40,7 @@ class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
     )
     beat_description_risk_30: str = Field(
         ...,
-        description="The creative brief for the beat that triggers at 30 risk. Should describe the 'early warning' or initial complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
+        description="The creative brief for the beat that triggers at 30 risk. Should describe the 'early warning' or initial complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-250 words)."
     )
     beat_name_risk_60: str = Field(
         ...,
@@ -48,7 +48,7 @@ class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
     )
     beat_description_risk_60: str = Field(
         ...,
-        description="The creative brief for the beat that triggers at 60 risk. Should describe the escalating complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words).",
+        description="The creative brief for the beat that triggers at 60 risk. Should describe the escalating complication of the failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-250 words).",
     )
     beat_name_risk_100: str = Field(
         ...,
@@ -56,7 +56,7 @@ class ToolCreateFailureConditionWithBeatsArgs(InjectedToolContext):
     )
     beat_description_risk_100: str = Field(
         ...,
-        description="The creative brief for the beat that triggers at 100 risk. Should describe the 'final, game-over climax' of this failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
+        description="The creative brief for the beat that triggers at 100 risk. Should describe the 'final, game-over climax' of this failure path. Detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-250 words)."
     )
 
 class ToolAddRiskTriggeredBeatArgs(InjectedToolContext):
@@ -76,7 +76,7 @@ class ToolAddRiskTriggeredBeatArgs(InjectedToolContext):
     )
     description: str = Field(
         ..., 
-        description="The 'creative brief' for this beat. A detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-150 words)."
+        description="The 'creative brief' for this beat. A detailed, self-contained description. Must clearly state the intent, key actions, and the criteria for the beat's resolution. This text will be used by another agent to generate final game content (dialogues, actions). (Approx. 100-250 words)."
     )
 
 class ToolSetFailureRiskLevelArgs(InjectedToolContext):

@@ -13,17 +13,44 @@ from .schemas import (
 )
 from typing import Optional, Dict, List, Set
 
+from .constants import EVENT_STATUSES, EVENT_STATUS_LITERAL
+from core_game.game_event.activation_conditions.domain import (
+    ActivationCondition,
+    AreaEntryCondition,
+    EventCompletionCondition,
+    ImmediateActivation,
+    CharacterInteractionOption,
+    WRAPPER_MAP as CONDITION_WRAPPER_MAP
+)
+
 class BaseGameEvent:
     """Common functionality for domain event wrappers.
     """
 
     def __init__(self, model: GameEventModel):
         self._data = model
+        self.activation_conditions: List[ActivationCondition] = []
+        self._build_condition_wrappers()
+
+    def _build_condition_wrappers(self):
+        """Instantiates domain objects for the activation conditions."""
+        for condition_model in self._data.activation_conditions:
+            wrapper_class = CONDITION_WRAPPER_MAP.get(condition_model.type)
+            if wrapper_class:
+                self.activation_conditions.append(wrapper_class(model=condition_model))
 
     @property
     def id(self) -> str:
         """Return the unique identifier of the underlying event model."""
         return self._data.id
+
+    @property
+    def status(self) -> str:
+        """Returns the status"""
+        return self._data.status
+    
+    def get_activation_conditions(self) -> List[ActivationCondition]:
+        return self.activation_conditions
 
     def get_model(self) -> GameEventModel:
         """Return the underlying Pydantic model."""
@@ -93,8 +120,13 @@ class GameEventsManager:
     """Domain class for managing and storing events"""
     def __init__(self, model: Optional[GameEventsManagerModel] = None):
         self._all_events: Dict[str, BaseGameEvent]
+
+        self._status_indexes: Dict[str, Set[str]]
+
         self.events_by_beat_id: Dict[str, Set[str]]
         self.beatless_event_ids: Set[str]
+
+        self._running_event_stack: List[str]
 
         if model:
             self._populate_from_model(model)
@@ -102,40 +134,122 @@ class GameEventsManager:
             self._all_events = {}
             self.events_by_beat_id = {}
             self.beatless_event_ids = set()
+            self._status_indexes = {status: set() for status in EVENT_STATUSES}
+            self._running_event_stack = []
 
     def _populate_from_model(self, model: GameEventsManagerModel):
         """
-        Iterates through the data models from the input, instantiates the correct
-        domain wrapper for each, and populates the internal event dictionary.
+        Populates the manager from data models and builds the initial indexes.
         """
         self._all_events = {}
-        self.events_by_beat_id = {}
-        self.beatless_event_ids = set()
+        self._status_indexes = {status: set() for status in EVENT_STATUSES}
+        self.events_by_beat_id = model.events_by_beat_id.copy()
+        self.beatless_event_ids = model.beatless_event_ids.copy()
+        self._running_event_stack = model.running_event_stack.copy()
         for event_id, event_model in model.all_events.items():
             wrapper_class = WRAPPER_MAP.get(event_model.type)
-
             if wrapper_class:
                 domain_event = wrapper_class(model=event_model)
                 self._all_events[event_id] = domain_event
+                
+                if event_model.status in self._status_indexes:
+                    self._status_indexes[event_model.status].add(event_id)
             else:
-                print(f"Warning: Unknown event type '{event_model.type}' with ID '{event_id}' encountered. Skipping.")
+                print(f"Warning: Unknown event type '{event_model.type}' for ID '{event_id}'.")
 
-    #PER FER DE MANERA CORRECTA
-    def add_event(self, event: BaseGameEvent) -> BaseGameEvent:
-        if event.id in self._all_events:
-            raise ValueError(f"Event with ID '{event.id}' already exists.")
-        self._all_events[event.id] = event
-        return event
 
     def to_model(self) -> GameEventsManagerModel:
         return GameEventsManagerModel(
-            all_events={eid: ev.get_model() for eid, ev in self._all_events.items()}
+            all_events={eid: ev.get_model() for eid, ev in self._all_events.items()},
+            events_by_beat_id=self.events_by_beat_id,
+            beatless_event_ids=self.beatless_event_ids,
+            running_event_stack=self._running_event_stack
         )
+    
+    # --- METHODS TO MANIPULATE THE STACK ---
 
+    def start_event(self, event_id: str):
+        """
+        Activates an event, sets its status to RUNNING, and pushes it onto the top of the stack.
+        """
+        if event_id not in self._all_events:
+            raise KeyError(f"Error: Cannot start non-existent event '{event_id}'.")
+            
+        event = self._all_events[event_id]
+        if event.status != "AVAILABLE":
+            return
 
-    #PER FER
-    def get_initial_summary(self) -> str:
-        if not self._all_events:
-            return "No game events created yet."
-        lines = [f"{eid} ({ev.get_model().type})" for eid, ev in self._all_events.items()]
-        return f"Game events ({len(self._all_events)} total): " + ", ".join(lines)
+        self.set_event_status(event_id, "RUNNING")
+        self._running_event_stack.append(event_id)
+
+    def complete_current_event(self):
+        """
+        Completes the event that is currently at the top of the stack,
+        pops it, and updates its status to COMPLETED.
+        """
+        if not self._running_event_stack:
+            print("Warning: Tried to complete an event, but the running stack is empty.")
+            return
+
+        event_id_to_complete = self._running_event_stack.pop()
+        self.set_event_status(event_id_to_complete, "COMPLETED")
+        
+        # Optional: What happens to the event that was underneath? Does it resume?
+        # The logic for resuming would be in the GameLoopManager.
+
+    # --- METHODS TO QUERY THE STACK ---
+
+    def get_current_running_event(self) -> Optional[BaseGameEvent]:
+        """
+        Returns the event that is currently active (at the top of the stack).
+        Returns None if no event is running.
+        """
+        if not self.is_any_event_running():
+            return None
+        
+        current_event_id = self._running_event_stack[-1]
+        return self._all_events.get(current_event_id)
+
+    def is_any_event_running(self) -> bool:
+        """Returns True if the running event stack is not empty."""
+        return len(self._running_event_stack) > 0
+
+    def set_event_status(self, event_id: str, new_status: EVENT_STATUS_LITERAL):
+        """
+        Updates an event's status and correctly maintains the indexes.
+        This is the ONLY method you should use to change an event's status.
+        """
+        if new_status not in EVENT_STATUSES:
+            print(f"Error: Attempted to set invalid status '{new_status}'.")
+            return
+
+        if event_id in self._all_events:
+            event = self._all_events[event_id]
+            old_status = event.status
+
+            if old_status == new_status:
+                return 
+
+            if old_status in self._status_indexes:
+                self._status_indexes[old_status].discard(event_id)
+
+            self._status_indexes[new_status].add(event_id)
+
+            event.get_model().status = new_status
+            print(f"Event '{event_id}' status changed from '{old_status}' to '{new_status}'.")
+
+    def get_events_by_status(self, status: str) -> List[BaseGameEvent]:
+        """
+        Efficiently retrieves all events with a given status using the index.
+        """
+        if status not in self._status_indexes:
+            return []
+        
+        event_ids = self._status_indexes[status]
+        return [self._all_events[eid] for eid in event_ids]
+
+    def get_completed_event_ids(self) -> Set[str]:
+        """
+        Directly and efficiently returns the set of completed event IDs.
+        """
+        return self._status_indexes.get("COMPLETED", set())

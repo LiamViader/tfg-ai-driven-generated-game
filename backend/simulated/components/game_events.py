@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from core_game.game_event.domain import (
     GameEventsManager,
@@ -33,3 +33,9 @@ class SimulatedGameEvents:
 
     def get_state(self) -> GameEventsManager:
         return self._working_state
+    
+    def get_completed_event_ids(self) -> Set[str]:
+        return self._working_state.get_completed_event_ids()
+    
+    def get_current_running_event(self) -> Optional[BaseGameEvent]:
+        return self._working_state.get_current_running_event()
