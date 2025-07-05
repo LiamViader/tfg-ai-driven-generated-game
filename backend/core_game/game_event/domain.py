@@ -20,6 +20,8 @@ from core_game.game_event.activation_conditions.domain import (
     WRAPPER_MAP as CONDITION_WRAPPER_MAP
 )
 
+from core_game.game_event.activation_conditions.schemas import ActivationConditionModel, CharacterInteractionOptionModel
+
 class BaseGameEvent:
     """Common functionality for domain event wrappers.
     """
@@ -55,6 +57,11 @@ class BaseGameEvent:
     def description(self) -> str:
         """Returns the description"""
         return self._data.description
+    
+    @property
+    def source_beat_id(self) -> Optional[str]:
+        """Returns the source beat id"""
+        return self._data.source_beat_id
     
     def get_activation_conditions(self) -> List[ActivationCondition]:
         return self.activation_conditions
@@ -175,8 +182,6 @@ class GameEventsManager:
             all_events={eid: ev.get_model() for eid, ev in self._all_events.items()},
             running_event_stack=self._running_event_stack
         )
-    
-    # --- METHODS TO MANIPULATE THE STACK ---
 
     def start_event(self, event_id: str):
         """
@@ -263,3 +268,56 @@ class GameEventsManager:
         Directly and efficiently returns the set of completed event IDs.
         """
         return self._status_indexes.get("COMPLETED", set())
+    
+    def find_event(self, event_id: str) -> Optional[BaseGameEvent]:
+        """
+        Returns the event associated with event id or None if it doesnt exist
+        """
+        return self._all_events.get(event_id)
+    
+    def add_and_index_event(self, event_model: GameEventModel) -> BaseGameEvent:
+        """
+        (Internal Logic) Adds a pre-validated event model to the internal state
+        and updates all necessary indexes. This is the final step.
+        """
+        wrapper_class = WRAPPER_MAP.get(event_model.type)
+        if not wrapper_class:
+            raise TypeError(f"Internal Error: Event type '{event_model.type}' is unknown and cannot be processed.")
+
+        domain_event = wrapper_class(model=event_model)
+        self._all_events[event_model.id] = domain_event
+
+        self._status_indexes[domain_event.status].add(domain_event.id)
+
+        if domain_event.source_beat_id:
+            self._events_by_beat_id[domain_event.source_beat_id].add(domain_event.id)
+        else:
+            self._beatless_event_ids.add(domain_event.id)
+
+        for condition in domain_event.get_activation_conditions():
+            if isinstance(condition, CharacterInteractionOption):
+                self._interaction_options_by_character[condition.character_id].add(domain_event.id)
+        
+        return domain_event
+    
+    def link_conditions_to_event(self, event_id: str, conditions: List[ActivationConditionModel]):
+        """
+        (Core Logic) Adds new activation conditions to an existing event's data model
+        and updates all relevant indexes.
+        """
+        event = self._all_events[event_id] # Assumes event existence is pre-validated
+
+        # Add the new conditions to the underlying Pydantic model
+        event.get_model().activation_conditions.extend(conditions)
+        
+        # Rebuild the domain wrappers for the event so it's aware of the new conditions
+        event._build_condition_wrappers()
+
+        # Update indexes with the new information
+        for condition in conditions:
+            if isinstance(condition, CharacterInteractionOptionModel):
+                self._interaction_options_by_character[condition.character_id].add(event_id)
+        
+        # If the event was a DRAFT, adding conditions makes it AVAILABLE
+        if event.status == "DRAFT" and event.get_activation_conditions():
+            self.set_event_status(event_id, "AVAILABLE")

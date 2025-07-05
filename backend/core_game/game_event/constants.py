@@ -1,4 +1,4 @@
-from typing import Tuple, Literal
+from typing import Tuple, Literal, Union
 
 EVENT_STATUSES: Tuple[str, ...] = (        
     "DRAFT",       # The event is defined but its trigger condition has not been set yet.
@@ -8,3 +8,5 @@ EVENT_STATUSES: Tuple[str, ...] = (
 )
 
 EVENT_STATUS_LITERAL = Literal["DRAFT", "AVAILABLE", "RUNNING", "COMPLETED"]
+
+

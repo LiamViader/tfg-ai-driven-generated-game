@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, List, Literal
+from typing import Annotated, Optional, List, Literal, cast
 from pydantic import Field
 from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
@@ -10,7 +10,7 @@ from subsystems.agents.utils.schemas import InjectedToolContext
 from subsystems.agents.utils.logs import get_log_item, extract_tool_args
 from .helpers import get_observation
 
-# Assuming your schemas and triggers are defined elsewhere
+# Assuming your schemas and activation_conditions are defined elsewhere
 from core_game.game_event.schemas import (
     GameEventModel,
     NPCConversationEventModel,
@@ -18,7 +18,8 @@ from core_game.game_event.schemas import (
     NarratorInterventionEventModel,
     CutsceneEventModel
 )
-from core_game.game_event.activation_conditions.schemas import GameEventTrigger
+from core_game.game_event.activation_conditions.schemas import ActivationConditionModel
+from core_game.game_event.activation_conditions.constants import *
 
 
 # ---------------------------------------------------
@@ -27,50 +28,40 @@ from core_game.game_event.activation_conditions.schemas import GameEventTrigger
 
 # --- Schemas for "all-in-one" convenience tools ---
 
-class ToolCreateNPCConversationAndLinkEventArgs(InjectedToolContext):
-    title: str = Field(..., description="A short, descriptive title for the conversation.")
-    description: str = Field(..., description="The detailed creative brief for this conversation, outlining topics and goals.")
-    npc_ids: List[str] = Field(..., description="A list of NPC IDs participating in the conversation.")
-    triggers: List[GameEventTrigger] = Field(..., description="A list of one or more trigger conditions that will make this event 'AVAILABLE' immediately upon creation.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of the Narrative Beat that originated this event.")
+class ToolCreateNPCConversationEventArgs(InjectedToolContext):
+    title: str = Field(..., description="A short, human-readable name for this event. Example: 'Guards complain about salary'.")
+    description: str = Field(..., description="The creative brief for the scene, guiding a future AI in writing the dialogue. For best results, provide context on the conversation's Topic, Goal, Tone, and others. (Max. 150-200 words)")
+    npc_ids: List[str] = Field(..., description="List of IDs for the NPCs in the conversation. Must contain at least one ID. A single ID creates a monologue. Player CANNOT be in the list")
+    activation_conditions: List[ActivationConditionsNPCConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
+    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
-class ToolCreatePlayerNPCConversationAndLinkEventArgs(InjectedToolContext):
-    title: str = Field(..., description="A short, descriptive title for the conversation.")
-    description: str = Field(..., description="The detailed creative brief for this conversation, outlining topics and goals.")
-    npc_ids: List[str] = Field(..., description="A list of NPC IDs participating in the conversation.")
-    triggers: List[GameEventTrigger] = Field(..., description="A list of one or more trigger conditions that will make this event 'AVAILABLE' immediately upon creation.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of the Narrative Beat that originated this event.")
+class ToolCreatePlayerNPCConversationEventArgs(InjectedToolContext):
+    title: str = Field(..., description="A short, human-readable name for this event. Example: 'Elara asks player (Julius) about the key'.")
+    description: str = Field(..., description="The creative brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), and the overall narrative goal. (Max. 150-200 words)")
+    npc_ids: List[str] = Field(..., description="List of IDs for the NPCs participating in the conversation. Must contain at least one NPC. Player CANNOT be in the list, it is included automatically")
+    activation_conditions: List[ActivationConditionsPlayerConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
+    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
-class ToolCreateCutsceneAndLinkEventArgs(InjectedToolContext):
-    title: str = Field(..., description="A short, descriptive title for the cutscene.")
-    description: str = Field(..., description="The detailed creative brief for this cutscene, outlining key visual actions and narrative points.")
-    triggers: List[GameEventTrigger] = Field(..., description="A list of one or more trigger conditions that will make this event 'AVAILABLE' immediately upon creation.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of the Narrative Beat that originated this event.")
+class ToolCreateCutsceneEventArgs(InjectedToolContext):
+    title: str = Field(..., description="A short, human-readable name for this cutscene. Example: 'The Castle Gates Explode'.")
+    description: str = Field(..., description="The creative brief for the cutscene. This is a high-level script that guides a future AI in generating the final visuals and texts for the cutscene. Describe the sequence of key moments, outlining the core action, setting, topic, and any important dialogue or narration, including who is speaking (e.g., Narrator, a specific character ID, or 'Player'). (Max. 150-200 words)")
+    involved_character_ids: Optional[List[str]] = Field(None, description="Optional: A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player character id can be here too")
+    involved_scenario_ids: Optional[List[str]] = Field(None, description="Optional: A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
+    activation_conditions: List[ActivationConditionsCutscene] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
+    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
-class ToolCreateNarratorInterventionAndLinkEventArgs(InjectedToolContext):
-    title: str = Field(..., description="A short, descriptive title for the narrator intervention.")
-    description: str = Field(..., description="The detailed creative brief for this intervention, outlining the information or observation to be conveyed.")
-    triggers: List[GameEventTrigger] = Field(..., description="A list of one or more trigger conditions that will make this event 'AVAILABLE' immediately upon creation.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of the Narrative Beat that originated this event.")
 
-# --- Schemas for "Advanced" DRAFT creation tools ---
-
-class ToolCreateDraftEventArgs(InjectedToolContext):
-    title: str = Field(..., description="A short, descriptive title for the event.")
-    description: str = Field(..., description="The detailed creative brief for the event.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of the Narrative Beat that originated this event.")
-
-class ToolCreateDraftNPCConversationEventArgs(ToolCreateDraftEventArgs):
-    npc_ids: List[str] = Field(..., description="A list of NPC IDs participating in the conversation.")
-
-class ToolCreateDraftPlayerNPCConversationEventArgs(ToolCreateDraftEventArgs):
-    npc_ids: List[str] = Field(..., description="A list of NPC IDs participating in the conversation.")
+class ToolCreateNarratorInterventionEventArgs(InjectedToolContext):
+    title: str = Field(..., description="A short, human-readable name for the narrator intervention. Example: 'It starts raining ashes'.")
+    description: str = Field(..., description="The creative brief for the intervention. This text will be used by a future AI to write the narrator's exact lines. Describe the observation, topic, information, or internal thought the player should experience.")
+    activation_conditions: List[ActivationConditionsNarrator] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
+    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 # --- Schemas for other tools ---
 
-class ToolLinkTriggersToEventArgs(InjectedToolContext):
-    event_id: str = Field(..., description="The ID of the 'DRAFT' or 'AVAILABLE' event to which the triggers will be linked.")
-    triggers: List[GameEventTrigger] = Field(..., description="A list of one or more trigger conditions that will make this event 'AVAILABLE'.")
+class ToolLinkActivationConditionsToEventArgs(InjectedToolContext):
+    event_id: str = Field(..., description="The ID of the event to which the new activation conditions will be added.")
+    activation_conditions: List[ActivationConditionsUnion] = Field(..., description="The set of conditions that will be added to trigger this event.")
 
 class ToolListEventsArgs(InjectedToolContext):
     status_filter: Optional[Literal["DRAFT", "AVAILABLE", "RUNNING", "COMPLETED"]] = Field(None, description="Optional: Filter the list to show events only with this status.")
@@ -93,129 +84,214 @@ class ToolValidateSimulatedGameEventsArgs(InjectedToolContext):
 
 # --- RECOMMENDED "ALL-IN-ONE" TOOLS ---
 
-@tool(args_schema=ToolCreateNPCConversationAndLinkEventArgs)
-def create_npc_conversation_and_link_triggers(
-    title: str, description: str, npc_ids: List[str], triggers: List[GameEventTrigger], source_beat_id: Optional[str],
+@tool(args_schema=ToolCreateNPCConversationEventArgs)
+def create_npc_conversation_event(
+    title: str, description: str, npc_ids: List[str], activation_conditions: List[ActivationConditionsNPCConversation], source_beat_id: Optional[str],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """(Recommended) Creates a new NPC conversation and immediately links its triggers, making it active in the game ('AVAILABLE' state)."""
+    """
+    Creates and adds a self-contained non interactive conversation event between NPCs.
+
+    Use Case: This tool is for creating non-interactive scenes that the player
+    overhears. The player CANNOT participate. It requires at least one NPC; if only one
+    is provided, the event will be a monologue spoken by that character. Its applications
+    are broad, including uses like ambient world-building, storytelling through
+    background chatter, or scripted scenes. Feel free to use it for any creative
+    purpose that fits a non-interactive conversation. The created event is made
+    'AVAILABLE' immediately.
+    """
     args = extract_tool_args(locals())
+    
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_model = NPCConversationEventModel(title=title, description=description, npc_ids=npc_ids, source_beat_id=source_beat_id, triggered_by=triggers, status="AVAILABLE")
-    # simulated_state.add_event(event_model)
-    message = f"NPC Conversation event '{event_model.title}' (ID: {event_model.id}) created and linked. Status is now AVAILABLE."
-    return Command(update={
-        logs_field_to_update: [get_log_item("create_npc_conversation_and_link_triggers", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_npc_conversation_and_link_triggers", True, message), tool_call_id=tool_call_id)],
-    })
 
-@tool(args_schema=ToolCreatePlayerNPCConversationAndLinkEventArgs)
-def create_player_npc_conversation_and_link_triggers(
-    title: str, description: str, npc_ids: List[str], triggers: List[GameEventTrigger], source_beat_id: Optional[str],
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-    tool_call_id: Annotated[str, InjectedToolCallId],
-) -> Command:
-    """(Recommended) Creates a new Player-NPC conversation and immediately links its triggers, making it active in the game ('AVAILABLE' state)."""
-    args = extract_tool_args(locals())
-    simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_model = PlayerNPCConversationEventModel(title=title, description=description, npc_ids=npc_ids, source_beat_id=source_beat_id, triggered_by=triggers, status="AVAILABLE")
-    # simulated_state.add_event(event_model)
-    message = f"Player-NPC Conversation event '{event_model.title}' (ID: {event_model.id}) created and linked. Status is now AVAILABLE."
-    return Command(update={
-        logs_field_to_update: [get_log_item("create_player_npc_conversation_and_link_triggers", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_player_npc_conversation_and_link_triggers", True, message), tool_call_id=tool_call_id)],
-    })
-
-@tool(args_schema=ToolCreateCutsceneAndLinkEventArgs)
-def create_cutscene_and_link_triggers(
-    title: str, description: str, triggers: List[GameEventTrigger], source_beat_id: Optional[str],
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-    tool_call_id: Annotated[str, InjectedToolCallId],
-) -> Command:
-    """(Recommended) Creates a new cutscene event and immediately links its triggers, making it active in the game ('AVAILABLE' state)."""
-    args = extract_tool_args(locals())
-    simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_model = CutsceneEventModel(title=title, description=description, source_beat_id=source_beat_id, triggered_by=triggers, status="AVAILABLE")
-    # simulated_state.add_event(event_model)
-    message = f"Cutscene event '{event_model.title}' (ID: {event_model.id}) created and linked. Status is now AVAILABLE."
-    return Command(update={
-        logs_field_to_update: [get_log_item("create_cutscene_and_link_triggers", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_cutscene_and_link_triggers", True, message), tool_call_id=tool_call_id)],
-    })
-
-@tool(args_schema=ToolCreateNarratorInterventionAndLinkEventArgs)
-def create_narrator_intervention_and_link_triggers(
-    title: str, description: str, triggers: List[GameEventTrigger], source_beat_id: Optional[str],
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-    tool_call_id: Annotated[str, InjectedToolCallId],
-) -> Command:
-    """(Recommended) Creates a new narrator intervention event and immediately links its triggers, making it active in the game ('AVAILABLE' state)."""
-    args = extract_tool_args(locals())
-    simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_model = NarratorInterventionEventModel(title=title, description=description, source_beat_id=source_beat_id, triggered_by=triggers, status="AVAILABLE")
-    # simulated_state.add_event(event_model)
-    message = f"Narrator Intervention event '{event_model.title}' (ID: {event_model.id}) created and linked. Status is now AVAILABLE."
-    return Command(update={
-        logs_field_to_update: [get_log_item("create_narrator_intervention_and_link_triggers", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_narrator_intervention_and_link_triggers", True, message), tool_call_id=tool_call_id)],
-    })
-
-
-# --- ADVANCED "DRAFT-ONLY" TOOLS ---
-
-@tool(args_schema=ToolCreateDraftNPCConversationEventArgs)
-def create_draft_npc_conversation_event(
-    title: str, description: str, npc_ids: List[str], source_beat_id: Optional[str],
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-    tool_call_id: Annotated[str, InjectedToolCallId],
-) -> Command:
-    """(Advanced) Creates a new NPC conversation event in a 'DRAFT' state without any triggers. Use this only if you explicitly need to define triggers in a separate, later step using 'link_triggers_to_event'."""
-    args = extract_tool_args(locals())
-    simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_model = NPCConversationEventModel(title=title, description=description, npc_ids=npc_ids, source_beat_id=source_beat_id, status="DRAFT")
-    # simulated_state.add_event(event_model)
-    message = f"NPC Conversation event '{event_model.title}' (ID: {event_model.id}) created in DRAFT state."
-    return Command(update={
-        logs_field_to_update: [get_log_item("create_draft_npc_conversation_event", args, False, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_draft_npc_conversation_event", True, message), tool_call_id=tool_call_id)],
-    })
-
-# You would add similar advanced draft tools for other event types here.
-# For brevity, they are omitted, but would follow the same pattern.
-
-# --- LINKING & QUERY TOOLS ---
-
-@tool(args_schema=ToolLinkTriggersToEventArgs)
-def link_triggers_to_event(
-    event_id: str, triggers: List[GameEventTrigger],
-    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
-    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
-    tool_call_id: Annotated[str, InjectedToolCallId],
-) -> Command:
-    """(Advanced) Links one or more triggers to an existing 'DRAFT' event, changing its status to AVAILABLE. Use this to activate events created with a 'create_draft_...' tool."""
-    args = extract_tool_args(locals())
-    simulated_state = SimulatedGameStateSingleton.get_instance()
-    success = True
     try:
-        # event = simulated_state.get_event_by_id(event_id)
-        # if event.status != "DRAFT":
-        #     raise ValueError(f"Event {event_id} is not in DRAFT state. Cannot link new triggers.")
-        # event.triggers.extend(triggers)
-        # event.status = "AVAILABLE"
-        # simulated_state.update_event(event)
-        message = f"Triggers successfully linked to event {event_id}. Status is now AVAILABLE."
+        conditions_for_orchestrator = cast(List[ActivationConditionModel], activation_conditions)
+
+        created_event = simulated_state.create_available_npc_conversation(
+            title=title,
+            description=description,
+            npc_ids=npc_ids,
+            activation_conditions=conditions_for_orchestrator,
+            source_beat_id=source_beat_id
+        )
+        
+        success = True
+        message = f"NPC Conversation event '{created_event.title}' (ID: {created_event.id}) was created successfully with status AVAILABLE."
+
     except Exception as e:
         success = False
         message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("link_triggers_to_event", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation("link_triggers_to_event", success, message), tool_call_id=tool_call_id)],
+        logs_field_to_update: [get_log_item("create_npc_conversation_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("create_npc_conversation_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+@tool(args_schema=ToolCreatePlayerNPCConversationEventArgs)
+def create_player_npc_conversation_event(
+    title: str,
+    description: str,
+    npc_ids: List[str],
+    activation_conditions: List[ActivationConditionsPlayerConversation],
+    source_beat_id: Optional[str],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """
+    Creates and adds an INTERACTIVE conversation involving the Player and NPCs.
+
+    Use Case: This is the core tool for driving the story forward through player agency. 
+    Its applications are broad, including creating scenes where the player's choices can directly influence relationships, unlock new paths, or permanently alter the narrative. 
+    This event type is fundamental for creating meaningful consequences based on player decisions.
+    The created event becomes 'AVAILABLE' immediately.
+    """
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+
+    try:
+        conditions_for_orchestrator = cast(List[ActivationConditionModel], activation_conditions)
+        created_event = simulated_state.create_available_player_npc_conversation(
+            title=title,
+            description=description,
+            npc_ids=npc_ids,
+            activation_conditions=conditions_for_orchestrator,
+            source_beat_id=source_beat_id
+        )
+        
+        success = True
+        message = f"Player-NPC Conversation event '{created_event.title}' (ID: {created_event.id}) created successfully with status AVAILABLE."
+
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("create_player_npc_conversation_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("create_player_npc_conversation_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+@tool(args_schema=ToolCreateCutsceneEventArgs)
+def create_cutscene_event(
+    title: str, description: str, activation_conditions: List[ActivationConditionsCutscene], source_beat_id: Optional[str],
+    involved_character_ids: Optional[List[str]],
+    involved_scenario_ids: Optional[List[str]],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """
+    Creates and adds an a non-interactive, cinematic cutscene event.
+
+    Use Case: This tool is for creating scripted sequences where the player loses
+    control and watches events unfold. Its applications
+    are broad, including uses like major plot points,
+    character introductions, flashbacks, imaginations, environmental events, or anything that would be great to be accompanied by specific visuals. The created event is made
+    'AVAILABLE' immediately.
+    """
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+
+    try:
+        conditions_for_orchestrator = cast(List[ActivationConditionModel], activation_conditions)
+        created_event = simulated_state.create_available_cutscene(
+            title=title,
+            description=description,
+            activation_conditions=conditions_for_orchestrator,
+            source_beat_id=source_beat_id,
+            involved_character_ids=involved_character_ids,
+            involved_scenario_ids=involved_scenario_ids
+        )
+        
+        success = True
+        message = f"Cutscene event '{created_event.title}' (ID: {created_event.id}) was created successfully with status AVAILABLE."
+
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("create_cutscene_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("create_cutscene_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+@tool(args_schema=ToolCreateNarratorInterventionEventArgs)
+def create_narrator_intervention_and_link_activation_conditions(
+    title: str,
+    description: str,
+    activation_conditions: List[ActivationConditionsNarrator],
+    source_beat_id: Optional[str],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """
+    Constructs and activates a narrator intervention event.
+
+    Use Case: This tool is for making the narrator speak directly to the player,
+    describe something in the environment, or convey the player's internal thoughts.
+    Its applications are broad, including uses like providing clues, setting a scene, or revealing lore. The created
+    event is made 'AVAILABLE' immediately.
+    """
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+
+    try:
+        conditions_for_orchestrator = cast(List[ActivationConditionModel], activation_conditions)
+        created_event = simulated_state.create_available_narrator_intervention(
+            title=title,
+            description=description,
+            activation_conditions=conditions_for_orchestrator,
+            source_beat_id=source_beat_id
+        )
+        
+        success = True
+        message = f"Narrator Intervention event '{created_event.title}' (ID: {created_event.id}) was created successfully with status AVAILABLE."
+
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("create_narrator_intervention_and_link_activation_conditions", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("create_narrator_intervention_and_link_activation_conditions", success, message), tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolLinkActivationConditionsToEventArgs)
+def link_activation_conditions_to_event(
+    event_id: str,
+    activation_conditions: List[ActivationConditionsUnion],
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """
+    Adds one or more new activation conditions to an existing event in  'AVAILABLE' or 'DRAFT' Status.
+    If the event was in a 'DRAFT' state, adding conditions will make it 'AVAILABLE'.
+    """
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+
+    try:
+        conditions_for_orchestrator = cast(List[ActivationConditionModel], activation_conditions)
+        simulated_state.link_conditions_to_event(
+            event_id=event_id,
+            conditions=conditions_for_orchestrator
+        )
+        
+        success = True
+        message = f"Successfully linked new activation conditions to event '{event_id}'."
+
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("link_activation_conditions_to_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("link_activation_conditions_to_event", success, message), tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolListEventsArgs)
@@ -225,10 +301,9 @@ def list_events(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """(QUERY) Lists existing game events, optionally filtering by status (DRAFT, AVAILABLE, etc.). Useful for finding DRAFT events that need triggers."""
+    """(QUERY) Lists existing game events, optionally filtering by status (AVAILABLE, RUNNING, COMPLETED)."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    # event_list = simulated_state.list_events(status=status_filter)
     event_list = [] # Placeholder
     message = f"Found {len(event_list)} events."
     if status_filter:
@@ -313,15 +388,15 @@ def validate_simulated_game_events(
 
 EXECUTORTOOLS = [
     # Recommended "all-in-one" tools
-    create_npc_conversation_and_link_triggers,
-    create_player_npc_conversation_and_link_triggers,
-    create_cutscene_and_link_triggers,
-    create_narrator_intervention_and_link_triggers,
+    create_npc_conversation_event,
+    create_player_npc_conversation_event,
+    create_cutscene_event,
+    create_narrator_intervention_event,
     
     # Advanced, granular tools
     create_draft_npc_conversation_event,
     # ... (add other create_draft_* tools here for completeness)
-    link_triggers_to_event,
+    link_activation_conditions_to_event,
     
     # Query and finalize tools
     list_events,

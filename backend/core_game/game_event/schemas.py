@@ -193,6 +193,8 @@ class CutsceneEventModel(GameEventModel):
         default_factory=list,
         description="Ordered sequence of frames composing the cutscene.",
     )
+    involved_character_ids: List[str] = Field(default_factory=list, description="A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player id can be here too")
+    involved_scenario_ids: List[str] = Field(default_factory=list, description="A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
 
 class GameEventsManagerModel(BaseModel):
     """Stores game events and related info"""

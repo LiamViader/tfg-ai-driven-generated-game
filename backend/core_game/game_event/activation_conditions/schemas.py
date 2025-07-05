@@ -23,13 +23,6 @@ class CharacterInteractionOptionModel(ActivationConditionModel):
     """Makes an event available as a menu option when the player interacts with a specific character."""
     type: Literal["character_interaction"] = "character_interaction"
     character_id: str = Field(..., description="The ID of the character the player must interact with to see this option.")
-    menu_label: str = Field(..., description="The text that will appear in the UI for the player to select. E.g., 'Ask about the stolen artifact'.")
-    is_repeatable: bool = Field(False, description="If true, this option will reappear in the catalog even after the event has been completed.")
+    menu_label: str = Field(..., description="The text that will appear in the UI for the player to select. E.g., 'Ask about the stolen artifact', 'About the raising war', 'What time is it?', etc.")
+    is_repeatable: bool = Field(False, description="If true, this option will reappear in the catalog even after the event has been completed, so the player can keep playing this interaction.")
 
-# La Union ahora tiene un nombre más preciso
-ActivationConditionUnion = Union[
-    AreaEntryConditionModel,
-    EventCompletionConditionModel,
-    ImmediateActivationModel,
-    CharacterInteractionOptionModel
-]
