@@ -416,6 +416,32 @@ class GameEventsManager:
         event.get_model().title = new_title
         return event
 
+    def disable_event(self, event_id: str) -> BaseGameEvent:
+        """Set the event status to DISABLED if currently AVAILABLE."""
+        event = self._all_events.get(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        if event.status != "AVAILABLE":
+            raise ValueError(
+                f"Cannot disable event '{event_id}' because it is in '{event.status}' status."
+            )
+
+        self.set_event_status(event_id, "DISABLED")
+        return event
+
+    def enable_event(self, event_id: str) -> BaseGameEvent:
+        """Set the event status back to AVAILABLE if currently DISABLED."""
+        event = self._all_events.get(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        if event.status != "DISABLED":
+            raise ValueError(
+                f"Cannot enable event '{event_id}' because it is in '{event.status}' status."
+            )
+
+        self.set_event_status(event_id, "AVAILABLE")
+        return event
+
     def get_all_events_grouped(self) -> Dict[str, Dict[str, List[BaseGameEvent]]]:
         """
         Returns all full event domain objects, grouped by beat and then by status.

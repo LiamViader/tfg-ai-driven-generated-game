@@ -397,6 +397,14 @@ class SimulatedGameState:
         
 
         self._validate_activation_conditions(conditions)
-        
+
         self.events.link_conditions_to_event(event_id, conditions)
+
+    def disable_event(self, event_id: str) -> BaseGameEvent:
+        """Convenience wrapper to disable an event if possible."""
+        return self.events.disable_event(event_id)
+
+    def enable_event(self, event_id: str) -> BaseGameEvent:
+        """Convenience wrapper to re-enable a disabled event."""
+        return self.events.enable_event(event_id)
         

@@ -81,6 +81,12 @@ class ToolUpdateEventTitleArgs(InjectedToolContext):
     event_id: str = Field(..., description="The ID of the event to update.")
     new_title: str = Field(..., description="The new title for the event.")
 
+class ToolDisableEventArgs(InjectedToolContext):
+    event_id: str = Field(..., description="ID of the event to disable.")
+
+class ToolEnableEventArgs(InjectedToolContext):
+    event_id: str = Field(..., description="ID of the event to enable.")
+
 class ToolUnlinkActivationConditionArgs(InjectedToolContext):
     event_id: str = Field(..., description="ID of the event from which the condition will be removed.")
     condition_id: str = Field(..., description="ID of the activation condition to remove.")
@@ -485,6 +491,54 @@ def update_event_title(
     })
 
 
+@tool(args_schema=ToolDisableEventArgs)
+def disable_event(
+    event_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Temporarily disables an AVAILABLE event."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        simulated_state.disable_event(event_id)
+        success = True
+        message = f"Event '{event_id}' disabled."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("disable_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("disable_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolEnableEventArgs)
+def enable_event(
+    event_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Re-enables a previously disabled event."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        simulated_state.enable_event(event_id)
+        success = True
+        message = f"Event '{event_id}' enabled."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("enable_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("enable_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+
 @tool(args_schema=ToolUnlinkActivationConditionArgs)
 def unlink_activation_condition(
     event_id: str,
@@ -567,6 +621,8 @@ EXECUTORTOOLS = [
     delete_event,
     update_event_description,
     update_event_title,
+    disable_event,
+    enable_event,
     unlink_activation_condition,
 
     # Query and finalize tools
