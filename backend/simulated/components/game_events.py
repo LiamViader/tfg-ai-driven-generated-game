@@ -56,6 +56,12 @@ class SimulatedGameEvents:
 
         self._working_state.link_conditions_to_event(event_id, conditions)
 
+    def unlink_condition_from_event(self, event_id: str, condition_id: str) -> ActivationConditionModel:
+        """Delegates removal of a specific activation condition from an event."""
+        if not self._working_state.find_event(event_id):
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self._working_state.unlink_condition_from_event(event_id, condition_id)
+
 
     def list_events(self, status: Optional[str] = None) -> List[BaseGameEvent]:
         """Delegates event listing to the manager."""
@@ -64,3 +70,19 @@ class SimulatedGameEvents:
     def get_all_events_grouped(self) -> Dict[str, Dict[str, List[BaseGameEvent]]]:
         """Delegates grouping logic to the manager."""
         return self._working_state.get_all_events_grouped()
+
+    def delete_event(self, event_id: str) -> BaseGameEvent:
+        event = self._working_state.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self._working_state.delete_event(event_id)
+
+    def update_event_description(self, event_id: str, new_description: str) -> BaseGameEvent:
+        if not self._working_state.find_event(event_id):
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self._working_state.update_event_description(event_id, new_description)
+
+    def update_event_title(self, event_id: str, new_title: str) -> BaseGameEvent:
+        if not self._working_state.find_event(event_id):
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self._working_state.update_event_title(event_id, new_title)

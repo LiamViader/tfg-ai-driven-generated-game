@@ -1,9 +1,24 @@
 from pydantic import BaseModel, Field
 from typing import Literal, Union
 
+_condition_id_counter = 0
+
+
+def generate_condition_id() -> str:
+    """Return a sequential id of the form 'condition_001'."""
+    global _condition_id_counter
+    _condition_id_counter += 1
+    return f"condition_{_condition_id_counter:03d}"
+
+
+def rollback_condition_id() -> None:
+    global _condition_id_counter
+    _condition_id_counter -= 1
+
 class ActivationConditionModel(BaseModel):
     """Base class for all activation condition models."""
-    type: str 
+    id: str = Field(default_factory=generate_condition_id, description="Unique identifier for the activation condition.")
+    type: str
 
 class AreaEntryConditionModel(ActivationConditionModel):
     """Activates when the player enters a specific scenario."""

@@ -400,6 +400,48 @@ class SimulatedGameState:
         self._validate_activation_conditions(conditions)
         
         self.events.link_conditions_to_event(event_id, conditions)
-        
+
         print(f"--- Conditions successfully linked to event '{event_id}' ---")
+
+    def unlink_condition_from_event(self, event_id: str, condition_id: str) -> ActivationConditionModel:
+        """Orchestrates removal of an activation condition from an event."""
+        print(f"--- Orchestrating unlink of condition '{condition_id}' from event '{event_id}' ---")
+
+        event = self.read_only_events.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+
+        if event.status in ["RUNNING", "COMPLETED"]:
+            raise ValueError(
+                f"Cannot unlink conditions from event '{event_id}'. It is already in '{event.status}' status."
+            )
+
+        removed = self.events.unlink_condition_from_event(event_id, condition_id)
+
+        print(
+            f"--- Condition '{condition_id}' successfully unlinked from event '{event_id}' ---"
+        )
+
+        return removed
+
+    def delete_event(self, event_id: str) -> BaseGameEvent:
+        """Orchestrates deletion of an event from the game state."""
+        event = self.read_only_events.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self.events.delete_event(event_id)
+
+    def update_event_description(self, event_id: str, new_description: str) -> BaseGameEvent:
+        """Update the description of an existing event."""
+        event = self.read_only_events.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self.events.update_event_description(event_id, new_description)
+
+    def update_event_title(self, event_id: str, new_title: str) -> BaseGameEvent:
+        """Update the title of an existing event."""
+        event = self.read_only_events.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        return self.events.update_event_title(event_id, new_title)
         
