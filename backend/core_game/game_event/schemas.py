@@ -34,7 +34,10 @@ class GameEventModel(BaseModel):
         "narrator_intervention",
         "cutscene",
     ]
-    status: EVENT_STATUS_LITERAL = Field("AVAILABLE", description="The current lifecycle state of the event.")
+    status: EVENT_STATUS_LITERAL = Field(
+        "AVAILABLE",
+        description="The current lifecycle state of the event. If 'DISABLED', activation conditions will not trigger it.",
+    )
 
     activation_conditions: List[ActivationConditionModel] = Field(
         default_factory=list,

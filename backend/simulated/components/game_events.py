@@ -91,3 +91,23 @@ class SimulatedGameEvents:
         if not self._working_state.find_event(event_id):
             raise KeyError(f"Event with ID '{event_id}' not found.")
         return self._working_state.update_event_title(event_id, new_title)
+
+    def disable_event(self, event_id: str) -> BaseGameEvent:
+        event = self._working_state.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        if event.status != "AVAILABLE":
+            raise ValueError(
+                f"Event '{event_id}' must be AVAILABLE to be disabled."
+            )
+        return self._working_state.disable_event(event_id)
+
+    def enable_event(self, event_id: str) -> BaseGameEvent:
+        event = self._working_state.find_event(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        if event.status != "DISABLED":
+            raise ValueError(
+                f"Event '{event_id}' must be DISABLED to be enabled."
+            )
+        return self._working_state.enable_event(event_id)
