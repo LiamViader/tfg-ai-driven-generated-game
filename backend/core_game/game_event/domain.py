@@ -323,6 +323,34 @@ class GameEventsManager:
             if isinstance(condition, CharacterInteractionOptionModel):
                 self._interaction_options_by_character[condition.character_id].add(event_id)
 
+    def unlink_condition_from_event(self, event_id: str, condition_id: str) -> ActivationConditionModel:
+        """Remove a specific activation condition from an event and update indexes."""
+        event = self._all_events.get(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+
+        conditions = event.get_model().activation_conditions
+        idx_to_remove = next((i for i, cond in enumerate(conditions) if cond.id == condition_id), None)
+        if idx_to_remove is None:
+            raise KeyError(
+                f"Activation condition '{condition_id}' not found for event '{event_id}'."
+            )
+
+        removed_condition = conditions.pop(idx_to_remove)
+
+        # Rebuild the wrappers list
+        event.activation_conditions = []
+        event._build_condition_wrappers()
+
+        if isinstance(removed_condition, CharacterInteractionOptionModel):
+            char_set = self._interaction_options_by_character.get(removed_condition.character_id)
+            if char_set:
+                char_set.discard(event_id)
+                if not char_set:
+                    self._interaction_options_by_character.pop(removed_condition.character_id, None)
+
+        return removed_condition
+
     def list_events(self, status: Optional[str] = None) -> List[BaseGameEvent]:
         """
         Lists full event domain objects, optionally filtered by status.
@@ -337,6 +365,56 @@ class GameEventsManager:
             events_to_list = list(self._all_events.values())
         
         return events_to_list
+
+    def delete_event(self, event_id: str) -> BaseGameEvent:
+        """Remove an event completely from the manager and all indexes."""
+        event = self._all_events.pop(event_id, None)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+
+        # Remove from running stack if present
+        self._running_event_stack = [eid for eid in self._running_event_stack if eid != event_id]
+
+        # Clean status index
+        if event.status in self._status_indexes:
+            self._status_indexes[event.status].discard(event_id)
+
+        # Clean beat indexes
+        if event.source_beat_id:
+            beat_set = self._events_by_beat_id.get(event.source_beat_id)
+            if beat_set:
+                beat_set.discard(event_id)
+                if not beat_set:
+                    self._events_by_beat_id.pop(event.source_beat_id, None)
+        else:
+            self._beatless_event_ids.discard(event_id)
+
+        # Clean interaction indexes
+        for condition in event.get_activation_conditions():
+            if isinstance(condition, CharacterInteractionOption):
+                char_set = self._interaction_options_by_character.get(condition.character_id)
+                if char_set:
+                    char_set.discard(event_id)
+                    if not char_set:
+                        self._interaction_options_by_character.pop(condition.character_id, None)
+
+        return event
+
+    def update_event_description(self, event_id: str, new_description: str) -> BaseGameEvent:
+        """Update the description of an existing event."""
+        event = self._all_events.get(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        event.get_model().description = new_description
+        return event
+
+    def update_event_title(self, event_id: str, new_title: str) -> BaseGameEvent:
+        """Update the title of an existing event."""
+        event = self._all_events.get(event_id)
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        event.get_model().title = new_title
+        return event
 
     def get_all_events_grouped(self) -> Dict[str, Dict[str, List[BaseGameEvent]]]:
         """

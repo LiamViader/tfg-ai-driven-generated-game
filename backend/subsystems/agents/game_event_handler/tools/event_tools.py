@@ -70,6 +70,21 @@ class ToolListEventsArgs(InjectedToolContext):
 class ToolGetEventDetailsArgs(InjectedToolContext):
     event_id: str = Field(..., description="The ID of the event to inspect.")
 
+class ToolDeleteEventArgs(InjectedToolContext):
+    event_id: str = Field(..., description="The ID of the event to delete.")
+
+class ToolUpdateEventDescriptionArgs(InjectedToolContext):
+    event_id: str = Field(..., description="The ID of the event to update.")
+    new_description: str = Field(..., description="The new director's brief for the event.")
+
+class ToolUpdateEventTitleArgs(InjectedToolContext):
+    event_id: str = Field(..., description="The ID of the event to update.")
+    new_title: str = Field(..., description="The new title for the event.")
+
+class ToolUnlinkActivationConditionArgs(InjectedToolContext):
+    event_id: str = Field(..., description="ID of the event from which the condition will be removed.")
+    condition_id: str = Field(..., description="ID of the activation condition to remove.")
+
 class ToolFinalizeSimulationArgs(InjectedToolContext):
     justification: str = Field(..., description="Explanation of why the events meet the objective")
 
@@ -395,6 +410,105 @@ def get_event_details(
         messages_field_to_update: [ToolMessage(get_observation("get_event_details", success, message), tool_call_id=tool_call_id)],
     })
 
+
+@tool(args_schema=ToolDeleteEventArgs)
+def delete_event(
+    event_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Permanently removes an event from the game state."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        event = simulated_state.delete_event(event_id)
+        success = True
+        message = f"Event '{event_id}' deleted successfully."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("delete_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("delete_event", success, message), tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolUpdateEventDescriptionArgs)
+def update_event_description(
+    event_id: str,
+    new_description: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Updates the director's brief of an existing event."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        simulated_state.update_event_description(event_id, new_description)
+        success = True
+        message = f"Description for event '{event_id}' updated."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("update_event_description", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("update_event_description", success, message), tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolUpdateEventTitleArgs)
+def update_event_title(
+    event_id: str,
+    new_title: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Updates the title of an existing event."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        simulated_state.update_event_title(event_id, new_title)
+        success = True
+        message = f"Title for event '{event_id}' updated."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("update_event_title", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("update_event_title", success, message), tool_call_id=tool_call_id)],
+    })
+
+
+@tool(args_schema=ToolUnlinkActivationConditionArgs)
+def unlink_activation_condition(
+    event_id: str,
+    condition_id: str,
+    messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
+    logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> Command:
+    """Removes a specific activation condition from an event."""
+    args = extract_tool_args(locals())
+    simulated_state = SimulatedGameStateSingleton.get_instance()
+    try:
+        simulated_state.unlink_condition_from_event(event_id, condition_id)
+        success = True
+        message = f"Condition '{condition_id}' removed from event '{event_id}'."
+    except Exception as e:
+        success = False
+        message = str(e)
+
+    return Command(update={
+        logs_field_to_update: [get_log_item("unlink_activation_condition", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("unlink_activation_condition", success, message), tool_call_id=tool_call_id)],
+    })
+
 # --- FINALIZE/VALIDATE TOOLS ---
 @tool(args_schema=ToolFinalizeSimulationArgs)
 def finalize_simulation(
@@ -450,7 +564,11 @@ EXECUTORTOOLS = [
     create_cutscene_event,
     create_narrator_intervention_event,
     link_activation_conditions_to_event,
-    
+    delete_event,
+    update_event_description,
+    update_event_title,
+    unlink_activation_condition,
+
     # Query and finalize tools
     list_events,
     get_event_details,

@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Any
+from __future__ import annotations
 
-# Assuming this is the path to your Singleton. Adjust if necessary!
-from simulated.game_state import SimulatedGameState
+from abc import ABC, abstractmethod
+from typing import Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from simulated.game_state import SimulatedGameState
 
 # Import all the data models (schemas) that the domain classes will need
 from .schemas import *
