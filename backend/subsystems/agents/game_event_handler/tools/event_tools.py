@@ -31,21 +31,21 @@ from core_game.game_event.constants import EVENT_STATUS_LITERAL
 
 class ToolCreateNPCConversationEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this event. Example: 'Guards complain about salary'.")
-    description: str = Field(..., description="The creative brief for the scene, guiding a future AI in writing the dialogue. For best results, provide context on the conversation's Topic, Goal, Tone, and others. (Max. 150-200 words)")
+    description: str = Field(..., description="The director's brief for the scene, guiding a future AI in writing the dialogue. For best results, provide context on the conversation's Topic, Goal, Tone, and others. (Max. 150-200 words)")
     npc_ids: List[str] = Field(..., description="List of IDs for the NPCs in the conversation. Must contain at least one ID. A single ID creates a monologue. Player CANNOT be in the list")
     activation_conditions: List[ActivationConditionsNPCConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
     source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 class ToolCreatePlayerNPCConversationEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this event. Example: 'Elara asks player (Julius) about the key'.")
-    description: str = Field(..., description="The creative brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), and the overall narrative goal. (Max. 150-200 words)")
+    description: str = Field(..., description="The director's brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), and the overall narrative goal. (Max. 150-200 words)")
     npc_ids: List[str] = Field(..., description="List of IDs for the NPCs participating in the conversation. Must contain at least one NPC. Player CANNOT be in the list, it is included automatically")
     activation_conditions: List[ActivationConditionsPlayerConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
     source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 class ToolCreateCutsceneEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this cutscene. Example: 'The Castle Gates Explode'.")
-    description: str = Field(..., description="The creative brief for the cutscene. This is a high-level script that guides a future AI in generating the final visuals and texts for the cutscene. Describe the sequence of key moments, outlining the core action, setting, topic, and any important dialogue or narration, including who is speaking (e.g., Narrator, a specific character ID, or 'Player'). (Max. 150-200 words)")
+    description: str = Field(..., description="The director's brief for the cutscene. This is a high-level script that guides a future AI in generating the final visuals and texts for the cutscene. Describe the sequence of key moments, outlining the core action, setting, topic, and any important dialogue or narration, including who is speaking (e.g., Narrator, a specific character ID, or 'Player'). (Max. 150-200 words)")
     involved_character_ids: Optional[List[str]] = Field(None, description="Optional: A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player character id can be here too")
     involved_scenario_ids: Optional[List[str]] = Field(None, description="Optional: A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
     activation_conditions: List[ActivationConditionsCutscene] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
@@ -54,7 +54,7 @@ class ToolCreateCutsceneEventArgs(InjectedToolContext):
 
 class ToolCreateNarratorInterventionEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for the narrator intervention. Example: 'It starts raining ashes'.")
-    description: str = Field(..., description="The creative brief for the intervention. This text will be used by a future AI to write the narrator's exact lines. Describe the observation, topic, information, or internal thought the player should experience.")
+    description: str = Field(..., description="The director's brief for the intervention. This text will be used by a future AI to write the narrator's exact lines. Describe the observation, topic, information, or internal thought the player should experience.")
     activation_conditions: List[ActivationConditionsNarrator] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
     source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
@@ -422,7 +422,7 @@ def delete_event(
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        event = simulated_state.delete_event(event_id)
+        event = simulated_state.events.delete_event(event_id)
         success = True
         message = f"Event '{event_id}' deleted successfully."
     except Exception as e:
@@ -447,7 +447,7 @@ def update_event_description(
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_state.update_event_description(event_id, new_description)
+        simulated_state.events.update_event_description(event_id, new_description)
         success = True
         message = f"Description for event '{event_id}' updated."
     except Exception as e:
@@ -472,7 +472,7 @@ def update_event_title(
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_state.update_event_title(event_id, new_title)
+        simulated_state.events.update_event_title(event_id, new_title)
         success = True
         message = f"Title for event '{event_id}' updated."
     except Exception as e:
@@ -497,7 +497,7 @@ def unlink_activation_condition(
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_state.unlink_condition_from_event(event_id, condition_id)
+        simulated_state.events.unlink_condition_from_event(event_id, condition_id)
         success = True
         message = f"Condition '{condition_id}' removed from event '{event_id}'."
     except Exception as e:

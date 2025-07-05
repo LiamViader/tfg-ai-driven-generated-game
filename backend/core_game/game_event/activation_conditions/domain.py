@@ -25,7 +25,7 @@ class ActivationCondition(ABC):
         return self._model
 
     @abstractmethod
-    def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
+    def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
         """
         Checks if this trigger's condition is met in the current game state.
 
@@ -46,7 +46,7 @@ class AreaEntryCondition(ActivationCondition):
         super().__init__(model)
         self._model: AreaEntryConditionModel 
 
-    def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
+    def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
         player = game_state.read_only_characters.get_player()
         if not player:
             return False
@@ -60,7 +60,7 @@ class EventCompletionCondition(ActivationCondition):
         super().__init__(model)
         self._model: EventCompletionConditionModel
 
-    def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
+    def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
         completed_ids = game_state.read_only_events.get_completed_event_ids()
         return self._model.source_event_id in completed_ids
 
@@ -84,7 +84,7 @@ class CharacterInteractionOption(ActivationCondition):
     def is_repeatable(self) -> bool:
         return self._model.is_repeatable
 
-    def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
+    def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
         # This trigger is REACTIVE. Its main logic is not in this passive check,
         # but in the manager method that fetches dialogue options.
         # This method would be used if the manager delegated the final check.
@@ -97,7 +97,7 @@ class ImmediateActivation(ActivationCondition):
     def __init__(self, model: ImmediateActivationModel):
         super().__init__(model)
 
-    def is_met(self, game_state: SimulatedGameState, **kwargs: Any) -> bool:
+    def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
         # This trigger is automatic.
         # causing it to be executed on the next game cycle.
         return True

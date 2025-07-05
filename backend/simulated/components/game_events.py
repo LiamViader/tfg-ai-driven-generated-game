@@ -58,8 +58,13 @@ class SimulatedGameEvents:
 
     def unlink_condition_from_event(self, event_id: str, condition_id: str) -> ActivationConditionModel:
         """Delegates removal of a specific activation condition from an event."""
-        if not self._working_state.find_event(event_id):
+        event = self._working_state.find_event(event_id)
+        if not event:
             raise KeyError(f"Event with ID '{event_id}' not found.")
+            
+        if event.status in ["RUNNING", "COMPLETED"]:
+            raise ValueError(f"Cannot link new conditions to event '{event_id}'. It is already in '{event.status}' status.")
+        
         return self._working_state.unlink_condition_from_event(event_id, condition_id)
 
 
