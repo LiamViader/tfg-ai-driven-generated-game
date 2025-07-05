@@ -498,11 +498,11 @@ def disable_event(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Temporarily disables an AVAILABLE event."""
+    """Temporarily disables an AVAILABLE event. A DISABLED event means it won't be triggered by any of it linked activation conditions"""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_state.disable_event(event_id)
+        simulated_state.events.disable_event(event_id)
         success = True
         message = f"Event '{event_id}' disabled."
     except Exception as e:
@@ -522,11 +522,11 @@ def enable_event(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Re-enables a previously disabled event."""
+    """Makes AVAILABLE a previously DISABLED event or makes AVAILABLE a COMPLETED event so it can be runned again."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
-        simulated_state.enable_event(event_id)
+        simulated_state.events.enable_event(event_id)
         success = True
         message = f"Event '{event_id}' enabled."
     except Exception as e:

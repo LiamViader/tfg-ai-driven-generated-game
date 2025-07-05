@@ -132,7 +132,7 @@ class SimulatedNarrative:
                     beats.append(rtb.beat)
         return beats
 
-    def list_pending_beats_main(self) -> List[NarrativeBeatModel]:
+    def list_pending_beats(self) -> List[NarrativeBeatModel]:
         """Return PENDING beats only from main narrative stages."""
         beats: List[NarrativeBeatModel] = []
         if self._working_state.narrative_structure:

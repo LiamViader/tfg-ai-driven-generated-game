@@ -487,7 +487,7 @@ def list_pending_beats(
     """(QUERY tool) List pending beats from the main narrative only."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    beats = simulated_state.read_only_narrative.list_pending_beats_main()
+    beats = simulated_state.read_only_narrative.list_pending_beats()
     if not beats:
         message = "No pending beats."
     else:

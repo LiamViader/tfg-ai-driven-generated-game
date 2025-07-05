@@ -106,8 +106,8 @@ class SimulatedGameEvents:
         event = self._working_state.find_event(event_id)
         if not event:
             raise KeyError(f"Event with ID '{event_id}' not found.")
-        if event.status != "DISABLED":
+        if event.status not in ["DISABLED", "COMPLETED"]:
             raise ValueError(
-                f"Event '{event_id}' must be DISABLED to be enabled."
+                f"Event '{event_id}' must be DISABLED or COMPLETED to be enabled."
             )
         return self._working_state.enable_event(event_id)
