@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Dict
 
 from core_game.game_event.domain import (
     GameEventsManager,
@@ -55,3 +55,12 @@ class SimulatedGameEvents:
             raise KeyError(f"Event with ID '{event_id}' not found.")
 
         self._working_state.link_conditions_to_event(event_id, conditions)
+
+
+    def list_events(self, status: Optional[str] = None) -> List[BaseGameEvent]:
+        """Delegates event listing to the manager."""
+        return self._working_state.list_events(status)
+
+    def get_all_events_grouped(self) -> Dict[str, Dict[str, List[BaseGameEvent]]]:
+        """Delegates grouping logic to the manager."""
+        return self._working_state.get_all_events_grouped()

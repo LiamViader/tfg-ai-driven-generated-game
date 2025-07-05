@@ -1,4 +1,5 @@
 from typing import Annotated, Optional, List, Literal, cast
+import json
 from pydantic import Field
 from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
@@ -20,7 +21,7 @@ from core_game.game_event.schemas import (
 )
 from core_game.game_event.activation_conditions.schemas import ActivationConditionModel
 from core_game.game_event.activation_conditions.constants import *
-
+from core_game.game_event.constants import EVENT_STATUS_LITERAL
 
 # ---------------------------------------------------
 # 1. SCHEMAS FOR TOOL ARGUMENTS
@@ -64,7 +65,7 @@ class ToolLinkActivationConditionsToEventArgs(InjectedToolContext):
     activation_conditions: List[ActivationConditionsUnion] = Field(..., description="The set of conditions that will be added to trigger this event.")
 
 class ToolListEventsArgs(InjectedToolContext):
-    status_filter: Optional[Literal["DRAFT", "AVAILABLE", "RUNNING", "COMPLETED"]] = Field(None, description="Optional: Filter the list to show events only with this status.")
+    status_filter: Optional[EVENT_STATUS_LITERAL] = Field(None, description="Optional: Filter the list to show events only with this status.")
 
 class ToolGetEventDetailsArgs(InjectedToolContext):
     event_id: str = Field(..., description="The ID of the event to inspect.")
@@ -218,7 +219,7 @@ def create_cutscene_event(
     })
 
 @tool(args_schema=ToolCreateNarratorInterventionEventArgs)
-def create_narrator_intervention_and_link_activation_conditions(
+def create_narrator_intervention_event(
     title: str,
     description: str,
     activation_conditions: List[ActivationConditionsNarrator],
@@ -255,8 +256,8 @@ def create_narrator_intervention_and_link_activation_conditions(
         message = str(e)
 
     return Command(update={
-        logs_field_to_update: [get_log_item("create_narrator_intervention_and_link_activation_conditions", args, False, success, message)],
-        messages_field_to_update: [ToolMessage(get_observation("create_narrator_intervention_and_link_activation_conditions", success, message), tool_call_id=tool_call_id)],
+        logs_field_to_update: [get_log_item("create_narrator_intervention_event", args, False, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("create_narrator_intervention_event", success, message), tool_call_id=tool_call_id)],
     })
 
 
@@ -269,8 +270,7 @@ def link_activation_conditions_to_event(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
     """
-    Adds one or more new activation conditions to an existing event in  'AVAILABLE' or 'DRAFT' Status.
-    If the event was in a 'DRAFT' state, adding conditions will make it 'AVAILABLE'.
+    Adds one or more new activation conditions to an existing event in  'AVAILABLE' Status.
     """
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
@@ -296,22 +296,73 @@ def link_activation_conditions_to_event(
 
 @tool(args_schema=ToolListEventsArgs)
 def list_events(
-    status_filter: Optional[str],
+    status_filter: Optional[EVENT_STATUS_LITERAL],
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """(QUERY) Lists existing game events, optionally filtering by status (AVAILABLE, RUNNING, COMPLETED)."""
+    """
+    (QUERY) Lists existing game events. If a status is provided, it returns a
+    filtered list. Otherwise, it provides a structured overview of all events,
+    grouped by their narrative beat and then by status. For each event it shows title, id, status, source beat id and type
+    """
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    event_list = [] # Placeholder
-    message = f"Found {len(event_list)} events."
-    if status_filter:
-        message += f" with status '{status_filter}'"
-    message += f"\n{event_list}"
+    
+    try:
+        if status_filter:
+            event_list = simulated_state.read_only_events.list_events(status=status_filter)
+            
+            if not event_list:
+                message = f"No events found with status '{status_filter}'."
+            else:
+                # Manual formatting for a cleaner, more readable output for the LLM
+                message_parts = [f"Found {len(event_list)} events with status '{status_filter}':"]
+                for event in event_list:
+                    source_beat_id = event.source_beat_id
+                    beat_info_str = "BEATLESS"
+                    if source_beat_id:
+                        beat = simulated_state.read_only_narrative.get_beat(source_beat_id)
+                        beat_name = f" (\"{beat.name}\")" if beat and hasattr(beat, 'name') else " (Not Found)"
+                        beat_info_str = f"{source_beat_id} {beat_name}"
+
+                    message_parts.append(f"  - ID: {event.id}, Title: \"{event.title}\", Type: {event.get_model().type}, Status: {event.status}, Source Beat: [{beat_info_str}]")
+                message = "\n".join(message_parts)
+        else:
+            # --- Logic for when NO filter is provided: Group by beat and then by status ---
+            grouped_events = simulated_state.read_only_events.get_all_events_grouped()
+            
+            if not grouped_events:
+                message = "No events found in the game."
+            else:
+                message_parts = ["Overview of all game events:"]
+                sorted_beat_ids = sorted(grouped_events.keys(), key=lambda k: (k == "BEATLESS", k))
+
+                for beat_id in sorted_beat_ids:
+                    beat_header = beat_id
+                    if beat_id != "BEATLESS":
+                        beat = simulated_state.read_only_narrative.get_beat(beat_id)
+                        if beat and hasattr(beat, 'name'):
+                            beat_header = f"{beat_id} (\"{beat.name}\")"
+
+                    events_by_status = grouped_events[beat_id]
+                    message_parts.append(f"\n\n--- NARRATIVE BEAT: {beat_header} ---")
+                    for status in sorted(events_by_status.keys()):
+                        events = events_by_status[status]
+                        message_parts.append(f"\n  - STATUS: {status.upper()}")
+                        for event in events:
+                            message_parts.append(f"    - ID: {event.id}, Title: \"{event.title}\", Type: {event.get_model().type}")
+                message = "\n".join(message_parts)
+        
+        success = True
+
+    except Exception as e:
+        success = False
+        message = str(e)
+
     return Command(update={
-        logs_field_to_update: [get_log_item("list_events", args, True, True, message)],
-        messages_field_to_update: [ToolMessage(get_observation("list_events", True, message), tool_call_id=tool_call_id)],
+        logs_field_to_update: [get_log_item("list_events", args, True, success, message)],
+        messages_field_to_update: [ToolMessage(get_observation("list_events", success, message), tool_call_id=tool_call_id)],
     })
 
 @tool(args_schema=ToolGetEventDetailsArgs)
@@ -321,17 +372,24 @@ def get_event_details(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """(QUERY) Retrieves all details for a single, specific game event by its ID."""
+    """(QUERY) Retrieves all details for a single, specific game event by its ID. With this tool you will obtain the description and activation conditions of an event (between others)"""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
-    success = True
+    
     try:
-        # details = simulated_state.get_event_by_id(event_id).model_dump_json(indent=2)
-        details = "{}" # Placeholder
-        message = details
+        event = simulated_state.read_only_events.find_event(event_id)
+        
+        if not event:
+            raise KeyError(f"Event with ID '{event_id}' not found.")
+        
+        details = event.get_model().model_dump_json(indent=2)
+        message = f"Details for event '{event_id}':\n{details}"
+        success = True
+
     except Exception as e:
         success = False
         message = str(e)
+
     return Command(update={
         logs_field_to_update: [get_log_item("get_event_details", args, True, success, message)],
         messages_field_to_update: [ToolMessage(get_observation("get_event_details", success, message), tool_call_id=tool_call_id)],
@@ -387,15 +445,10 @@ def validate_simulated_game_events(
 # ---------------------------------------------------
 
 EXECUTORTOOLS = [
-    # Recommended "all-in-one" tools
     create_npc_conversation_event,
     create_player_npc_conversation_event,
     create_cutscene_event,
     create_narrator_intervention_event,
-    
-    # Advanced, granular tools
-    create_draft_npc_conversation_event,
-    # ... (add other create_draft_* tools here for completeness)
     link_activation_conditions_to_event,
     
     # Query and finalize tools

@@ -63,6 +63,11 @@ class BaseGameEvent:
         """Returns the source beat id"""
         return self._data.source_beat_id
     
+    @property
+    def type(self) -> Optional[str]:
+        """Returns the source beat id"""
+        return self._data.type
+    
     def get_activation_conditions(self) -> List[ActivationCondition]:
         return self.activation_conditions
 
@@ -317,7 +322,34 @@ class GameEventsManager:
         for condition in conditions:
             if isinstance(condition, CharacterInteractionOptionModel):
                 self._interaction_options_by_character[condition.character_id].add(event_id)
+
+    def list_events(self, status: Optional[str] = None) -> List[BaseGameEvent]:
+        """
+        Lists full event domain objects, optionally filtered by status.
+        """
+        events_to_list: List[BaseGameEvent] = []
+        if status:
+            if status not in self._status_indexes:
+                raise ValueError(f"Invalid status filter: '{status}'.")
+            event_ids = self._status_indexes[status]
+            events_to_list = [self._all_events[eid] for eid in event_ids]
+        else:
+            events_to_list = list(self._all_events.values())
         
-        # If the event was a DRAFT, adding conditions makes it AVAILABLE
-        if event.status == "DRAFT" and event.get_activation_conditions():
-            self.set_event_status(event_id, "AVAILABLE")
+        return events_to_list
+
+    def get_all_events_grouped(self) -> Dict[str, Dict[str, List[BaseGameEvent]]]:
+        """
+        Returns all full event domain objects, grouped by beat and then by status.
+        """
+
+        grouped_events: Dict[str, Dict[str, List[BaseGameEvent]]] = defaultdict(lambda: defaultdict(list))
+
+        for event in self._all_events.values():
+            beat_key = event.source_beat_id or "BEATLESS"
+            status_key = event.status
+            
+            grouped_events[beat_key][status_key].append(event)
+
+        return grouped_events
+        

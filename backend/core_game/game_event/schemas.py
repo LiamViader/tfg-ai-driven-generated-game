@@ -34,11 +34,11 @@ class GameEventModel(BaseModel):
         "narrator_intervention",
         "cutscene",
     ]
-    status: EVENT_STATUS_LITERAL = Field("DRAFT", description="The current lifecycle state of the event.")
+    status: EVENT_STATUS_LITERAL = Field("AVAILABLE", description="The current lifecycle state of the event.")
 
     activation_conditions: List[ActivationConditionModel] = Field(
         default_factory=list,
-        description="The specific condition/s that activates this event. Its structure depends on its 'type'. When any trigger is set, the event moves from 'DRAFT' to 'AVAILABLE'."
+        description="The specific condition/s that activates this event. Its structure depends on its 'type'."
     )
 
     source_beat_id: Optional[str] = Field(..., description="The ID of the Narrative Beat that originated this game event. None if it was not originated by a narrative beat")
