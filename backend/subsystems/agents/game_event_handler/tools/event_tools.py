@@ -522,7 +522,7 @@ def enable_event(
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Makes AVAILABLE a previously DISABLED event or makes AVAILABLE a COMPLETED event so it can be runned again."""
+    """Makes AVAILABLE a previously DISABLED event or makes AVAILABLE a COMPLETED event so it can be replayed again if triggered."""
     args = extract_tool_args(locals())
     simulated_state = SimulatedGameStateSingleton.get_instance()
     try:
