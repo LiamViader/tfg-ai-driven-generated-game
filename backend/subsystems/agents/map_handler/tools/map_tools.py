@@ -19,7 +19,6 @@ class ToolCreateScenarioArgs(InjectedToolContext):
     name: str = Field(..., description=SCENARIO_FIELDS["name"])
     summary_description: str = Field(..., description=SCENARIO_FIELDS["summary_description"])
     visual_description: str = Field(..., description=SCENARIO_FIELDS["visual_description"])
-    visual_prompt: str = Field(..., description=SCENARIO_FIELDS["visual_prompt"])
     narrative_context: str = Field(..., description=SCENARIO_FIELDS["narrative_context"])
     indoor_or_outdoor: Literal["indoor", "outdoor"] = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
     type: str = Field(..., description=SCENARIO_FIELDS["type"])
@@ -30,7 +29,6 @@ class ToolModifyScenarioArgs(InjectedToolContext):
     new_name: Optional[str] = Field(None, description=SCENARIO_FIELDS["name"])
     new_summary_description: Optional[str] = Field(None, description=SCENARIO_FIELDS["summary_description"])
     new_visual_description: Optional[str] = Field(None, description=SCENARIO_FIELDS["visual_description"])
-    new_visual_prompt: Optional[str] = Field(None, description=SCENARIO_FIELDS["visual_prompt"])
     new_narrative_context: Optional[str] = Field(None, description=SCENARIO_FIELDS["narrative_context"])
     new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = Field(None, description=SCENARIO_FIELDS["indoor_or_outdoor"])
     new_type: Optional[str] = Field(None, description=SCENARIO_FIELDS["type"])
@@ -114,7 +112,6 @@ def create_scenario(
     name: str,
     narrative_context: str,
     visual_description: str,
-    visual_prompt: str,
     summary_description: str,
     indoor_or_outdoor: Literal["indoor", "outdoor"],
     type: str,
@@ -132,7 +129,6 @@ def create_scenario(
         name=name,
         narrative_context=narrative_context,
         visual_description=visual_description,
-        visual_prompt=visual_prompt,
         summary_description=summary_description,
         indoor_or_outdoor=indoor_or_outdoor,
         type=type,
@@ -160,7 +156,6 @@ def modify_scenario(
     new_name: Optional[str] = None,
     new_summary_description: Optional[str] = None,
     new_visual_description: Optional[str] = None,
-    new_visual_prompt: Optional[str] = None,
     new_narrative_context: Optional[str] = None,
     new_indoor_or_outdoor: Optional[Literal["indoor", "outdoor"]] = None,
     new_type: Optional[str] = None,
@@ -179,8 +174,6 @@ def modify_scenario(
         updated_fields.append("summary_description")
     if new_visual_description is not None:
         updated_fields.append("visual_description")
-    if new_visual_prompt is not None:
-        updated_fields.append("visual_prompt")
     if new_narrative_context is not None:
         updated_fields.append("narrative_context")
     if new_indoor_or_outdoor is not None:
@@ -197,7 +190,6 @@ def modify_scenario(
         new_name,
         new_summary_description,
         new_visual_description,
-        new_visual_prompt,
         new_narrative_context,
         new_indoor_or_outdoor,
         new_type,

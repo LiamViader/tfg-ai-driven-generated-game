@@ -208,7 +208,7 @@
   },
   "62": {
     "inputs": {
-      "text": "objects, artifacts, holes, bumps, dents, uneven ground, cracks, pits, fire, water, unstable floor, broken floor, distorted floor, liquid,  rocks, stones, grass tufts, uneven surface, trenches, slopes, ramps, irregular terrain, elevation, steps, cliffs, lava, rubble, obstacles, people",
+      "text": "objects, artifacts, holes, bumps, dents, uneven ground, pits, water, liquid, slopes, ramps, humans",
       "clip": [
         "43",
         0
@@ -242,7 +242,7 @@
       "cfg": 5.5,
       "sampler_name": "euler",
       "scheduler": "sgm_uniform",
-      "denoise": 0.7000000000000002,
+      "denoise": 0.700000000000002,
       "model": [
         "4",
         0

@@ -10,8 +10,8 @@ COMFYUI_SERVER = "127.0.0.1:3020"
 
 generation_queue = asyncio.Queue()
 
-@app.post("/generate")
-async def generate(req: GenerationRequest):
+@app.post("/create-scenario-image")
+async def create_scenario_image(req: GenerationRequest):
     print("GOT REQUEST")
     fut = asyncio.get_event_loop().create_future()
     await generation_queue.put((req, fut))
