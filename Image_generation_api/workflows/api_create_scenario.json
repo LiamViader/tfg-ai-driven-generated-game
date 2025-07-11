@@ -54,19 +54,6 @@
       "title": "VAE Decode"
     }
   },
-  "9": {
-    "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": [
-        "8",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
-    }
-  },
   "16": {
     "inputs": {
       "text": "A digital painting in a graphical cartoonish realistic art style. The scene depicts a mystical forest. Viewed from a human eye-level perspective. The foreground, covering the bottom 20% of the image, is a clearly visible, walkable ground made of dirt and mystical grass. It is visually separated from the rest of the scene by a sharp horizontal transition. In the background, there are glowing trees and mist.",
@@ -153,19 +140,6 @@
     "class_type": "ImagePadForOutpaint",
     "_meta": {
       "title": "Pad Image for Outpainting"
-    }
-  },
-  "55": {
-    "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": [
-        "54",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
     }
   },
   "58": {
@@ -261,19 +235,6 @@
       "title": "VAE Decode"
     }
   },
-  "64": {
-    "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": [
-        "63",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
-    }
-  },
   "68": {
     "inputs": {
       "seed": 935794655496640,
@@ -318,19 +279,6 @@
     "class_type": "VAEDecode",
     "_meta": {
       "title": "VAE Decode"
-    }
-  },
-  "70": {
-    "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": [
-        "69",
-        0
-      ]
-    },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Save Image"
     }
   },
   "72": {

@@ -1,5 +1,3 @@
-# comfyui_create_scenario.py
-import websocket
 import uuid
 import json
 import urllib.request
@@ -7,7 +5,9 @@ import urllib.parse
 import base64
 import random
 from PIL import Image
-import io
+import os
+import asyncio
+import websockets  # Asegúrate de instalarlo: pip install websockets
 from schemas import GenerationRequest
 
 def queue_prompt(prompt, server_address, client_id):
@@ -44,19 +44,21 @@ async def generate_image(req: GenerationRequest, server_address: str):
     workflow["61"]["inputs"]["text"] = ground_positive_prompt
     workflow["3"]["inputs"]["seed"] = random.randint(1, 1000000000)
 
-    # Execute prompt
-    ws = websocket.WebSocket()
-    ws.connect(f"ws://{server_address}/ws?clientId={client_id}")
-    prompt_id = queue_prompt(workflow, server_address, client_id)['prompt_id']
+    # Send prompt first
+    prompt_response = queue_prompt(workflow, server_address, client_id)
+    prompt_id = prompt_response['prompt_id']
 
-    while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            if message['type'] == 'executing':
-                if message['data']['node'] is None and message['data']['prompt_id'] == prompt_id:
-                    break
+    # Async WebSocket connection
+    async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as ws:
+        while True:
+            out = await ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                if message['type'] == 'executing':
+                    if message['data']['node'] is None and message['data']['prompt_id'] == prompt_id:
+                        break
 
+    # Get result
     history = get_history(prompt_id, server_address)[prompt_id]
     output_images = []
     for node in history["outputs"]:
@@ -65,13 +67,14 @@ async def generate_image(req: GenerationRequest, server_address: str):
             img_data = get_image(image['filename'], image['subfolder'], image['type'], server_address)
             output_images.append(img_data)
 
-    #return only the first image
     image_bytes = output_images[0]
-    #delete the image from the server
+
+    # Delete image from server
     image_path = f"/workspace/ComfyUI/output/{image['subfolder']}/{image['filename']}"
     try:
         if os.path.exists(image_path):
             os.remove(image_path)
     except Exception as e:
         print(f"Couldn't delete the image: {image_path}. Error: {e}")
+
     return base64.b64encode(image_bytes).decode("utf-8")
