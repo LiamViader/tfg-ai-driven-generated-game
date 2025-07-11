@@ -10,10 +10,10 @@ API_URL = "https://vamtumkbs3pr94-5050.proxy.runpod.net/generate"
 OUTPUT_DIR = r"C:\Users\34640\OneDrive\Escritorio\GDDV\4t\TFG\tfg-ai-driven-generated-game"
 
 payload = {
-    "scene_summary": "forest",
-    "scene_detail": "misty green forest with sun rays",
-    "ground_detail": "moss and dirt",
-    "ground_summary": "dirt",
+    "scene_summary": "hell",
+    "scene_detail": "Golden door between lava rivers",
+    "ground_detail": "cracked stone",
+    "ground_summary": "cracked stone",
     "graphic_style": "A digital painting in a graphical cartoonish realistic art style"
 }
 
