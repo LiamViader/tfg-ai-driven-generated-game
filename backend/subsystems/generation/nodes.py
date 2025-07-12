@@ -1,7 +1,12 @@
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from simulated.singleton import SimulatedGameStateSingleton
-from subsystems.image_generation.scenarios.create.orchestrator import get_created_scenario_images_generation_app
+from subsystems.image_generation.scenarios.create.orchestrator import (
+    get_created_scenario_images_generation_app,
+)
+from subsystems.image_generation.scenarios.create.schemas import GraphState as ScenarioImagesGraphState
 from typing import Set, Optional
+import os
+import base64
 
 
 def start_generation(state: GenerationGraphState):
@@ -127,8 +132,74 @@ def generate_images(state: GenerationGraphState):
     diff_result = manager.diff(from_checkpoint=checkpoint_id)
 
     added_scenarios_ids = diff_result.scenarios.added
+    if not added_scenarios_ids:
+        print("  - No new scenarios detected. Skipping image generation.")
+        return {"finalized_with_success": True}
 
-    return {}
+    game_state = SimulatedGameStateSingleton.get_instance()
+
+    scenarios_to_process = []
+    for sid in added_scenarios_ids:
+        scenario = game_state.read_only_map.find_scenario(sid)
+        if scenario:
+            scenarios_to_process.append(scenario.get_scenario_model())
+        else:
+            print(f"  - WARNING: Scenario {sid} not found in current state.")
+
+    if not scenarios_to_process:
+        print("  - No valid scenarios found for image generation.")
+        return {"finalized_with_success": False}
+
+    graphic_style = getattr(
+        game_state.read_only_session.get_state(),
+        "scenarios_graphic_style",
+        "Cartoon",
+    )
+
+    image_api_url = os.getenv("SCENARIOS_IMAGE_API_URL")
+    if not image_api_url:
+        print("  - ERROR: SCENARIOS_IMAGE_API_URL environment variable not set.")
+        return {"finalized_with_success": False}
+
+    general_context = state.refinement_foundational_world_info
+
+    result = created_scenario_images_generation_app.invoke(
+        ScenarioImagesGraphState(
+            scenarios=scenarios_to_process,
+            graphic_style=graphic_style,
+            general_game_context=general_context,
+            image_api_url=image_api_url,
+        )
+    )
+
+    final_state = ScenarioImagesGraphState(**result)
+
+    if final_state.failed_scenarios:
+        print(
+            f"  - ERROR: Failed to generate {len(final_state.failed_scenarios)} scenario image(s)."
+        )
+        return {"finalized_with_success": False}
+
+    output_dir = os.path.join("images", "scenario")
+    os.makedirs(output_dir, exist_ok=True)
+
+    existing_counts = {}
+    for scenario_state in final_state.successful_scenarios:
+        if scenario_state.image_base64 is None:
+            print(f"  - WARNING: Missing image data for {scenario_state.scenario.id}.")
+            continue
+
+        count = existing_counts.get(scenario_state.scenario.id, 0)
+        suffix = f"_{count}" if count else ""
+        filename = f"{scenario_state.scenario.id}{suffix}.png"
+        existing_counts[scenario_state.scenario.id] = count + 1
+
+        image_path = os.path.join(output_dir, filename)
+        with open(image_path, "wb") as f:
+            f.write(base64.b64decode(scenario_state.image_base64))
+        print(f"  - Image saved to {image_path}")
+
+    return {"finalized_with_success": True}
 
 
 def finalize_generation_success(state: GenerationGraphState):
