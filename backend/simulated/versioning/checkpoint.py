@@ -36,7 +36,7 @@ def _model_dump(value: Any) -> Any:
     return value
 
 
-def _characters_as_dict(model: CharactersModel) -> Dict[str, CharacterBaseModel | PlayerCharacterModel]:
+def _characters_as_dict(model: CharactersModel) -> Dict[str, CharacterBaseModel]:
     registry = dict(model.registry)
     if model.player_character is not None:
         registry[model.player_character.id] = model.player_character
