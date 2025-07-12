@@ -4,6 +4,7 @@ from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.refinement_loop.pipelines import (
     alternating_expansion_pipeline,
+    map_then_characters_pipeline,
     map_characters_relationships_pipeline,
     map_characters_relationships_narrative_pipeline,
     map_only_pipeline
@@ -16,7 +17,7 @@ Apocaliptic world, zombie epidemic
 """
 
 if __name__ == "__main__":
-    pipeline = map_only_pipeline()
+    pipeline = map_then_characters_pipeline()
     state = GenerationGraphState(
         initial_prompt=USER_PROMPT,
         refined_prompt_desired_word_length=200,

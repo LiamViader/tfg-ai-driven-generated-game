@@ -9,6 +9,7 @@ llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
 
 async def generate_prompt_for_character(state: CharacterProcessorState) -> dict:
     """Generate the prompt using the LLM."""
+    print(f"\n--- ⚙️ Trying to generate payload for ID: {state.character.id} (Attempt {state.retry_count + 1}) ---")
     try:
         result = await llm.ainvoke(
             format_prompt(state.general_game_context, state.character)
@@ -26,8 +27,8 @@ async def generate_prompt_for_character(state: CharacterProcessorState) -> dict:
             print(f"  -  {error_msg}")
             return {"error": error_msg}
         
-        if word_count > 120:
-            error_msg = f"Validation failed: Prompt is too long ({word_count} words, maximum is 120)."
+        if word_count > 130:
+            error_msg = f"Validation failed: Prompt is too long ({word_count} words, maximum is 130)."
             print(f"  -  {error_msg}")
             return {"error": error_msg}
 
@@ -53,7 +54,7 @@ async def _generate_image_call(state: CharacterProcessorState) -> dict:
         f"Full body image of a character, centered, with transparent background, no shadows casted."
         f"In a {state.graphic_style} style, "
         f"The character is: {base_description}. "
-        f"Use the provided image as a reference only for the facing direction of the character"
+        f"Use the provided image as a reference only for the facing direction (his right) of the character"
     )
     
     reference_image_path = "images/references/character_silhouette.png"
@@ -69,7 +70,7 @@ async def _generate_image_call(state: CharacterProcessorState) -> dict:
                 n=1,
                 background="transparent"
             )
-            
+
         if not response.data or not response.data[0].b64_json:
             raise ValueError("API response did not contain valid image data.")
         

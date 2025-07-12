@@ -9,7 +9,7 @@ Your primary role is to create parameters that will generate an image capturing 
 If you need to omit details due to length constraints, ensure the most important and defining elements of the scenario are preserved.
 The summary ground must be made of materials as uniform as possible that won't generate any dents, bumps, irregular terrain, etc when generating the image; because lately in the pipeline it will be used to place character sprites on top of it.
 Detailed gound can be less uniform but has to make sense with the ground summary. Pay Close attention to wheter the scenario is an indoor or an outdoor, your output must adhere to that.
-You must output a JSON object matching the requested structure. You can NOT exceed the max words stated on the field descriptions.
+You must output a JSON object matching the requested structure. You can NOT exceed the maximum words stated on the field descriptions, Pay close attention to them.
 """
 
 HUMAN_PROMPT = """

@@ -2,7 +2,6 @@ from typing import Dict, List, Optional, Literal, Any, Tuple, Set
 from pydantic import BaseModel, Field
 from core_game.map.constants import Direction, OppositeDirections, IndoorOrOutdoor
 
-
 # Internal counter to generate sequential scenario ids
 _scenario_id_counter = 0
 # Internal counter to generate sequential connection ids
@@ -50,7 +49,13 @@ class ConnectionModel(BaseModel):
     exit_appearance_description: Optional[str] = Field(default=None, description=EXIT_FIELDS["exit_appearance_description"])
     is_blocked: bool = Field(default=False, description=EXIT_FIELDS["is_blocked"])
 
-
+class ScenarioImageGenerationTemplate(BaseModel):
+    """Template for generating scenario images."""
+    scene_summary: str = Field(description="A very brief summary of the main scene (1-3 words). Example: 'A floating castle'.")
+    scene_detail: str = Field(description="A detailed visual description of the main scene. Example: 'A majestic castle with glowing towers drifts silently among a sea of clouds.'")
+    ground_detail: str = Field(description="A detailed description of the ground or base of the scene. Example: 'cracked, ancient stone with glowing blue lava flowing through the fissures.'")
+    ground_summary: str = Field(description="A very brief summary of the ground or base (1-3 words). Example: 'Cracked lava stone'.")
+    graphic_style: str = Field(description="Defines the artistic look and feel. Examples: 'Oil painting', 'Pixel art', 'Photorealistic 3D render', 'in the style of Studio Ghibli'.")
 
 #valid from i valid until hauran de ser de la classe temps del joc. de moment float com a placeholder
 
@@ -65,6 +70,8 @@ class ScenarioSnapshot(BaseModel):
     type: str = Field(..., description=SCENARIO_FIELDS["type"])
     zone: str = Field(..., description=SCENARIO_FIELDS["zone"])
     connections: Dict[Direction, Optional[str]]
+    image_path: Optional[str] = Field(default=None, description="Path of the image for the character representation")
+    image_generation_prompt: Optional[ScenarioImageGenerationTemplate] = Field(default=None, description="Prompt used for generating the current image.")
 
 
 class ScenarioModel(BaseModel):
@@ -79,6 +86,8 @@ class ScenarioModel(BaseModel):
     was_added_this_run: bool = Field(default=True,description="Flag indicating if the scenario was added this run of the graph")
     was_modified_this_run: bool = Field(default=False,description="Flag indicating if the scenario was modified this run of the graph")
     valid_from: Optional[float] = Field(default=None, description="Timestamp of when this scenario version was created. If it was the first scenario version then set to None")
+    image_path: Optional[str] = Field(default=None, description="Path of the image for the character representation")
+    image_generation_prompt: Optional[ScenarioImageGenerationTemplate] = Field(default=None, description="Prompt used for generating the current image.")
     connections: Dict[Direction, Optional[str]] = Field(
         default_factory=lambda: {direction: None for direction in Direction.__args__},
         description="Mapping from direction to connection ID, if any."

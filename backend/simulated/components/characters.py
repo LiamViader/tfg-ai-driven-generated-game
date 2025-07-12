@@ -299,3 +299,6 @@ class SimulatedCharacters:
                 f"{c.identity.full_name}({cid})" for cid, c in characters.items()
             )
         )
+
+    def attach_new_image(self, character_id: str, image_path: str, image_generation_prompt: str) -> bool:
+        return self._working_state.attach_new_image(character_id, image_path, image_generation_prompt)

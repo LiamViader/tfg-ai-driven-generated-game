@@ -1,5 +1,6 @@
 from langchain_openai import ChatOpenAI
-from subsystems.image_generation.scenarios.create.scenario_processor.schemas import ImageGenerationPayload, LlmGeneratedPayload, ScenarioProcessorState
+from subsystems.image_generation.scenarios.create.scenario_processor.schemas import LlmGeneratedPayload, ScenarioProcessorState
+from core_game.map.schemas import ScenarioImageGenerationTemplate
 from subsystems.image_generation.scenarios.create.scenario_processor.prompts import format_prompt
 from typing import cast
 import httpx
@@ -20,7 +21,7 @@ async def generate_payload_for_scenario(state: ScenarioProcessorState) -> dict:
         llm_payload = cast(LlmGeneratedPayload, await structured_llm.ainvoke(
             format_prompt(state.general_game_context, state.scenario)
         ))
-        final_payload = ImageGenerationPayload(
+        final_payload = ScenarioImageGenerationTemplate(
             **llm_payload.model_dump(),
             graphic_style=state.graphic_style
         )
@@ -45,7 +46,7 @@ async def generate_image_from_payload(state: ScenarioProcessorState) -> dict:
         return {"error": error_msg}
 
     try:
-        async with httpx.AsyncClient(timeout=500.0) as client:
+        async with httpx.AsyncClient(timeout=750.0) as client:
             print(f"  - 📤 Sending request to the image API...")
             full_url_endpoint = f"{state.image_api_url}/create-scenario-image"
             response = await client.post(full_url_endpoint, json=payload.model_dump())

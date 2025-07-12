@@ -1,4 +1,4 @@
-from core_game.map.schemas import ScenarioModel, ScenarioSnapshot, ConnectionModel, GameMapModel
+from core_game.map.schemas import ScenarioModel, ScenarioSnapshot, ConnectionModel, GameMapModel, ScenarioImageGenerationTemplate
 from typing import Dict, Optional, List, Set, Literal
 from core_game.map.constants import Direction, OppositeDirections, IndoorOrOutdoor
 from core_game.character.domain import PlayerCharacter, BaseCharacter
@@ -82,6 +82,22 @@ class Scenario:
     @property
     def present_characters_ids(self) -> set[str]:
         return self._data.present_character_ids
+    
+    @property
+    def image_path(self) -> Optional[str]:
+        return self._data.image_path
+    
+    @image_path.setter
+    def image_path(self, value: Optional[str]) -> None:
+        self._data.image_path = value
+
+    @property
+    def image_generation_prompt(self) -> Optional[ScenarioImageGenerationTemplate]:
+        return self._data.image_generation_prompt
+    
+    @image_generation_prompt.setter
+    def image_generation_prompt(self, value: Optional[ScenarioImageGenerationTemplate]) -> None:
+        self._data.image_generation_prompt = value
 
     def snapshot_scenario(self, current_time: float):
         snapshot = ScenarioSnapshot(
@@ -93,6 +109,8 @@ class Scenario:
             type=self._data.type,
             zone=self._data.zone,
             connections=self._data.connections.copy(),
+            image_path=self.image_path,
+            image_generation_prompt=self.image_generation_prompt,
             valid_from=self._data.valid_from,
             valid_until=current_time
         )
@@ -471,3 +489,10 @@ class GameMap():
     def get_all_clusters(self) -> List[Set[str]]:
         return self._island_clusters
     
+    def attach_new_image(self, scenario_id: str, image_path: str, image_generation_prompt: ScenarioImageGenerationTemplate) -> bool:
+        scenario = self.find_scenario(scenario_id)
+        if scenario:
+            scenario.image_path = image_path
+            scenario.image_generation_prompt = image_generation_prompt
+            return True
+        return False

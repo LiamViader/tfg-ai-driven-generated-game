@@ -55,7 +55,7 @@ def map_then_characters_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Initial Map",
                 agent_name=AgentName.MAP,
-                objective_prompt="Create a concise map with five scenarios all connected.",
+                objective_prompt="Create a concise map with 3 scenarios all connected.",
                 rules_and_constraints=[],
                 other_guidelines="",
                 max_executor_iterations=4,
@@ -65,10 +65,10 @@ def map_then_characters_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Add Characters",
                 agent_name=AgentName.CHARACTERS,
-                objective_prompt="Add interesting NPCs to the previously generated map.",
+                objective_prompt="Add 2 interesting NPCs to the previously generated map.",
                 rules_and_constraints=[],
-                other_guidelines="Ensure the characters fit within the scenarios created.",
-                max_executor_iterations=3,
+                other_guidelines="Ensure the characters fit within the scenarios created. Made the characters have so little short data",
+                max_executor_iterations=5,
                 max_validation_iterations=1,
                 max_retries=1,
             ),

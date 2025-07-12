@@ -94,6 +94,8 @@ class CharacterBaseModel(BaseModel):
     psychological: PsychologicalAttributesModel
     knowledge: KnowledgeModel
     present_in_scenario: Optional[str] = Field(default=None, description="ID of the scenario where the character is currently located.")
+    image_path: Optional[str] = Field(default=None, description="Path of the image for the character representation")
+    image_generation_prompt: Optional[str] = Field(default=None, description="Prompt used for generating the current image. It is not the whole prompt, only the description of the character")
 
 
 class PlayerCharacterModel(CharacterBaseModel):

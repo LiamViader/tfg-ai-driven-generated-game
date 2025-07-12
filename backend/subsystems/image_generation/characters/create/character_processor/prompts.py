@@ -27,7 +27,7 @@ You are an expert art director and character concept artist. Your task is to wri
 #### 1. **Prioritization and Inference:**
    - **Filter and Prioritize:** Your primary goal is to capture the CHARACTER'S ESSENCE. From all the data provided, you must select and emphasize the most **unique, important, and defining** features.
    - **Contextual Inference:** Actively use the `Game Context` to infer and add logical visual details that are not explicitly stated in the character description but make sense for a character in that world and you are sure the character has it. IMPORTANT, If a trait of the character is particularly relevant to the story or world, it must be included.
-   - **Conciseness:** The description should be rich in detail but concise. Aim for a maximum length of 80-100 words.
+   - **Conciseness:** The description should be rich in detail but concise. Aim for a strict maximum length of 80-100 words.
    - **Don't List:** Your output must be a single, well-written paragraph. Do not use bullet points or any other structured format. Weave the details together naturally.
 
 #### 2. **Required Descriptive Elements:**

@@ -1,12 +1,18 @@
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.image_generation.scenarios.create.orchestrator import get_created_scenario_images_generation_app
-from typing import Set, Optional
 from subsystems.image_generation.scenarios.create.schemas import GraphState as ScenarioCreatedImagesGenerationState
+from subsystems.image_generation.characters.create.schemas import GraphState as CharacterCreatedImagesGenerationState
+from subsystems.image_generation.characters.create.orchestrator import get_created_character_images_generation_app
+from core_game.character.schemas import CharacterBaseModel
+from core_game.map.schemas import ScenarioModel, ScenarioImageGenerationTemplate
+from typing import Set, Optional, Tuple, List, Dict, Any
+
 import os
 import base64
 import asyncio
 from dotenv import load_dotenv
+
 
 def start_generation(state: GenerationGraphState):
     """Initial node for the generation workflow."""
@@ -116,94 +122,194 @@ def ensure_map_connectivity(state: GenerationGraphState):
         return {"finalized_with_success": False}
 
 
-def generate_images(state: GenerationGraphState):
-    """Node for generating all images for the added or (TO DO)[modified] entities"""
-    print("---ENTERING: PARALLEL IMAGE GENERATION NODE---")
-
-    created_scenario_images_generation_app = get_created_scenario_images_generation_app()
-
-    checkpoint_id = state.initial_state_checkpoint_id
-    if not checkpoint_id:
-        print("  -  ERROR: No initial state checkpoint ID found. Cannot calculate diff.")
-        return {"finalized_with_success": False}
-
+def _get_entities_for_generation(checkpoint_id: str) -> Tuple[List[ScenarioModel], List[CharacterBaseModel]]:
+    """
+    Calculates the diff from the checkpoint and returns lists of scenarios
+    and characters that require image generation.
+    """
+    print("  - Calculating diff from checkpoint to find new/modified entities...")
     manager = SimulatedGameStateSingleton.get_checkpoint_manager()
     diff_result = manager.diff(from_checkpoint=checkpoint_id)
-
-    added_scenarios_ids = diff_result.scenarios.added
-
-    if not added_scenarios_ids:
-        print("  - No new scenarios detected. Skipping image generation.")
-        return {"finalized_with_success": True}
-
     game_state = SimulatedGameStateSingleton.get_instance()
 
-    scenarios_to_process = []
-    for sid in added_scenarios_ids:
-        scenario = game_state.read_only_map.find_scenario(sid)
-        if scenario:
-            scenarios_to_process.append(scenario.get_scenario_model())
+    # Process scenarios
+    added_scenario_ids = diff_result.scenarios.added
+    scenarios_to_process = [
+        s.get_scenario_model() for sid in added_scenario_ids 
+        if (s := game_state.read_only_map.find_scenario(sid)) is not None
+    ]
 
-    if not scenarios_to_process:
-        print("  - No valid scenarios found for image generation.")
-        return {"finalized_with_success": False}
+    added_character_ids = diff_result.characters.added
+    characters_to_process = [
+        c.get_model() for cid in added_character_ids
+        if (c := game_state.read_only_characters.get_character(cid)) is not None
+    ]
+
+    print(f"  - Found {len(scenarios_to_process)} scenarios and {len(characters_to_process)} characters to process.")
+    return scenarios_to_process, characters_to_process
+
+def _run_image_generation_subgraphs(
+    scenarios: List[ScenarioModel], 
+    characters: List[CharacterBaseModel], 
+    scenarios_image_api_url: str
+) -> Dict[str, Any]:
+    """
+    Prepares and runs the image generation subgraphs for scenarios and characters in parallel.
+    """
+    game_state = SimulatedGameStateSingleton.get_instance()
+    general_context = game_state.read_only_session.get_refined_prompt() or ""
+    
+    tasks = []
+    
+    if scenarios:
+        print("  - Preparing scenario image generation task...")
+        scenario_app = get_created_scenario_images_generation_app()
+        scenario_input = ScenarioCreatedImagesGenerationState(
+            scenarios=scenarios,
+            graphic_style=game_state.read_only_session.get_scenarios_graphic_style(),
+            general_game_context=general_context,
+            image_api_url=scenarios_image_api_url
+        )
+        tasks.append(scenario_app.ainvoke(scenario_input))
+
+    # Prepare character generation task if needed
+    if characters:
+        print("  - Preparing character image generation task...")
+        character_app = get_created_character_images_generation_app()
+        character_input = CharacterCreatedImagesGenerationState(
+            characters=characters,
+            graphic_style=game_state.read_only_session.get_characters_graphic_style(),
+            general_game_context=general_context,
+        )
+        tasks.append(character_app.ainvoke(character_input))
+
+    if not tasks:
+        return {}
+
+    async def run_parallel_tasks():
+        """Helper coroutine to run tasks with asyncio.gather."""
+        return await asyncio.gather(*tasks)
+
+    print(f"  - Running {len(tasks)} generation subgraphs in parallel...")
+    all_results = asyncio.run(run_parallel_tasks())
+    
+    # Map results back based on the order tasks were added
+    final_results = {}
+    result_index = 0
+    if scenarios:
+        final_results["scenario_results"] = all_results[result_index]
+        result_index += 1
+    if characters:
+        final_results["character_results"] = all_results[result_index]
+
+    return final_results
+
+def _save_images(result_data: Dict[str, Any]) -> bool:
+    """Saves the generated images from both scenarios and characters to disk."""
+    all_successful = True
+
+    if "scenario_results" in result_data:
+        scenario_final_state = ScenarioCreatedImagesGenerationState(**result_data["scenario_results"])
+        if scenario_final_state.failed_scenarios:
+            print(f"  - ERROR: Failed to generate {len(scenario_final_state.failed_scenarios)} scenario image(s).")
+            all_successful = False
+
+        output_dir = os.path.join("images", "scenarios")
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"  - Saving {len(scenario_final_state.successful_scenarios)} scenario images to '{output_dir}'...")
+
+        for scenario_state in scenario_final_state.successful_scenarios:
+            if scenario_state.image_base64 is None:
+                print(f"  - WARNING: Missing image data for {scenario_state.scenario.id}.")
+                continue
+
+            base_filename = scenario_state.scenario.id
+            extension = ".png"
+            
+            image_path = os.path.join(output_dir, f"{base_filename}{extension}")
+            counter = 1
+
+            # Loop to find unique name
+            while os.path.exists(image_path):
+                counter += 1
+                # Creates new name with suffix, eg: "scenario_001_2.png"
+                unique_filename = f"{base_filename}_{counter}{extension}"
+                image_path = os.path.join(output_dir, unique_filename)
+        
+            try:
+                with open(image_path, "wb") as f:
+                    f.write(base64.b64decode(scenario_state.image_base64))
+                print(f"  - Image saved to {image_path}")
+                assert scenario_state.generation_payload is not None
+                SimulatedGameStateSingleton.get_instance().map.attach_new_image(scenario_state.scenario.id, image_path, scenario_state.generation_payload)
+            except Exception as e:
+                print(f"  -  ERROR saving image to {image_path}: {e}")
+
+    if "character_results" in result_data:
+        char_final_state = CharacterCreatedImagesGenerationState(**result_data["character_results"])
+        if char_final_state.failed_characters:
+            print(f"  - ERROR: Failed to generate {len(char_final_state.failed_characters)} character image(s).")
+            all_successful = False
+        
+        output_dir = os.path.join("images", "characters")
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"  - Saving {len(char_final_state.successful_characters)} character images to '{output_dir}'...")
+
+        for character_state in char_final_state.successful_characters:
+            if character_state.image_base64 is None:
+                print(f"  - WARNING: Missing image data for {character_state.character.id}.")
+                continue
+
+            base_filename = character_state.character.id
+            extension = ".png"
+            
+            image_path = os.path.join(output_dir, f"{base_filename}{extension}")
+            counter = 1
+
+            # Loop to find unique name
+            while os.path.exists(image_path):
+                counter += 1
+                # Creates new name with suffix, eg: "character_001_2.png"
+                unique_filename = f"{base_filename}_{counter}{extension}"
+                image_path = os.path.join(output_dir, unique_filename)
+        
+            try:
+                with open(image_path, "wb") as f:
+                    f.write(base64.b64decode(character_state.image_base64))
+                print(f"  - Image saved to {image_path}")
+                assert character_state.generated_image_prompt is not None
+                SimulatedGameStateSingleton.get_instance().characters.attach_new_image(character_state.character.id, image_path, character_state.generated_image_prompt)
+            except Exception as e:
+                print(f"  -  ERROR saving image to {image_path}: {e}")
+
+    return all_successful
+
+def generate_images(state: GenerationGraphState):
+    """Node for generating all images for the added entities"""
+    print("---ENTERING: PARALLEL IMAGE GENERATION NODE---")
 
     load_dotenv()
+    checkpoint_id = state.initial_state_checkpoint_id
+    if not checkpoint_id:
+        print("  - ERROR: No initial state checkpoint ID found.")
+        return {"finalized_with_success": False}
+    
     scenarios_image_api_url = os.getenv("SCENARIOS_IMAGE_API_URL")
     if not scenarios_image_api_url:
         print("  - ERROR: SCENARIOS_IMAGE_API_URL environment variable not set.")
         return {"finalized_with_success": False}
 
-    general_context = game_state.read_only_session.get_refined_prompt()
-    if general_context is None:
-        general_context = ""
+    scenarios_to_process, characters_to_process = _get_entities_for_generation(checkpoint_id)
 
-    result = asyncio.run(created_scenario_images_generation_app.ainvoke(
-        ScenarioCreatedImagesGenerationState(
-            scenarios=scenarios_to_process,
-            graphic_style=game_state.read_only_session.get_scenarios_graphic_style(),
-            general_game_context=general_context,
-            image_api_url=scenarios_image_api_url,
-        )
-    ))
+    if not scenarios_to_process and not characters_to_process:
+        print("  - No new or visually modified entities found. Skipping image generation.")
+        return {"finalized_with_success": True}
 
-    final_state = ScenarioCreatedImagesGenerationState(**result)
-
-    if final_state.failed_scenarios:
-        print(
-            f"  - ERROR: Failed to generate {len(final_state.failed_scenarios)} scenario image(s)."
-        )
-        return {"finalized_with_success": False}
-
-    output_dir = os.path.join("images", "scenarios")
-    os.makedirs(output_dir, exist_ok=True)
-
-    for scenario_state in final_state.successful_scenarios:
-        if scenario_state.image_base64 is None:
-            print(f"  - WARNING: Missing image data for {scenario_state.scenario.id}.")
-            continue
-
-        base_filename = scenario_state.scenario.id
-        extension = ".png"
-        
-        image_path = os.path.join(output_dir, f"{base_filename}{extension}")
-        counter = 1
-
-        # 3. Bucle para encontrar un nombre de archivo único
-        while os.path.exists(image_path):
-            counter += 1
-            # Crea un nuevo nombre con un sufijo, ej: "scenario_001_2.png"
-            unique_filename = f"{base_filename}_{counter}{extension}"
-            image_path = os.path.join(output_dir, unique_filename)
+    results = _run_image_generation_subgraphs(scenarios_to_process,characters_to_process,scenarios_image_api_url)
+    success = _save_images(results)
     
-        try:
-            with open(image_path, "wb") as f:
-                f.write(base64.b64decode(scenario_state.image_base64))
-            print(f"  - Image saved to {image_path}")
-        except Exception as e:
-            print(f"  -  ERROR saving image to {image_path}: {e}")
+    return {"finalized_with_success": success}
 
-    return {"finalized_with_success": True}
 
 
 def finalize_generation_success(state: GenerationGraphState):

@@ -3,9 +3,8 @@ from typing import List, Dict, Any, Optional, Set, Literal, Tuple
 
 from copy import deepcopy
 from core_game.map.domain import GameMap, Scenario, Connection
-from core_game.map.schemas import ScenarioModel, ConnectionModel
+from core_game.map.schemas import ScenarioModel, ConnectionModel, ScenarioImageGenerationTemplate
 from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirections
-
 from core_game.character.domain import BaseCharacter, PlayerCharacter
 import random
 
@@ -359,3 +358,6 @@ class SimulatedMap:
         
         print(f"    - ❌ FAILED to connect largest island. No valid connection pairs found between the main cluster and the island.")
         return False
+
+    def attach_new_image(self, scenario_id: str, image_path: str, image_generation_prompt: ScenarioImageGenerationTemplate) -> bool:
+        return self._working_state.attach_new_image(scenario_id, image_path, image_generation_prompt)

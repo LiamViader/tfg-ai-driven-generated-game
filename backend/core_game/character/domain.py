@@ -37,6 +37,22 @@ class BaseCharacter:
     @present_in_scenario.setter
     def present_in_scenario(self, value: Optional[str]) -> None:
         self._data.present_in_scenario = value
+    
+    @property
+    def image_path(self) -> Optional[str]:
+        return self._data.image_path
+    
+    @image_path.setter
+    def image_path(self, value: Optional[str]) -> None:
+        self._data.image_path = value
+
+    @property
+    def image_generation_prompt(self) -> Optional[str]:
+        return self._data.image_generation_prompt
+    
+    @image_generation_prompt.setter
+    def image_generation_prompt(self, value: Optional[str]) -> None:
+        self._data.image_generation_prompt = value
 
     def get_model(self) -> CharacterBaseModel:
         return self._data
@@ -381,3 +397,11 @@ class Characters:
             if char.present_in_scenario == scenario_id:
                 matches.append(char)
         return matches
+    
+    def attach_new_image(self, character_id: str, image_path: str, image_generation_prompt: str) -> bool:
+        character = self.find_character(character_id)
+        if character:
+            character.image_path = image_path
+            character.image_generation_prompt = image_generation_prompt
+            return True
+        return False
