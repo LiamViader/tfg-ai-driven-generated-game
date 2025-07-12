@@ -41,9 +41,14 @@ class SimulatedGameSession:
     def get_refined_prompt(self) -> Optional[str]:
         return self._working_state.refined_prompt
 
-
     def get_global_flags(self) -> dict[str, Any]:
         return dict(self._working_state.global_flags)
 
     def get_time(self):
         return self._working_state.time
+    
+    def get_characters_graphic_style(self)->str:
+        return self._working_state.characters_graphic_style
+    
+    def get_scenarios_graphic_style(self)->str:
+        return self._working_state.scenarios_graphic_style

@@ -2,7 +2,11 @@ from subsystems.generation.schemas.graph_state import GenerationGraphState
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.image_generation.scenarios.create.orchestrator import get_created_scenario_images_generation_app
 from typing import Set, Optional
-
+from subsystems.image_generation.scenarios.create.schemas import GraphState as ScenarioCreatedImagesGenerationState
+import os
+import base64
+import asyncio
+from dotenv import load_dotenv
 
 def start_generation(state: GenerationGraphState):
     """Initial node for the generation workflow."""
@@ -128,21 +132,96 @@ def generate_images(state: GenerationGraphState):
 
     added_scenarios_ids = diff_result.scenarios.added
 
-    return {}
+    if not added_scenarios_ids:
+        print("  - No new scenarios detected. Skipping image generation.")
+        return {"finalized_with_success": True}
+
+    game_state = SimulatedGameStateSingleton.get_instance()
+
+    scenarios_to_process = []
+    for sid in added_scenarios_ids:
+        scenario = game_state.read_only_map.find_scenario(sid)
+        if scenario:
+            scenarios_to_process.append(scenario.get_scenario_model())
+
+    if not scenarios_to_process:
+        print("  - No valid scenarios found for image generation.")
+        return {"finalized_with_success": False}
+
+    load_dotenv()
+    scenarios_image_api_url = os.getenv("SCENARIOS_IMAGE_API_URL")
+    if not scenarios_image_api_url:
+        print("  - ERROR: SCENARIOS_IMAGE_API_URL environment variable not set.")
+        return {"finalized_with_success": False}
+
+    general_context = game_state.read_only_session.get_refined_prompt()
+    if general_context is None:
+        general_context = ""
+
+    result = asyncio.run(created_scenario_images_generation_app.ainvoke(
+        ScenarioCreatedImagesGenerationState(
+            scenarios=scenarios_to_process,
+            graphic_style=game_state.read_only_session.get_scenarios_graphic_style(),
+            general_game_context=general_context,
+            image_api_url=scenarios_image_api_url,
+        )
+    ))
+
+    final_state = ScenarioCreatedImagesGenerationState(**result)
+
+    if final_state.failed_scenarios:
+        print(
+            f"  - ERROR: Failed to generate {len(final_state.failed_scenarios)} scenario image(s)."
+        )
+        return {"finalized_with_success": False}
+
+    output_dir = os.path.join("images", "scenarios")
+    os.makedirs(output_dir, exist_ok=True)
+
+    for scenario_state in final_state.successful_scenarios:
+        if scenario_state.image_base64 is None:
+            print(f"  - WARNING: Missing image data for {scenario_state.scenario.id}.")
+            continue
+
+        base_filename = scenario_state.scenario.id
+        extension = ".png"
+        
+        image_path = os.path.join(output_dir, f"{base_filename}{extension}")
+        counter = 1
+
+        # 3. Bucle para encontrar un nombre de archivo único
+        while os.path.exists(image_path):
+            counter += 1
+            # Crea un nuevo nombre con un sufijo, ej: "scenario_001_2.png"
+            unique_filename = f"{base_filename}_{counter}{extension}"
+            image_path = os.path.join(output_dir, unique_filename)
+    
+        try:
+            with open(image_path, "wb") as f:
+                f.write(base64.b64decode(scenario_state.image_base64))
+            print(f"  - Image saved to {image_path}")
+        except Exception as e:
+            print(f"  -  ERROR saving image to {image_path}: {e}")
+
+    return {"finalized_with_success": True}
 
 
 def finalize_generation_success(state: GenerationGraphState):
     """Final node for the generation workflow."""
-    print("---ENTERING: FINALIZE GENERATION NODE---")
+    print("---ENTERING: FINALIZE GENERATION SUCCESS NODE---")
     SimulatedGameStateSingleton.commit()
+    if state.initial_state_checkpoint_id:
+        SimulatedGameStateSingleton.get_checkpoint_manager().delete_checkpoint(state.initial_state_checkpoint_id)
     return {
         "finalized_with_success": True
     }
 
 def finalize_generation_error(state: GenerationGraphState):
     """Final node for the generation workflow."""
-    print("---ENTERING: FINALIZE GENERATION NODE---")
+    print("---ENTERING: FINALIZE GENERATION ERROR NODE---")
     SimulatedGameStateSingleton.rollback()
+    if state.initial_state_checkpoint_id:
+        SimulatedGameStateSingleton.get_checkpoint_manager().delete_checkpoint(state.initial_state_checkpoint_id)
     return {
         "finalized_with_success": False
     }

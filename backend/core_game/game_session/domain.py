@@ -67,6 +67,13 @@ class GameSession:
     def global_flags(self) -> Dict[str, Any]:
         return self._global_flags
 
+    @property
+    def characters_graphic_style(self) -> str:
+        return self._characters_graphic_style
+    
+    @property
+    def scenarios_graphic_style(self) -> str:
+        return self._scenarios_graphic_style
 
     # ------------------------------------------------------------------
     # Modification methods
