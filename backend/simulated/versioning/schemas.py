@@ -1,29 +1,29 @@
 from pydantic import BaseModel, Field
-from typing import Dict, List, Any, TypeVar
+from typing import Dict, List, Any
 
-# Un tipo genérico para los detalles del cambio
-T = TypeVar('T')
-
-class ChangeDetailModel(BaseModel, extra='allow'):
-    """Modelo genérico para representar un cambio de un valor antiguo a uno nuevo."""
+class ChangeDetailModel(BaseModel, extra="allow"):
+    """Represents a change from one value to another."""
     old: Any
     new: Any
 
-# Modelo para los cambios en escenarios
+class ConnectionDiffModel(BaseModel):
+    """Detailed differences for a scenario's connections."""
+    added: Dict[str, Any] = Field(default_factory=dict)
+    removed: Dict[str, Any] = Field(default_factory=dict)
+    changed: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+
 class ScenarioDiffModel(BaseModel):
     added: List[str] = Field(default_factory=list)
     removed: List[str] = Field(default_factory=list)
     modified: List[str] = Field(default_factory=list)
-    # Ahora usamos nuestro modelo específico para los detalles
     modified_visual_info: Dict[str, Dict[str, ChangeDetailModel]] = Field(default_factory=dict)
-    modified_connections: Dict[str, ChangeDetailModel] = Field(default_factory=dict)
+    modified_connections: Dict[str, ConnectionDiffModel] = Field(default_factory=dict)
 
-# Modelo para los cambios en personajes
+# Modelo para los cambios en escenarios
 class CharacterDiffModel(BaseModel):
     added: List[str] = Field(default_factory=list)
     removed: List[str] = Field(default_factory=list)
     modified: List[str] = Field(default_factory=list)
-    # Usamos el mismo modelo aquí
     modified_visual_info: Dict[str, Dict[str, ChangeDetailModel]] = Field(default_factory=dict)
     modified_location: Dict[str, ChangeDetailModel] = Field(default_factory=dict)
 
