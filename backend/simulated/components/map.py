@@ -7,7 +7,7 @@ from core_game.map.schemas import ScenarioModel, ConnectionModel
 from core_game.map.constants import IndoorOrOutdoor, Direction, OppositeDirections
 
 from core_game.character.domain import BaseCharacter, PlayerCharacter
-
+import random
 
 class SimulatedMap:
     def __init__(self, game_map: GameMap) -> None:
@@ -262,3 +262,100 @@ class SimulatedMap:
         if not scenario:
             raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
         return scenario
+    
+    def get_all_clusters(self) -> List[Set[str]]:
+        return self._working_state.get_all_clusters()
+    
+    def get_outside_clusters(self) -> List[Set[str]]:
+        """
+        Returns all clusters that are not the main cluster. Clusters are sorted from bigger to smaller
+        The main cluster is defined as the largest one.
+        This is a read-only operation.
+        """
+        all_clusters = self._working_state.get_all_clusters()
+
+        if len(all_clusters) <= 1:
+            return []
+        sorted_clusters = sorted(all_clusters, key=len, reverse=True)
+        outside_clusters = sorted_clusters[1:]
+        return outside_clusters
+    
+    def get_main_cluster(self) -> Optional[Set[str]]:
+        """
+        Returns the main cluster.
+        The main cluster is defined as the largest one.
+        This is a read-only operation.
+        """
+        all_clusters = self._working_state.get_all_clusters()
+
+        if not all_clusters: 
+            return None
+
+        sorted_clusters = sorted(all_clusters, key=len, reverse=True)
+        return sorted_clusters[0]
+    
+    def connect_largest_island_to_main_cluster(self) -> bool:
+        """
+        Finds the largest isolated island and connects it to the main cluster.
+        It exhaustively tries all pairs of scenarios between the main cluster
+        and the island to find a valid connection.
+        Returns True on successful connection, False if no connection could be made.
+        """
+        print("  - Executing: Connect largest island to main cluster.")
+        outside_clusters = self.get_outside_clusters()
+        if not outside_clusters:
+            print("    - No outside clusters to connect.")
+            return True  
+
+        main_cluster_ids = self.get_main_cluster()
+        if not main_cluster_ids:
+            print("    - No main cluster found to connect to.")
+            return False
+
+        largest_island = outside_clusters[0]
+        
+        # Shuffle both lists to ensure random connection choices
+        shuffled_main_cluster_ids = list(main_cluster_ids)
+        random.shuffle(shuffled_main_cluster_ids)
+        
+        shuffled_island_ids = list(largest_island)
+        random.shuffle(shuffled_island_ids)
+
+        for origin_node_id in shuffled_main_cluster_ids:
+            origin_scenario = self._working_state.find_scenario(origin_node_id)
+            if not origin_scenario:
+                continue
+
+            # Find an available exit from the origin
+            available_origin_directions: List[Direction] = [d for d, c_id in origin_scenario.connections.items() if c_id is None]
+            if not available_origin_directions:
+                continue # This origin is full, try the next one
+
+            # Now, find a destination with a compatible available exit
+            for destination_node_id in shuffled_island_ids:
+                destination_scenario = self._working_state.find_scenario(destination_node_id)
+                if not destination_scenario:
+                    continue
+
+                # Try to make a connection for each available direction
+                for direction in available_origin_directions:
+                    return_direction = OppositeDirections[direction]
+                    
+                    # Check if the return path is free on the destination
+                    if destination_scenario.connections.get(return_direction) is None:
+                        try:
+                            # We found a valid pair, make the connection and exit
+                            self.create_bidirectional_connection(
+                                from_scenario_id=origin_node_id,
+                                to_scenario_id=destination_node_id,
+                                direction_from_origin=direction,
+                                connection_type="path"
+                            )
+                            print(f"    - ✅ Successfully created connection from '{origin_node_id}' to '{destination_node_id}'.")
+                            return True
+                        except Exception as e:
+                            print(f"    - ⚠️ An unexpected error occurred when trying to connect from '{origin_node_id}' to '{destination_node_id}': {e}")
+                            continue
+        
+        print(f"    - ❌ FAILED to connect largest island. No valid connection pairs found between the main cluster and the island.")
+        return False

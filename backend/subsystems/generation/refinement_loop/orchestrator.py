@@ -63,6 +63,7 @@ def get_refinement_loop_graph_app():
     workflow.add_node("prepare_next_step", prepare_next_step)
     workflow.add_node("summarize_agent_logs", summarize_sub_graph)
     workflow.add_node("add_summarized_agent_log", add_agent_log_to_changelog)
+    workflow.add_node("finalize_refinement_loop", finalize_refinement_loop)
 
 
 
@@ -76,7 +77,7 @@ def get_refinement_loop_graph_app():
             AgentName.RELATIONSHIP: "relationship_step_start",
             AgentName.NARRATIVE: "narrative_step_start",
             AgentName.EVENTS: "events_step_start",
-            "finalize": END,
+            "finalize": "finalize_refinement_loop",
         }
     )
 
@@ -89,7 +90,7 @@ def get_refinement_loop_graph_app():
             AgentName.RELATIONSHIP: "relationship_step_start",
             AgentName.NARRATIVE: "narrative_step_start",
             AgentName.EVENTS: "events_step_start",
-            "finalize": END,
+            "finalize": "finalize_refinement_loop",
         }
     )
 
@@ -124,7 +125,7 @@ def get_refinement_loop_graph_app():
     )
     workflow.add_edge("summarize_agent_logs", "add_summarized_agent_log")
     workflow.add_edge("add_summarized_agent_log", "prepare_next_step")
-
+    workflow.add_edge("finalize_refinement_loop", END)
 
     app = workflow.compile()
     return app

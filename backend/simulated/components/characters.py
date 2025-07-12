@@ -3,7 +3,7 @@ from typing import Optional, Dict, Set, Tuple, List, Literal
 
 
 
-
+from core_game.exceptions import PlayerDeletionError
 from core_game.character.domain import Characters, BaseCharacter, PlayerCharacter, NPCCharacter
 from core_game.character.schemas import PlayerCharacterModel, rollback_character_id, NonPlayerCharacterModel, NarrativeImportance, NarrativeRole, NarrativePurposeModel
 from core_game.character.constants import Gender
@@ -252,7 +252,7 @@ class SimulatedCharacters:
         if not character:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         if isinstance(character, PlayerCharacterModel):
-            raise ValueError("Cannot remove the player from a scenario.")
+            raise PlayerDeletionError("Cannot remove the player from a scenario.")
 
         scenario_id, character = self._working_state.remove_character_from_scenario(character_id)
         if not scenario_id or not character:
@@ -264,7 +264,7 @@ class SimulatedCharacters:
     def try_remove_any_characters_at_scenario(self, scenario_id: str) -> List[BaseCharacter]:
         characters = self._working_state.get_characters_at_scenario(scenario_id)
         if any(isinstance(c, PlayerCharacter) for c in characters):
-            raise ValueError(f"Player is currently at {scenario_id} and player can not be removed from scenarios.")
+            raise PlayerDeletionError(f"Player is currently at {scenario_id} and player can not be removed from scenarios.")
         for c in characters:
             c.present_in_scenario = None
         return characters

@@ -200,3 +200,12 @@ def finalize_step(state: RefinementLoopGraphState):
     return {
         
     }
+
+def finalize_refinement_loop(state: RefinementLoopGraphState):
+    """
+    Node called when the refinement_loop has finished
+    """
+    #TODO CHECK HOW MANY PASSES WERE SUCCESSFULL AND DECIDE WHETHER TO FINALIZE WITH SUCCESS OR WITH FAILURE
+    return {
+        "finalized_with_success": True
+    }

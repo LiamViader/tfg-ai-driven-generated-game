@@ -19,6 +19,8 @@ from core_game.game_event.domain import (
     BaseGameEvent
 )
 from core_game.game_event.schemas import *
+from core_game.exceptions import PlayerDeletionError
+import random
 
 class SimulatedGameState:
     """
@@ -160,7 +162,7 @@ class SimulatedGameState:
         return final_player, scenario
     
     def place_character(self, character_id: str, scenario_id: str) -> Tuple[BaseCharacter,Scenario]:
-        # TODO: This logic coordinates multiple components.
+        # TODO
         # Consider moving to a dedicated service if used elsewhere.
         character = self.read_only_characters.get_character(character_id)
         if not character:
@@ -177,8 +179,61 @@ class SimulatedGameState:
         scenario = self.map.place_character(character,scenario_id)
         return character, scenario
 
+    def place_character_main_cluster_random_safe_scenario(self, character_id: str) -> Tuple[BaseCharacter, Scenario]:
+        """
+        Finds a random, safe scenario within the largest cluster and places the character there.
+
+        This method identifies the main connected component of the map, shuffles its
+        scenarios, and iterates through them to find the first one where the
+        character can be safely placed.
+
+        Args:
+            character_id: The ID of the character to place.
+
+        Returns:
+            A tuple containing the updated character object and the scenario where it was placed.
+
+        Raises:
+            KeyError: If the character_id does not exist.
+            ValueErro: If the map has no scenarios or clusters.
+            ValueError: If no suitable scenario is found in the main cluster after checking all options.
+        """
+        print(f"--- Attempting to safely place character '{character_id}' in a random scenario of the main cluster ---")
+        
+        # 1. Get the character to be placed
+        character = self.read_only_characters.get_character(character_id)
+        if not character:
+            raise KeyError(f"Character with ID '{character_id}' not found.")
+
+        # 2. Find the main cluster
+        main_cluster_ids = self.read_only_map.get_main_cluster()
+        if not main_cluster_ids:
+            raise ValueError("Cannot place character: The map has no scenarios or clusters.")
+        
+        # 3. Shuffle scenarios for randomness
+        shuffled_scenario_ids = list(main_cluster_ids)
+        random.shuffle(shuffled_scenario_ids)
+
+        # 4. Find a safe scenario and place the character
+        for scenario_id in shuffled_scenario_ids:
+            print(f"  - Checking scenario '{scenario_id}' for placement...")
+            if isinstance(character, PlayerCharacter):
+                can_place, message = self.read_only_map.can_place_player(character, scenario_id)
+            else:
+                can_place, message = self.read_only_map.can_place_character(character, scenario_id)
+            
+            if can_place:
+                print(f"    - ✅ Safe to place. Placing character '{character_id}' in scenario '{scenario_id}'.")
+
+                return self.place_character(character_id, scenario_id)
+            else:
+                print(f"    - ❌ Cannot place here. Reason: {message}")
+
+        raise ValueError(f"Could not find a safe scenario to place character '{character_id}' in the main cluster.")
+
+
     def delete_character(self, character_id: str) -> BaseCharacter:
-        # TODO: This logic coordinates multiple components.
+        # TODO
         # Consider moving to a dedicated service if used elsewhere.
         deleted_character = self.characters.try_delete_character(character_id)
         if deleted_character.present_in_scenario:
@@ -189,15 +244,18 @@ class SimulatedGameState:
         return deleted_character
     
     def remove_character_from_scenario(self, character_id: str) -> Tuple[BaseCharacter,Scenario]:
-        # TODO: This logic coordinates multiple components.
+        # TODO
         # Consider moving to a dedicated service if used elsewhere.
         character, scenario_id = self.characters.try_remove_character_from_scenario(character_id)
         scenario = self.map.try_remove_character_from_scenario(character, scenario_id)
         return character, scenario
 
     def delete_scenario(self, scenario_id: str) -> Scenario:
-        # TODO: This logic coordinates multiple components.
+        # TODO
         # Consider moving to a dedicated service if used elsewhere.
+        scenario = self.read_only_map.find_scenario(scenario_id)
+        if not scenario:
+            raise ValueError(f"Scenario with ID '{scenario_id}' does not exist.")
         self.characters.try_remove_any_characters_at_scenario(scenario_id)
         return self.map.delete_scenario(scenario_id)
     
@@ -399,3 +457,19 @@ class SimulatedGameState:
         self._validate_activation_conditions(conditions)
 
         self.events.link_conditions_to_event(event_id, conditions)
+
+    def prune_scenarios_outside_main_cluster(self) -> bool:
+        """Prunes all scenarios not forming part of main cluster. Returns False if any went wrong while doing"""
+        outside_clusters = self.read_only_map.get_outside_clusters()
+        for cluster in outside_clusters:
+            for scenario_id in cluster:
+                try:
+                    scenario = self.read_only_map.find_scenario(scenario_id)
+                    assert scenario is not None
+                    for character_id in scenario.present_characters_ids:
+                        self.place_character_main_cluster_random_safe_scenario(character_id)
+                    self.delete_scenario(scenario_id)
+                except Exception as e:
+                    return False
+        return True
+

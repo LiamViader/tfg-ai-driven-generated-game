@@ -23,3 +23,11 @@ class GameSessionModel(BaseModel):
     refined_prompt: str = Field(..., description="The refined user prompt")
     narrative_time: GameTimeModel = Field(..., description="The current state of in-game time.")
     global_flags: Dict[str, Any] = Field(default_factory=dict, description="Dictionary for global world state flags (e.g., 'current_weather': 'storm', 'city_on_lockdown': True / False, ).")
+    scenarios_graphic_style: str = Field(
+        default="Cartoon",
+        description="The graphic style for generating scenario images."
+    )
+    characters_graphic_style: str = Field(
+        default="Cartoon",
+        description="The graphic style for generating character images."
+    )

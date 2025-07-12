@@ -2,11 +2,11 @@ import asyncio
 import base64
 import os
 import sys
-
+from dotenv import load_dotenv
 # Ensure the project path is available
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from subsystems.image_generation.scenarios.create.orchestrator import get_main_orchestrator_app
+from subsystems.image_generation.scenarios.create.orchestrator import get_created_scenario_images_generation_app
 from subsystems.image_generation.scenarios.create.schemas import GraphState
 from core_game.map.schemas import ScenarioModel
 from subsystems.image_generation.scenarios.create.scenario_processor.schemas import ScenarioProcessorState
@@ -16,11 +16,15 @@ async def main():
     """
     Main function to configure and run the image generation graph.
     """
-    # --- 1. Configuration ---
-    graph = get_main_orchestrator_app()
-    
-    # Define your RunPod API URL here
-    current_api_url = "https://f0ca5ggg0d804l-5050.proxy.runpod.net/create-scenario-image"
+
+    graph = get_created_scenario_images_generation_app()
+
+    load_dotenv()
+    current_api_url = current_api_url = os.getenv("SCENARIOS_IMAGE_API_URL")
+    if not current_api_url:
+        print("Error: The SCENARIOS_IMAGE_API_URL environment variable is not set or could not be found.")
+        print("Please ensure you have a .env file with this variable defined.")
+        return
     
     # Define the output directory for the images
     output_dir = os.path.join('images', 'scenarios')

@@ -19,6 +19,8 @@ class GameSession:
         self._refined_prompt: Optional[str]
         self._time: GameTime 
         self._global_flags: Dict[str, Any]
+        self._characters_graphic_style: str
+        self._scenarios_graphic_style: str
         if model:
             self._populate_from_model(model)
         else:
@@ -27,6 +29,8 @@ class GameSession:
             self._refined_prompt = None
             self._time = GameTime()
             self._global_flags = {}
+            self._characters_graphic_style = "Cartoon"
+            self._scenarios_graphic_style = "Cartoon"
     
 
     def _populate_from_model(self, model: GameSessionModel) -> None:
@@ -36,6 +40,8 @@ class GameSession:
         self._refined_prompt = model.refined_prompt
         self._time = GameTime(model.narrative_time)
         self._global_flags = model.global_flags
+        self._characters_graphic_style = model.characters_graphic_style
+        self._scenarios_graphic_style = model.scenarios_graphic_style
 
     # ------------------------------------------------------------------
     # Accessor properties

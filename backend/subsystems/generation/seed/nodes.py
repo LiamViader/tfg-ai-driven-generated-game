@@ -243,7 +243,7 @@ def final_success_node(state: SeedGenerationGraphState):
         game_state.narrative.set_narrative_structure(state.selected_structure)
     SimulatedGameStateSingleton.commit()
     return {
-        "seed_generation_succeeded": True
+        "finalized_with_success": True
     }
 
 
@@ -251,5 +251,5 @@ def final_failed_node(state: SeedGenerationGraphState):
     """Last step if something failed."""
     SimulatedGameStateSingleton.rollback()
     return {
-        "seed_generation_succeeded": False
+        "finalized_with_success": False
     }

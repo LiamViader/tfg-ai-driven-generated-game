@@ -35,5 +35,8 @@ class SeedGenerationGraphState(BaseModel):
     selected_structure: Optional[NarrativeStructureTypeModel] = Field(default=None, description="Narrative structure selected by the agent")
     structure_selection_justification: Optional[str] = Field(default=None, description="Justification of why the selected structure was chosen")
 
-    #seed
-    seed_generation_succeeded: bool = Field(default=False, description="Wheter the seed generation succeeded or failed")
+    #shared with other agents
+    finalized_with_success: bool = Field(
+        default=False,
+        description="Indicates whether this process finalized with success."
+    )

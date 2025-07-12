@@ -467,3 +467,7 @@ class GameMap():
         if scenario:
             scenario.present_characters_ids.discard(character.id)
         return scenario
+
+    def get_all_clusters(self) -> List[Set[str]]:
+        return self._island_clusters
+    

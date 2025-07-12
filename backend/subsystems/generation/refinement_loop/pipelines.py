@@ -18,9 +18,9 @@ def map_only_pipeline() -> PipelineConfig:
                 objective_prompt="Create a small map with three connected scenarios.",
                 rules_and_constraints=[],
                 other_guidelines="Keep it brief.",
-                max_executor_iterations=3,
+                max_executor_iterations=7,
                 max_validation_iterations=1,
-                max_retries=0,
+                max_retries=2,
             )
         ],
     )

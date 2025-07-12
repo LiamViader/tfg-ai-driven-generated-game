@@ -3,7 +3,7 @@ from langchain_core.runnables import Runnable
 from .schemas import GraphState
 from .nodes import process_all_scenarios_node
 
-def get_main_orchestrator_app() -> Runnable:
+def get_created_scenario_images_generation_app() -> Runnable:
     builder = StateGraph(GraphState)
 
     builder.add_node("process_all_scenarios", process_all_scenarios_node)

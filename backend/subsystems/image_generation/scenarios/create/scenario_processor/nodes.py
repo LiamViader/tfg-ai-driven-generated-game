@@ -47,7 +47,8 @@ async def generate_image_from_payload(state: ScenarioProcessorState) -> dict:
     try:
         async with httpx.AsyncClient(timeout=500.0) as client:
             print(f"  - 📤 Sending request to the image API...")
-            response = await client.post(state.image_api_url, json=payload.model_dump())
+            full_url_endpoint = f"{state.image_api_url}/create-scenario-image"
+            response = await client.post(full_url_endpoint, json=payload.model_dump())
             
             response.raise_for_status()
             

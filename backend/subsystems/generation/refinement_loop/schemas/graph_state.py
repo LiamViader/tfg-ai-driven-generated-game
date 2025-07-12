@@ -38,3 +38,8 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipG
         description="A log that accumulates the summary or outcome of each agent's operation in every pass. The 'operator.add' ensures that new log entries are appended, creating a complete history of the generation process."
     )
 
+    finalized_with_success: bool = Field(
+        default=False,
+        description="Indicates whether this process finalized with success."
+    )
+
