@@ -2,7 +2,8 @@
 
 from core_game.game_state.singleton import GameStateSingleton
 from simulated.versioning.manager import GameStateVersionManager 
-from simulated.game_state import SimulatedGameState             
+from simulated.game_state import SimulatedGameState
+from simulated.versioning.checkpoint import StateCheckpointManager
 import typing 
 
 class SimulatedGameStateSingleton:
@@ -14,6 +15,7 @@ class SimulatedGameStateSingleton:
     """
     _version_manager_instance: typing.Optional[GameStateVersionManager] = None
     _facade_instance: typing.Optional[SimulatedGameState] = None
+    _checkpoint_manager: typing.Optional[StateCheckpointManager] = None
 
     @classmethod
     def _initialize(cls):
@@ -65,4 +67,13 @@ class SimulatedGameStateSingleton:
         """
         cls._version_manager_instance = None
         cls._facade_instance = None
+        cls._checkpoint_manager = None
         cls._initialize()
+
+    @classmethod
+    def get_checkpoint_manager(cls) -> StateCheckpointManager:
+        """Return the global StateCheckpointManager instance."""
+        cls._initialize()
+        if cls._checkpoint_manager is None:
+            cls._checkpoint_manager = StateCheckpointManager(cls.get_instance())
+        return cls._checkpoint_manager

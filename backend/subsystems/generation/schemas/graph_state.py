@@ -10,4 +10,8 @@ from subsystems.generation.refinement_loop.schemas.graph_state import Refinement
 from subsystems.generation.seed.schemas.graph_state import SeedGenerationGraphState
 
 class GenerationGraphState(RefinementLoopGraphState, SeedGenerationGraphState):
+    initial_state_checkpoint_id: Optional[str] = Field(
+        default=None,
+        description="The unique ID of the checkpoint created at the start of the generation process."
+    )
     pass

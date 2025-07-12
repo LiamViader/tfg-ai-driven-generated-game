@@ -3,11 +3,16 @@ from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.image_generation.scenarios.create.orchestrator import get_created_scenario_images_generation_app
 from typing import Set, Optional
 
+
 def start_generation(state: GenerationGraphState):
     """Initial node for the generation workflow."""
     print("---ENTERING: START GENERATION NODE---")
     SimulatedGameStateSingleton.begin_transaction()
-    return {}
+
+    manager = SimulatedGameStateSingleton.get_checkpoint_manager()
+    checkpoint_id = manager.create_checkpoint()
+    
+    return {"initial_state_checkpoint_id": checkpoint_id}
 
 def prepare_refinement(state: GenerationGraphState):
     """Intermidiate node between seed generation and refinement, prepares refinement"""
@@ -109,12 +114,19 @@ def ensure_map_connectivity(state: GenerationGraphState):
 
 def generate_images(state: GenerationGraphState):
     """Node for generating all images for the added or (TO DO)[modified] entities"""
-    print("---ENTERING: PARALLEL ASSET GENERATION NODE---")
-    game_state = SimulatedGameStateSingleton.get_instance()
+    print("---ENTERING: PARALLEL IMAGE GENERATION NODE---")
 
-    # 1. Preparar las tareas para ambos subgrafos
     created_scenario_images_generation_app = get_created_scenario_images_generation_app()
-    #character_app = get_character_app() # Suponiendo que existe
+
+    checkpoint_id = state.initial_state_checkpoint_id
+    if not checkpoint_id:
+        print("  -  ERROR: No initial state checkpoint ID found. Cannot calculate diff.")
+        return {"finalized_with_success": False}
+
+    manager = SimulatedGameStateSingleton.get_checkpoint_manager()
+    diff_result = manager.diff(from_checkpoint=checkpoint_id)
+
+    added_scenarios_ids = diff_result["scenarios"]["added"]
 
     return {}
 
