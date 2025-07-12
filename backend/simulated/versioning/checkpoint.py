@@ -3,13 +3,25 @@ from __future__ import annotations
 from copy import deepcopy
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.map import SimulatedMap
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, Set, Any, Optional
 from pydantic import BaseModel
-from core_game.character.schemas import CharactersModel, CharacterBaseModel, PlayerCharacterModel, NonPlayerCharacterModel
+from core_game.character.schemas import (
+    CharactersModel,
+    CharacterBaseModel,
+    PlayerCharacterModel,
+    NonPlayerCharacterModel,
+)
 from core_game.map.schemas import GameMapModel, ScenarioModel
 from simulated.game_state import SimulatedGameState
 from typing import Any
 from uuid import uuid4
+from simulated.versioning.schemas import (
+    ScenarioDiffModel,
+    CharacterDiffModel,
+    DiffResultModel,
+    ChangeDetailModel,
+    ConnectionDiffModel,
+)
 
 def _model_dump(value: Any) -> Any:
     """
@@ -47,7 +59,9 @@ class StateCheckpoint:
     # ------------------------------------------------------------------
     # Diff helpers
     # ------------------------------------------------------------------
-    def _get_scenario_visual_changes(self, old_s: ScenarioModel, new_s: ScenarioModel) -> Optional[Dict[str, Any]]:
+    def _get_scenario_visual_changes(
+        self, old_s: ScenarioModel, new_s: ScenarioModel
+    ) -> Optional[Dict[str, ChangeDetailModel]]:
         """Checks for differences in visual attributes between two scenarios."""
         visual_attributes = [
             "visual_description",
@@ -55,23 +69,27 @@ class StateCheckpoint:
             "zone",
             "indoor_or_outdoor",
         ]
-        visual_changes: Dict[str, Any] = {}
+        visual_changes: Dict[str, ChangeDetailModel] = {}
         for attr in visual_attributes:
             old_val = getattr(old_s, attr)
             new_val = getattr(new_s, attr)
             if old_val != new_val:
-                visual_changes[attr] = {"old": old_val, "new": new_val}
+                visual_changes[attr] = ChangeDetailModel(old=old_val, new=new_val)
         
         return visual_changes if visual_changes else None
 
-    def _get_connection_changes(self, old_s: ScenarioModel, new_s: ScenarioModel) -> Optional[Dict[str, Any]]:
+    def _get_connection_changes(
+        self, old_s: ScenarioModel, new_s: ScenarioModel
+    ) -> Optional[ConnectionDiffModel]:
         """Checks for differences in connections between two scenarios."""
         if old_s.connections != new_s.connections:
             conn_diff = self._diff_connections(old_s.connections, new_s.connections)
-            return conn_diff if conn_diff else None
+            return ConnectionDiffModel(**conn_diff) if conn_diff else None
         return None
     
-    def _get_character_visual_changes(self, old_c: CharacterBaseModel, new_c: CharacterBaseModel) -> Optional[Dict[str, Any]]:
+    def _get_character_visual_changes(
+        self, old_c: CharacterBaseModel, new_c: CharacterBaseModel
+    ) -> Optional[Dict[str, ChangeDetailModel]]:
         """
         Checks for differences in visual attributes between two characters.
         """
@@ -80,18 +98,24 @@ class StateCheckpoint:
             "identity",
             "physical",
         ]
-        visual_changes: Dict[str, Any] = {}
+        visual_changes: Dict[str, ChangeDetailModel] = {}
         for attr in visual_attributes:
             old_val = getattr(old_c, attr)
             new_val = getattr(new_c, attr)
             # Since these attributes are Pydantic models, we compare their dumped dicts.
             if _model_dump(old_val) != _model_dump(new_val):
-                visual_changes[attr] = {"old": _model_dump(old_val), "new": _model_dump(new_val)}
+                visual_changes[attr] = ChangeDetailModel(
+                    old=_model_dump(old_val), new=_model_dump(new_val)
+                )
 
-    def _get_character_location_changes(self, old_c: CharacterBaseModel, new_c: CharacterBaseModel) -> Optional[Dict[str, Any]]:
+    def _get_character_location_changes(
+        self, old_c: CharacterBaseModel, new_c: CharacterBaseModel
+    ) -> Optional[ChangeDetailModel]:
         """Checks for differences in location between two characters."""
         if old_c.present_in_scenario != new_c.present_in_scenario:
-            return {"old": old_c.present_in_scenario, "new": new_c.present_in_scenario}
+            return ChangeDetailModel(
+                old=old_c.present_in_scenario, new=new_c.present_in_scenario
+            )
         return None
 
     def _diff_connections(self, old_conn: Dict[Any, Any], new_conn: Dict[Any, Any]) -> Dict[str, Any]:
@@ -112,7 +136,7 @@ class StateCheckpoint:
             return {}
         return result
 
-    def diff_scenarios_against(self, new_map: GameMapModel) -> Dict[str, Any]:
+    def diff_scenarios_against(self, new_map: GameMapModel) -> ScenarioDiffModel:
         """
         Compares the scenarios from the checkpoint against a new map state,
         identifying added, removed, and modified scenarios with detailed changes.
@@ -122,7 +146,7 @@ class StateCheckpoint:
         old_ids: Set[str] = set(old.keys())
         new_ids: Set[str] = set(new.keys())
 
-        diff_result = {
+        diff_dict: Dict[str, Any] = {
             "added": sorted(list(new_ids - old_ids)),
             "removed": sorted(list(old_ids - new_ids)),
             "modified": [],
@@ -138,25 +162,27 @@ class StateCheckpoint:
                 continue
 
             # If any part of the model changed, mark it as modified.
-            diff_result["modified"].append(sid)
+            diff_dict["modified"].append(sid)
 
             # --- Call Helper Functions ---
             visual_changes = self._get_scenario_visual_changes(old_s, new_s)
             if visual_changes:
-                diff_result["modified_visual_info"][sid] = visual_changes
+                diff_dict["modified_visual_info"][sid] = visual_changes
 
             connection_changes = self._get_connection_changes(old_s, new_s)
             if connection_changes:
-                diff_result["modified_connections"][sid] = connection_changes
+                diff_dict["modified_connections"][sid] = connection_changes
         
-        diff_result["modified"].sort()
-        return diff_result
+        diff_dict["modified"].sort()
+        return ScenarioDiffModel(**diff_dict)
 
-    def diff_scenarios(self, state: SimulatedGameState) -> Dict[str, Any]:
+    def diff_scenarios(self, state: SimulatedGameState) -> ScenarioDiffModel:
         current_map = state.read_only_map.get_state().to_model()
         return self.diff_scenarios_against(current_map)
 
-    def diff_characters_against(self, new_chars_model: CharactersModel) -> Dict[str, Any]:
+    def diff_characters_against(
+        self, new_chars_model: CharactersModel
+    ) -> CharacterDiffModel:
         """
         Compares the characters from the checkpoint against a new character state,
         identifying added, removed, and modified characters with detailed changes.
@@ -166,7 +192,7 @@ class StateCheckpoint:
         old_ids: Set[str] = set(old_chars.keys())
         new_ids: Set[str] = set(new_chars.keys())
 
-        diff_result = {
+        diff_dict: Dict[str, Any] = {
             "added": sorted(list(new_ids - old_ids)),
             "removed": sorted(list(old_ids - new_ids)),
             "modified": [],
@@ -181,21 +207,21 @@ class StateCheckpoint:
             if _model_dump(old_c) == _model_dump(new_c):
                 continue
 
-            diff_result["modified"].append(cid)
+            diff_dict["modified"].append(cid)
 
             # --- Call Helper Functions ---
             visual_changes = self._get_character_visual_changes(old_c, new_c)
             if visual_changes:
-                diff_result["modified_visual_info"][cid] = visual_changes
+                diff_dict["modified_visual_info"][cid] = visual_changes
 
             location_changes = self._get_character_location_changes(old_c, new_c)
             if location_changes:
-                diff_result["modified_location"][cid] = location_changes
+                diff_dict["modified_location"][cid] = location_changes
         
-        diff_result["modified"].sort()
-        return diff_result
+        diff_dict["modified"].sort()
+        return CharacterDiffModel(**diff_dict)
 
-    def diff_characters(self, state: SimulatedGameState) -> Dict[str, Any]:
+    def diff_characters(self, state: SimulatedGameState) -> CharacterDiffModel:
         current_chars = state.read_only_characters.get_state().to_model()
         return self.diff_characters_against(current_chars)
 
@@ -235,7 +261,7 @@ class StateCheckpointManager:
         self,
         from_checkpoint: str,
         to_checkpoint: str | None = None,
-    ) -> Dict[str, Any]:
+    ) -> DiffResultModel:
         cp_from = self.get_checkpoint(from_checkpoint)
         if to_checkpoint is None:
             map_model = self._state.read_only_map.get_state().to_model()
@@ -245,7 +271,7 @@ class StateCheckpointManager:
             map_model = cp_to.map_snapshot
             chars_model = cp_to.characters_snapshot
 
-        return {
-            "scenarios": cp_from.diff_scenarios_against(map_model),
-            "characters": cp_from.diff_characters_against(chars_model),
-        }
+        return DiffResultModel(
+            scenarios=cp_from.diff_scenarios_against(map_model),
+            characters=cp_from.diff_characters_against(chars_model),
+        )

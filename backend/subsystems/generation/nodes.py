@@ -126,7 +126,7 @@ def generate_images(state: GenerationGraphState):
     manager = SimulatedGameStateSingleton.get_checkpoint_manager()
     diff_result = manager.diff(from_checkpoint=checkpoint_id)
 
-    added_scenarios_ids = diff_result["scenarios"]["added"]
+    added_scenarios_ids = diff_result.scenarios.added
 
     return {}
 
