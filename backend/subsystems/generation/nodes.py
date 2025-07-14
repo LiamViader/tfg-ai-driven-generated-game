@@ -11,8 +11,10 @@ from typing import Set, Optional, Tuple, List, Dict, Any
 import os
 import base64
 import asyncio
-from dotenv import load_dotenv
-
+from dotenv import load_dotenv, find_dotenv
+dotenv_path = find_dotenv()
+print("📂 Usando archivo .env en:", dotenv_path)
+load_dotenv(dotenv_path)
 
 def start_generation(state: GenerationGraphState):
     """Initial node for the generation workflow."""
@@ -287,7 +289,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
 def generate_images(state: GenerationGraphState):
     """Node for generating all images for the added entities"""
     print("---ENTERING: PARALLEL IMAGE GENERATION NODE---")
-
+    
     load_dotenv()
     checkpoint_id = state.initial_state_checkpoint_id
     if not checkpoint_id:
@@ -295,6 +297,7 @@ def generate_images(state: GenerationGraphState):
         return {"finalized_with_success": False}
     
     scenarios_image_api_url = os.getenv("SCENARIOS_IMAGE_API_URL")
+
     if not scenarios_image_api_url:
         print("  - ERROR: SCENARIOS_IMAGE_API_URL environment variable not set.")
         return {"finalized_with_success": False}

@@ -5,6 +5,7 @@ from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.refinement_loop.pipelines import (
     alternating_expansion_pipeline,
     map_then_characters_pipeline,
+    characters_only_pipeline,
     map_characters_relationships_pipeline,
     map_characters_relationships_narrative_pipeline,
     map_only_pipeline
@@ -13,7 +14,7 @@ from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
 USER_PROMPT = """
-Apocaliptic world, zombie epidemic
+All characters are bicycles.
 """
 
 if __name__ == "__main__":

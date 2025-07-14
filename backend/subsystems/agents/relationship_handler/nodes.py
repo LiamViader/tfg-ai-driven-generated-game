@@ -37,10 +37,11 @@ def receive_objective_node(state: RelationshipGraphState):
         "relationships_task_succeeded_final": False,
     }
 
+executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def relationship_executor_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
-    llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+
     full_prompt = format_relationship_reason_prompt(
         foundational_lore_document=state.relationships_foundational_lore_document,
         recent_operations_summary=state.relationships_recent_operations_summary,
@@ -53,7 +54,7 @@ def relationship_executor_reason_node(state: RelationshipGraphState):
         messages=get_valid_messages_window(state.relationships_executor_messages, 30),
     )
     state.relationships_current_executor_iteration += 1
-    response = llm.invoke(full_prompt)
+    response = executor_llm.invoke(full_prompt)
     return {
         "relationships_executor_messages": [response],
         "relationships_current_executor_iteration": state.relationships_current_executor_iteration,

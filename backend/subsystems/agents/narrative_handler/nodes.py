@@ -34,10 +34,11 @@ def receive_objective_node(state: NarrativeGraphState):
         "narrative_task_succeeded_final": False,
     }
 
+executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def narrative_executor_reason_node(state: NarrativeGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
-    llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+
     full_prompt = format_narrative_react_reason_prompt(
         foundational_lore_document=state.narrative_foundational_lore_document,
         recent_operations_summary=state.narrative_recent_operations_summary,
@@ -50,7 +51,7 @@ def narrative_executor_reason_node(state: NarrativeGraphState):
         messages=get_valid_messages_window(state.narrative_executor_messages, 30),
     )
     state.narrative_current_executor_iteration += 1
-    response = llm.invoke(full_prompt)
+    response = executor_llm.invoke(full_prompt)
     return {
         "narrative_executor_messages": [response],
         "narrative_current_executor_iteration": state.narrative_current_executor_iteration,

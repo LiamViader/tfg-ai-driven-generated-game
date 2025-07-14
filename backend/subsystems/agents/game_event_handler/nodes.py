@@ -33,10 +33,11 @@ def receive_objective_node(state: GameEventGraphState):
         "events_task_succeeded_final": False,
     }
 
+executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def game_event_executor_reason_node(state: GameEventGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
-    llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+
     full_prompt = format_game_event_reason_prompt(
         foundational_lore_document=state.events_foundational_lore_document,
         recent_operations_summary=state.events_recent_operations_summary,
@@ -49,7 +50,7 @@ def game_event_executor_reason_node(state: GameEventGraphState):
         messages=get_valid_messages_window(state.events_executor_messages, 30),
     )
     state.events_current_executor_iteration += 1
-    response = llm.invoke(full_prompt)
+    response = executor_llm.invoke(full_prompt)
     return {
         "events_executor_messages": [response],
         "events_current_executor_iteration": state.events_current_executor_iteration,

@@ -1,15 +1,26 @@
 from langchain_openai import ChatOpenAI
-from .schemas import CharacterProcessorState
+from .schemas import CharacterProcessorState, FacingDirectionStructure
 from .prompts import format_prompt
 from openai import AsyncOpenAI, OpenAIError, RateLimitError
+from langchain_core.messages import HumanMessage, SystemMessage
 import asyncio
+import base64
+from PIL import Image, ImageOps, ImageFilter
+import io
+from typing import cast
 image_gen_client = AsyncOpenAI()
 
 llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
 
+llm_multimodal = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0.7,
+)
+structured_multimodal_llm = llm_multimodal.with_structured_output(FacingDirectionStructure)
+
 async def generate_prompt_for_character(state: CharacterProcessorState) -> dict:
     """Generate the prompt using the LLM."""
-    print(f"\n--- ⚙️ Trying to generate payload for ID: {state.character.id} (Attempt {state.retry_count + 1}) ---")
+    print(f"\n--- ⚙️ Trying to generate payload for ID: {state.character.id} (Attempt {state.retry_character_prompt_count + 1}) ---")
     try:
         result = await llm.ainvoke(
             format_prompt(state.general_game_context, state.character)
@@ -38,7 +49,8 @@ async def generate_prompt_for_character(state: CharacterProcessorState) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-
+def increment_retry_generate_character_prompt(state: CharacterProcessorState) -> dict:
+    return {"retry_character_prompt_count": state.retry_character_prompt_count + 1}
 
 async def _generate_image_call(state: CharacterProcessorState) -> dict:
     """
@@ -54,7 +66,7 @@ async def _generate_image_call(state: CharacterProcessorState) -> dict:
         f"Full body image of a character, centered, with transparent background, no shadows casted."
         f"In a {state.graphic_style} style, "
         f"The character is: {base_description}. "
-        f"Use the provided image as a reference only for the facing direction (his right) of the character"
+        f"Use the provided image as a reference only for the facing direction of the character"
     )
     
     reference_image_path = "images/references/character_silhouette.png"
@@ -87,6 +99,9 @@ async def _generate_image_call(state: CharacterProcessorState) -> dict:
         raise e
     except Exception as e:
         return {"error": f"An unexpected error occurred: {e}"}
+
+
+
 
 async def generate_image_from_prompt(state: CharacterProcessorState) -> dict:
     """
@@ -128,11 +143,111 @@ async def generate_image_from_prompt(state: CharacterProcessorState) -> dict:
             print(f"  - ❌ {error_msg}")
             return {"error": error_msg}
 
-    # This part should ideally not be reached, but as a fallback
     return {"error": "Exceeded maximum retry attempts."}
     
+def _crop_to_alpha_bbox(base64_image_str:str, threshold: int = 10) -> str:
+    """
+    Crops an image based on its alpha channel using a threshold and
+    morphological opening to remove noise and isolated pixels.
+
+    Args:
+        base64_image_str: The base64 encoded string of the PNG image.
+        threshold: Alpha value (0-255) below which pixels are considered fully transparent.
+
+    Returns:
+        A base64 encoded string of the cropped PNG image.
+    """
+    image_data = base64.b64decode(base64_image_str)
+    image = Image.open(io.BytesIO(image_data)).convert("RGBA")
+
+    # 1. Get the alpha channel of the image.
+    alpha = image.getchannel('A')
+
+    # 2. Create a lookup table to apply the threshold.
+    # All pixel values <= threshold become 0; all values > threshold become 255.
+    lookup_table = [0] * (threshold + 1) + [255] * (255 - threshold)
+    thresholded_mask = alpha.point(lookup_table)
+
+    # 3. Perform a morphological opening to remove noise.
+    #    - Erode: Shrinks bright regions, removing small noise pixels.
+    #    - Dilate: Expands remaining regions back to their original size.
+    eroded_mask = thresholded_mask.filter(ImageFilter.MinFilter(3))
+    opened_mask = eroded_mask.filter(ImageFilter.MaxFilter(3))
+
+    # 4. Get the bounding box from this clean, noise-free mask.
+    bbox = opened_mask.getbbox()
+
+    if bbox:
+        # 5. Crop the *original* image using the calculated bounding box.
+        cropped = image.crop(bbox)
+    else:
+        # If no content is found after cleaning, return the original image.
+        cropped = image
+
+    # 6. Save the cropped image to a buffer and encode it back to base64.
+    buffered = io.BytesIO()
+    cropped.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def _flip_image_horizontally(base64_image_str: str) -> str:
+    """Decodes, flips, and re-encodes a base64 image."""
+    print("  - Character is facing left. Flipping image horizontally...")
+    # First, decode the base64 string into image data
+    image_data = base64.b64decode(base64_image_str)
+    # Second, open the image data with Pillow
+    image = Image.open(io.BytesIO(image_data))
+    # Third, perform the flip operation on the Image object
+    flipped_image = ImageOps.mirror(image)
+    
+    # Finally, encode the flipped image back to a base64 string
+    final_buffered = io.BytesIO()
+    flipped_image.save(final_buffered, format="PNG")
+    return base64.b64encode(final_buffered.getvalue()).decode("utf-8")
+
+async def posprocess_generated_image(state: CharacterProcessorState) -> dict:
+    """
+    Post-processes the generated image: crops it and uses a multimodal LLM
+    to determine the direction the character is facing, then makes it face to the right.
+    """
+    print(f"\n--- 🖼️ Post-processing image for: {state.character.id} (Attempt {state.retry_analize_facing_dir_count + 1}) ---")
+    
+    if not state.image_base64:
+        return {"error": "Cannot post-process image: image_base64 is missing."}
+
+    try:
+        image_cropped_b64 = _crop_to_alpha_bbox(state.image_base64)
+
+        # 2. Prepare the multimodal input message
+        prompt_message = HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Determine the character's orientation relative to the image itself, NOT from the character's own point of view. Is the character's body oriented more towards the left side of the image frame, or the right side of the image frame? Your answer must be a single word: 'left' or 'right'.",
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{image_cropped_b64}"},
+                },
+            ]
+        )
+
+        print("  - Analyzing image to determine facing direction...")
+        facing_direction_result = cast(FacingDirectionStructure, await structured_multimodal_llm.ainvoke([prompt_message]))
+        print(f"  - Character is facing: {facing_direction_result.facing_direction}")
+        final_image_b64 = image_cropped_b64
+        if facing_direction_result.facing_direction == "left":
+            final_image_b64 = _flip_image_horizontally(image_cropped_b64)
+
+        return {
+            "image_base64": final_image_b64,
+            "error": None
+        }
+    except Exception as e:
+        error_msg = f"An unexpected error occurred during image post-processing: {e}"
+        print(f"  - ❌ {error_msg}")
+        return {"error": error_msg}
+
+def increment_retry_analize_facing_dir(state: CharacterProcessorState) -> dict:
+    return {"retry_analize_facing_dir_count": state.retry_analize_facing_dir_count + 1}
 
 
-
-def increment_retry_counter(state: CharacterProcessorState) -> dict:
-    return {"retry_count": state.retry_count + 1}

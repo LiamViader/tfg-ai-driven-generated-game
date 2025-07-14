@@ -35,11 +35,11 @@ def characters_only_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Characters Generation",
                 agent_name=AgentName.CHARACTERS,
-                objective_prompt="Create two unique NPCs and the player character in the current map.",
+                objective_prompt="Create 4 unique NPCs.",
                 rules_and_constraints=[],
                 other_guidelines="Keep them distinct and interesting.",
                 max_executor_iterations=3,
-                max_validation_iterations=1,
+                max_validation_iterations=0,
                 max_retries=0,
             )
         ],
@@ -65,7 +65,7 @@ def map_then_characters_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Add Characters",
                 agent_name=AgentName.CHARACTERS,
-                objective_prompt="Add 2 interesting NPCs to the previously generated map.",
+                objective_prompt="Add 5 interesting NPCs to the previously generated map.",
                 rules_and_constraints=[],
                 other_guidelines="Ensure the characters fit within the scenarios created. Made the characters have so little short data",
                 max_executor_iterations=5,

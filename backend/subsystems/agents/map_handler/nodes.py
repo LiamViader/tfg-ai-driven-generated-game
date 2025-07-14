@@ -40,13 +40,14 @@ def receive_objective_node(state: MapGraphState):
     }
 
 
+executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+
 def map_executor_reason_node(state: MapGraphState):
     """
     Reasoning node. The llm requests the tool towards the next step
     """
 
     print("---ENTERING: REASON EXECUTION NODE---")
-    map_reason_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
 
     full_prompt = format_map_react_reason_prompt(
         foundational_lore_document=state.map_foundational_lore_document,
@@ -63,7 +64,7 @@ def map_executor_reason_node(state: MapGraphState):
 
     print("CURRENT EXECUTOR ITERATION:", state.map_current_executor_iteration)
     
-    response = map_reason_llm.invoke(full_prompt)
+    response = executor_llm.invoke(full_prompt)
 
     return {
         "map_executor_messages": [response],
