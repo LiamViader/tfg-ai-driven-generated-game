@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
-from .schemas import CharacterProcessorState
-from .nodes import generate_prompt_for_character, generate_image_from_prompt, increment_retry_generate_character_prompt, posprocess_generated_image, increment_retry_analize_facing_dir
+from subsystems.image_generation.characters.create.character_processor.schemas import CharacterProcessorState
+from subsystems.image_generation.characters.create.character_processor.nodes import generate_prompt_for_character, generate_image_from_prompt, increment_retry_generate_character_prompt, posprocess_generated_image, increment_retry_analize_facing_dir
 
 MAX_RETRIES = 2
 

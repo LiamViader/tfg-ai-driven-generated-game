@@ -12,6 +12,10 @@ class CharacterProcessorState(BaseModel):
     retry_character_prompt_count: int = Field(default=0, description="Number of character prompt generation retries.")
     retry_analize_facing_dir_count: int = Field(default=0, description="Number of character prompt generation retries.")
     general_game_context: str = Field(..., description="General context of the game for additional flavor.")
+    use_image_ref: bool = Field(
+        default=True,
+        description="Whether to use image reference for the image generation."
+    )
 
 class FacingDirectionStructure(BaseModel):
     """Structure to hold the facing direction of the character."""

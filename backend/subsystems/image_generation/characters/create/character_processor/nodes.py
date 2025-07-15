@@ -1,6 +1,7 @@
 from langchain_openai import ChatOpenAI
-from .schemas import CharacterProcessorState, FacingDirectionStructure
-from .prompts import format_prompt
+from subsystems.image_generation.characters.create.character_processor.schemas import CharacterProcessorState
+from subsystems.image_generation.characters.create.character_processor.prompts import format_prompt
+from subsystems.image_processing.character_facing_classifier.executor import FacingDirectionClassifier
 from openai import AsyncOpenAI, OpenAIError, RateLimitError
 from langchain_core.messages import HumanMessage, SystemMessage
 import asyncio
@@ -12,11 +13,10 @@ image_gen_client = AsyncOpenAI()
 
 llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
 
-llm_multimodal = ChatOpenAI(
-    model="gpt-4o",
-    temperature=0.7,
+
+direction_classifier = FacingDirectionClassifier(
+    model_path="models/facing_direction_classifier_v1.keras"
 )
-structured_multimodal_llm = llm_multimodal.with_structured_output(FacingDirectionStructure)
 
 async def generate_prompt_for_character(state: CharacterProcessorState) -> dict:
     """Generate the prompt using the LLM."""
@@ -54,51 +54,85 @@ def increment_retry_generate_character_prompt(state: CharacterProcessorState) ->
 
 async def _generate_image_call(state: CharacterProcessorState) -> dict:
     """
-    The core API call to generate an image. This is the part that might fail.
+    Core image generation or editing call based on character state.
     """
     print(f"\n--- 🖼️ Starting image generation attempt for: {state.character.id} ---")
-    
-    base_description = state.generated_image_prompt
-    if not base_description:
+
+    if not state.generated_image_prompt:
         return {"error": "Cannot generate image without a base description."}
 
-    final_prompt = (
-        f"Full body image of a character, centered, with transparent background, no shadows casted."
-        f"In a {state.graphic_style} style, "
-        f"The character is: {base_description}. "
-        f"Use the provided image as a reference only for the facing direction of the character"
-    )
+    prompt = _build_prompt(state)
     
-    reference_image_path = "images/references/character_silhouette.png"
-
     try:
-        with open(reference_image_path, "rb") as reference_image_file:
-            response = await image_gen_client.images.edit(
-                model="gpt-image-1",
-                image=reference_image_file,
-                prompt=final_prompt,
-                size="1024x1536",
-                quality="low",
-                n=1,
-                background="transparent"
-            )
-
-        if not response.data or not response.data[0].b64_json:
-            raise ValueError("API response did not contain valid image data.")
-        
-        image_b64 = response.data[0].b64_json
-        if not image_b64:
-            raise ValueError("API response did not contain image data.")
-
-        print("  - ✅ Image generated successfully on this attempt.")
-        return {"image_base64": image_b64, "error": None}
-
-    except FileNotFoundError:
-        return {"error": f"Reference image not found at path: {reference_image_path}"}
+        if state.use_image_ref:
+            return await _generate_with_reference(prompt)
+        else:
+            return await _generate_without_reference(prompt)
+    except FileNotFoundError as e:
+        return {"error": f"Reference image not found: {str(e)}"}
     except OpenAIError as e:
         raise e
     except Exception as e:
-        return {"error": f"An unexpected error occurred: {e}"}
+        return {"error": f"Unexpected error: {e}"}
+
+
+def _build_prompt(state: CharacterProcessorState) -> str:
+    """
+    Create the final prompt text based on the generation mode.
+    """
+    base = (
+        f"Full body image of a character, centered, with transparent background, no shadows casted. "
+        f"In a {state.graphic_style} style. "
+        f"The character is: {state.generated_image_prompt}. "
+    )
+    if state.use_image_ref:
+        base += "Use the provided image as a reference only for the facing direction of the character."
+    else:
+        base += "The character is in a front-facing pose angled slightly to the right."
+    return base
+
+
+async def _generate_with_reference(prompt: str) -> dict:
+    """
+    Call the API using an image reference.
+    """
+    reference_image_path = "images/references/character_silhouette.png"
+    with open(reference_image_path, "rb") as reference_image_file:
+        response = await image_gen_client.images.edit(
+            model="gpt-image-1",
+            image=reference_image_file,
+            prompt=prompt,
+            size="1024x1536",
+            quality="low",
+            n=1,
+            background="transparent"
+        )
+    return _extract_image_response(response)
+
+
+async def _generate_without_reference(prompt: str) -> dict:
+    """
+    Call the API using only text (no image).
+    """
+    response = await image_gen_client.images.generate(
+        model="gpt-image-1",
+        prompt=prompt,
+        size="1024x1536",
+        quality="low",
+        n=1,
+        background="transparent"
+    )
+    return _extract_image_response(response)
+
+
+def _extract_image_response(response) -> dict:
+    """
+    Validate and extract image data from API response.
+    """
+    if not response.data or not response.data[0].b64_json:
+        raise ValueError("API response did not contain valid image data.")
+    
+    return {"image_base64": response.data[0].b64_json, "error": None}
 
 
 
@@ -217,31 +251,23 @@ async def posprocess_generated_image(state: CharacterProcessorState) -> dict:
     try:
         image_cropped_b64 = _crop_to_alpha_bbox(state.image_base64)
 
-        # 2. Prepare the multimodal input message
-        prompt_message = HumanMessage(
-            content=[
-                {
-                    "type": "text",
-                    "text": "Determine the character's orientation relative to the image itself, NOT from the character's own point of view. Is the character's body oriented more towards the left side of the image frame, or the right side of the image frame? Your answer must be a single word: 'left' or 'right'.",
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{image_cropped_b64}"},
-                },
-            ]
-        )
+        # Decodifica imagen base64 a PIL.Image
+        image_data = base64.b64decode(image_cropped_b64)
+        pil_image = Image.open(io.BytesIO(image_data)).convert("RGBA")
 
-        print("  - Analyzing image to determine facing direction...")
-        facing_direction_result = cast(FacingDirectionStructure, await structured_multimodal_llm.ainvoke([prompt_message]))
-        print(f"  - Character is facing: {facing_direction_result.facing_direction}")
+        print("  - Analyzing image to determine facing direction using local CNN...")
+        facing_direction = await direction_classifier.predict(pil_image)
+        print(f"  - Character is facing: {facing_direction}")
+
         final_image_b64 = image_cropped_b64
-        if facing_direction_result.facing_direction == "left":
+        if facing_direction == "left":
             final_image_b64 = _flip_image_horizontally(image_cropped_b64)
 
         return {
             "image_base64": final_image_b64,
             "error": None
         }
+    
     except Exception as e:
         error_msg = f"An unexpected error occurred during image post-processing: {e}"
         print(f"  - ❌ {error_msg}")

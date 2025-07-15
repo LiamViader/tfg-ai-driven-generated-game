@@ -14,7 +14,7 @@ from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
 USER_PROMPT = """
-All characters are bicycles.
+All characters are really weird aliens or monsters weird shaped.
 """
 
 if __name__ == "__main__":

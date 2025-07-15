@@ -13,7 +13,6 @@ import base64
 import asyncio
 from dotenv import load_dotenv, find_dotenv
 dotenv_path = find_dotenv()
-print("📂 Usando archivo .env en:", dotenv_path)
 load_dotenv(dotenv_path)
 
 def start_generation(state: GenerationGraphState):
@@ -170,7 +169,7 @@ def _run_image_generation_subgraphs(
             scenarios=scenarios,
             graphic_style=game_state.read_only_session.get_scenarios_graphic_style(),
             general_game_context=general_context,
-            image_api_url=scenarios_image_api_url
+            image_api_url=scenarios_image_api_url,
         )
         tasks.append(scenario_app.ainvoke(scenario_input))
 
@@ -182,6 +181,7 @@ def _run_image_generation_subgraphs(
             characters=characters,
             graphic_style=game_state.read_only_session.get_characters_graphic_style(),
             general_game_context=general_context,
+            use_image_ref=True
         )
         tasks.append(character_app.ainvoke(character_input))
 

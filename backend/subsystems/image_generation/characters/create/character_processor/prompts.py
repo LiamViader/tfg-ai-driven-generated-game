@@ -29,7 +29,7 @@ You are an expert art director and character concept artist. Your task is to wri
    - **Make It Visibly Representational:** If the character has powers, roles, or origins that could be *visibly manifested*, describe how those are physically reflected (e.g. a fire mage might have ember veins, scorched gloves, or smoke curling from their skin). These visual cues should feel *organic*, not decorative.
    - **Prioritize Uniqueness:** Choose details that differentiate the character from others. Avoid generic descriptions. Use specific, high-impact imagery.
    - **Contextual Inference:** (REALLY IMPORTANT) Actively use the `Game Context` to infer and add logical visual details that are not explicitly stated in the character description but make sense for a character in that world and you are sure the character has it. IMPORTANT, If a trait of the character is particularly relevant to the story or world, it must be included.
-   - **Concise and Cohesive:** Write a single, flowing paragraph. No bullet points. Stay within 80-100 words.
+   - **Concise and Cohesive:** Write a single, flowing paragraph. No bullet points. Stay within 80-100 words. You can't ever exceed 120 words.
 
 #### 2. **Required Descriptive Elements:**
    - Your description **might** (if suitable for the character(sometimes might not be suitable)) cover the following aspects, among others you deem relevant:

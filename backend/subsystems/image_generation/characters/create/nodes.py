@@ -1,8 +1,8 @@
 import asyncio
 from typing import cast
-from .schemas import GraphState
-from .character_processor.orchestrator import get_character_processor_graph_app
-from .character_processor.schemas import CharacterProcessorState
+from subsystems.image_generation.characters.create.schemas import GraphState
+from subsystems.image_generation.characters.create.character_processor.orchestrator import get_character_processor_graph_app
+from subsystems.image_generation.characters.create.character_processor.schemas import CharacterProcessorState
 
 async def process_all_characters_node(state: GraphState) -> dict:
     print("--- 🚀 Starting to process all characters in parallel ---")
@@ -14,6 +14,7 @@ async def process_all_characters_node(state: GraphState) -> dict:
                 character=char,
                 graphic_style=state.graphic_style,
                 general_game_context=state.general_game_context,
+                use_image_ref=state.use_image_ref
             )
         )
         for char in state.characters

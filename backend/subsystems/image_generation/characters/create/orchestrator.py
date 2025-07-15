@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END
 from langchain_core.runnables import Runnable
-from .schemas import GraphState
-from .nodes import process_all_characters_node
+from subsystems.image_generation.characters.create.schemas import GraphState
+from subsystems.image_generation.characters.create.nodes import process_all_characters_node
 
 
 def get_created_character_images_generation_app() -> Runnable:
