@@ -17,7 +17,7 @@ from typing import Any
 from uuid import uuid4
 from simulated.versioning.deltas.checkpoints.base import StateCheckpointBase
 from typing import Dict, Optional, Type
-from simulated.versioning.deltas.detectors.changeset.root_changeset import ChangesetDetector
+from simulated.versioning.deltas.detectors.changeset.root import ChangesetDetector
 from simulated.versioning.deltas.detectors.internal.root_internal import InternalDiffDetector
 from simulated.versioning.deltas.checkpoints.changeset import ChangesetCheckpoint
 from simulated.versioning.deltas.checkpoints.internal import InternalStateCheckpoint

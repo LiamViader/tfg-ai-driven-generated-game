@@ -2,38 +2,45 @@ from .manager import StateCheckpointManager
 from simulated.game_state import SimulatedGameState
 
 # Importa todas las piezas necesarias para construir los árboles
-from simulated.versioning.deltas.detectors.changeset.root_changeset import ChangesetDetector
-from simulated.versioning.deltas.detectors.changeset.map import ChangesetMapDetector
-from simulated.versioning.deltas.detectors.changeset.scenarios import ChangesetScenarioDetector
-from simulated.versioning.deltas.detectors.changeset.scenario_leafs import ScenarioNameDetector, ScenarioVisualsDetector
+# --- Imports for the Changeset Detector Tree ---
+from simulated.versioning.deltas.detectors.changeset.root import ChangesetDetector
+from simulated.versioning.deltas.detectors.changeset.map.collection import MapDetector as ChangesetMapDetector
+from simulated.versioning.deltas.detectors.changeset.map.entity import ScenarioDetector as ChangesetScenarioDetector
+from simulated.versioning.deltas.detectors.changeset.characters.collection import CharactersDetector as ChangesetCharactersDetector
+from simulated.versioning.deltas.detectors.changeset.characters.entity import CharacterDetector as ChangesetCharacterDetector
+# You would also import game_events detector here if you had one
+
+# --- Imports for the Internal Diff Detector Tree ---
 from simulated.versioning.deltas.detectors.internal.root_internal import InternalDiffDetector
 from simulated.versioning.deltas.detectors.internal.map import InternalMapDetector
 from simulated.versioning.deltas.detectors.internal.scenarios import InternalScenarioDetector
 from simulated.versioning.deltas.detectors.internal.scenario_leafs import InternalScenarioVisualsDetector, InternalConnectionsDetector
 from simulated.versioning.deltas.detectors.internal.characters import InternalCharacterDetector, InternalCharactersCollectionDetector
 from simulated.versioning.deltas.detectors.internal.character_leafs import InternalCharacterVisualsDetector, InternalCharacterLocationDetector
+
 class CheckpointManagerFactory:
     """
     Its only job is to create fully configured instances
     of StateCheckpointManager with default detector trees.
     """
     def create_manager(self, state: SimulatedGameState) -> StateCheckpointManager:
-        # --- 1. Construir el árbol de detectores para Changeset ---
-        changeset_scenario_detector = ChangesetScenarioDetector(
-            leaf_detectors=[
-                ScenarioNameDetector(), 
-                ScenarioVisualsDetector()
-            ]
-        )
+        # --- 1. Construct tree for changeset detectors ---
+        changeset_scenario_detector = ChangesetScenarioDetector()
         changeset_map_detector = ChangesetMapDetector(
             scenario_detector=changeset_scenario_detector
         )
-        # ... (aquí construirías el de personajes) ...
-        default_changeset_detector = ChangesetDetector(
-            map_detector=changeset_map_detector,
+        
+        changeset_character_detector = ChangesetCharacterDetector()
+        changeset_characters_collection_detector = ChangesetCharactersDetector(
+            character_detector=changeset_character_detector
         )
 
-        # --- 2. Construir el árbol de detectores para Diff Interno ---
+        default_changeset_detector = ChangesetDetector(
+            map_detector=changeset_map_detector,
+            characters_detector=changeset_characters_collection_detector
+        )
+
+        # --- 2. Construct tree for internal diffs ---
         internal_scenario_detector = InternalScenarioDetector(
             leaf_detectors=[
                 InternalScenarioVisualsDetector(), 
@@ -56,7 +63,7 @@ class CheckpointManagerFactory:
             character_detector=internal_chars_collection_detector
         )
 
-        # --- 3. Crear y devolver el Manager con todo inyectado ---
+        # --- 3. Create and return manager ---
         manager = StateCheckpointManager(
             state=state,
             default_changeset_detector=default_changeset_detector,
