@@ -115,4 +115,4 @@ class CharactersModel(BaseModel):
     Represents the component of characters
     """
     registry: Dict[str, CharacterBaseModel] = Field(default_factory=dict,description="Dictionary mapping each character id to correspondent CharacterBaseModel")
-    player_character: Optional[PlayerCharacterModel] = Field(default=None, description="Player character")
+    player_character_id: Optional[str] = Field(default=None, description="The ID of the character who is the player.")

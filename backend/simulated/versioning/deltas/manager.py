@@ -17,6 +17,11 @@ from typing import Any
 from uuid import uuid4
 from simulated.versioning.deltas.checkpoints.base import StateCheckpointBase
 from typing import Dict, Optional, Type
+from simulated.versioning.deltas.detectors.changeset.root_changeset import ChangesetDetector
+from simulated.versioning.deltas.detectors.internal.root_internal import InternalDiffDetector
+from simulated.versioning.deltas.checkpoints.changeset import ChangesetCheckpoint
+from simulated.versioning.deltas.checkpoints.internal import InternalStateCheckpoint
+from simulated.versioning.deltas.schemas import DiffResultModel
 
 class StateCheckpointManager:
     """
@@ -24,12 +29,17 @@ class StateCheckpointManager:
     to the game state it operates on.
     """
     
-    def __init__(self, state: SimulatedGameState) -> None:
-        """
-        Initializes the manager with a specific game state instance.
-        """
-        self._state: SimulatedGameState = state
+    def __init__(
+        self,
+        state: SimulatedGameState,
+        default_changeset_detector: ChangesetDetector,
+        default_internal_diff_detector: InternalDiffDetector
+    ):
+        self._state = state
         self._checkpoints: Dict[str, StateCheckpointBase] = {}
+        
+        self._default_changeset_detector = default_changeset_detector
+        self._default_internal_diff_detector = default_internal_diff_detector
 
     def create_checkpoint(
         self,
@@ -72,3 +82,62 @@ class StateCheckpointManager:
             del self._checkpoints[checkpoint_id]
         else:
             raise RuntimeError(f"Checkpoint '{checkpoint_id}' not found")
+
+
+    def generate_changeset(
+        self, 
+        from_id: str, 
+        to_id: Optional[str] = None,
+        detector_override: Optional[ChangesetDetector] = None
+    ) -> Dict[str, Any] | None:
+        """
+        Generates a client-facing changeset.
+
+        Compares the 'from_id' checkpoint against the 'to_id' checkpoint.
+        If 'to_id' is None, it compares against the current live state.
+        """
+        cp_from_base = self.get_checkpoint(from_id)
+        if not isinstance(cp_from_base, ChangesetCheckpoint):
+            raise TypeError("Changeset generation requires a 'ChangesetCheckpoint' as its origin ('from_id').")
+        cp_from = cp_from_base
+
+        if to_id is not None:
+            cp_to_base = self.get_checkpoint(to_id)
+            if not isinstance(cp_to_base, ChangesetCheckpoint):
+                raise TypeError("When 'to_id' is provided, it must also be a 'ChangesetCheckpoint'.")
+            cp_to = cp_to_base
+        else:
+            cp_to = ChangesetCheckpoint.create(self._state)
+
+        detector_to_use = detector_override if detector_override is not None else self._default_changeset_detector
+                
+        return detector_to_use.detect(cp_from, cp_to)
+
+    def generate_internal_diff(
+        self, 
+        from_id: str, 
+        to_id: Optional[str] = None,
+        detector_override: Optional[InternalDiffDetector] = None
+    ) -> DiffResultModel:
+        """
+        Generates an internal diff report.
+
+        Compares the 'from_id' checkpoint against the 'to_id' checkpoint.
+        If 'to_id' is None, it compares against the current live state.
+        """
+        cp_from_base = self.get_checkpoint(from_id)
+        if not isinstance(cp_from_base, InternalStateCheckpoint):
+            raise TypeError("Internal diff generation requires an 'InternalStateCheckpoint' as its origin ('from_id').")
+        cp_from = cp_from_base
+
+        if to_id is not None:
+            cp_to_base = self.get_checkpoint(to_id)
+            if not isinstance(cp_to_base, InternalStateCheckpoint):
+                raise TypeError("When 'to_id' is provided, it must also be an 'InternalStateCheckpoint'.")
+            cp_to = cp_to_base
+        else:
+            cp_to = InternalStateCheckpoint.create(self._state)
+
+        detector_to_use = detector_override if detector_override is not None else self._default_internal_diff_detector
+            
+        return detector_to_use.detect(cp_from, cp_to)

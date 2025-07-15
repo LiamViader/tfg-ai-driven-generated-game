@@ -7,6 +7,8 @@ from subsystems.image_generation.characters.create.orchestrator import get_creat
 from core_game.character.schemas import CharacterBaseModel
 from core_game.map.schemas import ScenarioModel, ScenarioImageGenerationTemplate
 from typing import Set, Optional, Tuple, List, Dict, Any
+from simulated.versioning.deltas.checkpoints.internal import InternalStateCheckpoint
+
 
 import os
 import base64
@@ -21,7 +23,10 @@ def start_generation(state: GenerationGraphState):
     SimulatedGameStateSingleton.begin_transaction()
 
     manager = SimulatedGameStateSingleton.get_checkpoint_manager()
-    checkpoint_id = manager.create_checkpoint()
+    checkpoint_id = manager.create_checkpoint(
+        checkpoint_type=InternalStateCheckpoint,
+        checkpoint_id="initial_generation_state" # Es buena práctica darle un ID legible
+    )
     
     return {"initial_state_checkpoint_id": checkpoint_id}
 
@@ -130,7 +135,7 @@ def _get_entities_for_generation(checkpoint_id: str) -> Tuple[List[ScenarioModel
     """
     print("  - Calculating diff from checkpoint to find new/modified entities...")
     manager = SimulatedGameStateSingleton.get_checkpoint_manager()
-    diff_result = manager.diff(from_checkpoint=checkpoint_id)
+    diff_result = manager.generate_internal_diff(from_id=checkpoint_id)
     game_state = SimulatedGameStateSingleton.get_instance()
 
     # Process scenarios

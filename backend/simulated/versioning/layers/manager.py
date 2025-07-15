@@ -8,7 +8,7 @@ from simulated.components.game_session import SimulatedGameSession
 from simulated.components.relationships import SimulatedRelationships
 from simulated.components.narrative import SimulatedNarrative
 from simulated.components.game_events import SimulatedGameEvents
-from simulated.versioning.layer import SimulationLayer # Importamos la clase SimulationLayer
+from simulated.versioning.layers.state import SimulationLayer # Importamos la clase SimulationLayer
 from typing import List, Optional
 
 class GameStateVersionManager:

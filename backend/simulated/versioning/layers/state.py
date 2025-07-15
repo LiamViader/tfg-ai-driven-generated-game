@@ -6,7 +6,7 @@ from simulated.components.relationships import SimulatedRelationships
 from simulated.components.narrative import SimulatedNarrative
 from simulated.components.game_events import SimulatedGameEvents
 if TYPE_CHECKING:
-    from simulated.versioning.manager import GameStateVersionManager
+    from simulated.versioning.layers.manager import GameStateVersionManager
     from simulated.game_state import SimulatedGameState
 from copy import deepcopy
 

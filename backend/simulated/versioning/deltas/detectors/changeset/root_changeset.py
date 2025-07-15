@@ -1,18 +1,13 @@
 from simulated.versioning.deltas.detectors.base import ChangeDetector
-from simulated.versioning.deltas.detectors.map import MapDetector
+from simulated.versioning.deltas.detectors.changeset.map import ChangesetMapDetector
 from simulated.versioning.deltas.checkpoints.changeset import ChangesetCheckpoint
-from simulated.versioning.deltas.detectors.scenarios import *
+from typing import Dict, Optional, Any
 
-class ChangesetDetector(ChangeDetector):
-    def __init__(self):
-        self.map_detector = MapDetector(ScenarioDetector(
-            [
-                ScenarioNameDetector(),
-                ScenarioVisualsDetector(),
-            ]
-        ))
+class ChangesetDetector(ChangeDetector[ChangesetCheckpoint]):
+    def __init__(self, map_detector: ChangesetMapDetector):
+        self.map_detector = map_detector
 
-    def detect(self, old_checkpoint: ChangesetCheckpoint, new_checkpoint: ChangesetCheckpoint) -> dict | None:
+    def detect(self, old_checkpoint: ChangesetCheckpoint, new_checkpoint: ChangesetCheckpoint) -> Dict[str, Any] | None:
         """
         The main entry point. It calls the high-level detectors
         and assembles the final 'changes' dictionary.

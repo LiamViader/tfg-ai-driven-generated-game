@@ -1,12 +1,13 @@
-from simulated.versioning.deltas.detectors.scenarios import ScenarioDetector
+from simulated.versioning.deltas.detectors.changeset.scenarios import ChangesetScenarioDetector
 from simulated.versioning.deltas.detectors.base import ChangeDetector
 from core_game.map.schemas import GameMapModel
+from typing import Dict, Any
 
-class MapDetector(ChangeDetector):
-    def __init__(self, scenario_detector: ScenarioDetector):
+class ChangesetMapDetector(ChangeDetector[GameMapModel]):
+    def __init__(self, scenario_detector: ChangesetScenarioDetector):
         self.scenario_detector = scenario_detector
 
-    def detect(self, old_map: GameMapModel, new_map: GameMapModel) -> dict | None:
+    def detect(self, old_map: GameMapModel, new_map: GameMapModel) -> Dict[str, Any] | None:
         """
         Compares two maps, finds the changes in scenarios, and uses
         the ScenarioDetector to get the details for each one.
@@ -28,3 +29,5 @@ class MapDetector(ChangeDetector):
                 ops.append({"op": "update", "id": id, **scenario_changes})
         
         return {"scenarios": ops} if ops else None
+    
+

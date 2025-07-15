@@ -1,7 +1,4 @@
-"""Manual test entrypoint for the complete generation graph."""
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.refinement_loop.pipelines import (
@@ -16,7 +13,7 @@ from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
 USER_PROMPT = """
-All characters are really weird aliens or monsters weird shaped.
+Cars game.
 """
 
 if __name__ == "__main__":

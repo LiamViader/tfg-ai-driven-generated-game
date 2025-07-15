@@ -1,10 +1,11 @@
 # in: core/singleton.py
 
 from core_game.game_state.singleton import GameStateSingleton
-from simulated.versioning.manager import GameStateVersionManager 
+from simulated.versioning.layers.manager import GameStateVersionManager 
 from simulated.game_state import SimulatedGameState
-from simulated.versioning.checkpoint import StateCheckpointManager
+from simulated.versioning.deltas.manager import StateCheckpointManager
 import typing 
+from simulated.versioning.deltas.factory import CheckpointManagerFactory
 
 class SimulatedGameStateSingleton:
     """
@@ -75,5 +76,6 @@ class SimulatedGameStateSingleton:
         """Return the global StateCheckpointManager instance."""
         cls._initialize()
         if cls._checkpoint_manager is None:
-            cls._checkpoint_manager = StateCheckpointManager(cls.get_instance())
+            factory = CheckpointManagerFactory()
+            cls._checkpoint_manager = factory.create_manager(cls.get_instance())
         return cls._checkpoint_manager

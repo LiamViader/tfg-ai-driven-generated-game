@@ -89,42 +89,45 @@ class Characters:
 
     def __init__(self, model: Optional[CharactersModel] = None) -> None:
         self._registry: Dict[str, BaseCharacter]
-        self._player: Optional[PlayerCharacter]
+        self._player_id: Optional[str]
 
         if model:
             self._populate_from_model(model)
         else:
             self._registry = {}
-            self._player = None
+            self._player_id = None
 
     def _populate_from_model(self, model: CharactersModel) -> None:
-        self._registry = {
-            character.id: BaseCharacter(character)
-            for character in model.registry.values()
-        }
-        self._player = (
-            PlayerCharacter(model.player_character) if model.player_character else None
-        )
+        self._registry = {}
+        for char_id, char_model in model.registry.items():
+            if char_model.type == "player":
+                self._registry[char_id] = PlayerCharacter(cast(PlayerCharacterModel, char_model))
+            else:
+                self._registry[char_id] = NPCCharacter(cast(NonPlayerCharacterModel, char_model))
+
+        self._player_id = model.player_character_id
 
 
     def to_model(self) -> CharactersModel:
         """Return the underlying data as a CharactersModel."""
         return CharactersModel(
             registry={cid: char.get_model() for cid, char in self._registry.items()},
-            player_character=self._player.get_model() if self._player else None,
+            # --- CAMBIO AQUÍ ---
+            player_character_id=self._player_id,
         )
 
     def find_character(self, character_id: str) -> Optional[BaseCharacter]:
-        """Return a character if it exists, or None."""
-        if self._player and self._player.id == character_id:
-            return self._player
+        """
+        Return a character from the registry if it exists, or None.
+        Mucho más simple ahora.
+        """
         return self._registry.get(character_id)
     
     def get_player(self) -> Optional[PlayerCharacter]:
-        return self._player
+        return self.player
 
     def has_player(self) -> bool:
-        return self._player is not None
+        return self.player is not None
 
     def add_npc(self, npc:NPCCharacter) -> NPCCharacter:
         """Create a new NPC and return it."""
@@ -133,9 +136,24 @@ class Characters:
 
     def add_player(self, player: PlayerCharacter) -> PlayerCharacter:
         """Adds the player to de character components. it does not check anything"""
-        self._player = player
+        if self.has_player():
+            raise ValueError("A player character already exists.")
+            
         self._registry[player.id] = player
+        self._player_id = player.id # La clave es guardar el ID
         return player
+
+    @property
+    def player(self) -> Optional[PlayerCharacter]:
+        """
+        Returns the full PlayerCharacter object by looking it up in the
+        registry using its ID. Returns None if there is no player.
+        """
+        if self._player_id is None:
+            return None
+        
+        char = self._registry.get(self._player_id)
+        return cast(PlayerCharacter, char)
 
     # ------------------------------------------------------------------
     # Modification helpers
@@ -325,7 +343,7 @@ class Characters:
     
     def delete_character(self, character_id: str) -> Optional[BaseCharacter]:
         """Delete an NPC from the registry."""
-        if character_id == (self._player.id if self._player else None):
+        if character_id == (self.player.id if self.player else None):
             return None
         return self._registry.pop(character_id, None)
 
