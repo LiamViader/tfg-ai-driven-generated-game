@@ -50,7 +50,7 @@ def narrative_executor_reason_node(state: NarrativeGraphState):
             state.narrative_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.narrative_current_try
+            (state.narrative_current_try - 1)
             + (state.narrative_current_executor_iteration / max_iterations)
         )
         state.narrative_progress_tracker.update(
@@ -111,7 +111,7 @@ def narrative_validation_reason_node(state: NarrativeGraphState):
             state.narrative_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.narrative_current_try
+            (state.narrative_current_try - 1)
             + (state.narrative_current_validation_iteration / max_iterations)
         )
         state.narrative_progress_tracker.update(

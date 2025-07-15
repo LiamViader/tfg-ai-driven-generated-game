@@ -139,3 +139,5 @@ class CharacterGraphState(BaseModel):
         description="Name of the field in the state where tool-generated messages should be appended",
     )
 
+    class Config:
+        arbitrary_types_allowed = True

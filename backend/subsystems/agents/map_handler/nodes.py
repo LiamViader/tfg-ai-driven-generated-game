@@ -52,12 +52,27 @@ def map_executor_reason_node(state: MapGraphState):
     Reasoning node. The llm requests the tool towards the next step
     """
     if state.map_progress_tracker is not None:
+        # --- LÓGICA DE PROGRESO CORREGIDA ---
+        max_retries = state.map_max_retries
         max_iterations = state.map_max_executor_iterations
-        weight_of_map_exec_by_retry = NODE_WEIGHTS["map_executor_reason_node"] / (state.map_max_retries+1)
-        progress_of_map_exec = weight_of_map_exec_by_retry * (
-            state.map_current_try + (state.map_current_executor_iteration / max_iterations)
+        
+        # 1. Base: ¿Cuánto progreso se completó en los reintentos ANTERIORES?
+        # Usamos (try - 1) porque los reintentos son 1-based (empiezan en 1).
+        progress_from_previous_tries = state.map_current_try / max_retries
+        
+        # 2. ¿Cuánto vale el bloque de progreso de ESTE reintento?
+        weight_of_current_try_block = 1 / max_retries
+        
+        # 3. ¿Cuánto hemos avanzado DENTRO de la fase de ejecución de este intento? (un valor de 0.0 a 1.0)
+        progress_within_execution_phase = state.map_current_executor_iteration / max_iterations
+        
+        # 4. El progreso total es la base + la fracción que llevamos de la fase de ejecución actual.
+        total_local_progress = progress_from_previous_tries + (
+            progress_within_execution_phase * weight_of_current_try_block * NODE_WEIGHTS["map_executor_reason_node"]
         )
-        state.map_progress_tracker.update(progress_of_map_exec, "Generating/Updating map")
+        print("Total local progress:", total_local_progress)
+        
+        state.map_progress_tracker.update(total_local_progress, "Generating/Updating map")
 
     print("---ENTERING: REASON EXECUTION NODE---")
 
@@ -122,10 +137,35 @@ def map_validation_reason_node(state: MapGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
     if state.map_progress_tracker is not None:
+        # --- LÓGICA DE PROGRESO CORREGIDA ---
+        max_retries = state.map_max_retries
+        max_iterations = state.map_max_validation_iterations
+        
+        # 1. Base: ¿Cuánto progreso se completó en los reintentos ANTERIORES?
+        # Usamos (try - 1) porque los reintentos son 1-based (empiezan en 1).
+        progress_from_previous_tries = state.map_current_try / max_retries
+        
+        # 2. ¿Cuánto vale el bloque de progreso de ESTE reintento?
+        weight_of_current_try_block = 1 / max_retries
+        
+        progress_within_execution_phase = weight_of_current_try_block * NODE_WEIGHTS["map_executor_reason_node"]
+        # 3. ¿Cuánto hemos avanzado DENTRO de la fase de ejecución de este intento? (un valor de 0.0 a 1.0)
+        progress_within_validation_phase = state.map_current_validation_iteration / max_iterations
+        
+        # 4. El progreso total es la base + la fracción que llevamos de la fase de ejecución actual.
+        total_local_progress = progress_from_previous_tries + (
+            progress_within_validation_phase * weight_of_current_try_block * NODE_WEIGHTS["map_executor_reason_node"]
+        ) + progress_within_execution_phase
+
+        print("Total local progress:", total_local_progress)
+        
+        state.map_progress_tracker.update(total_local_progress, "Generating/Updating map")
+
+    if state.map_progress_tracker is not None:
         max_iterations = state.map_max_validation_iterations
         weight_of_map_val_by_retry = NODE_WEIGHTS["map_validation_reason_node"] / (state.map_max_retries+1)
         progress_of_map_val = weight_of_map_val_by_retry * (
-            state.map_current_try + (state.map_current_validation_iteration / max_iterations)
+           (state.map_current_try - 1) + (state.map_current_validation_iteration / max_iterations)
         )
         state.map_progress_tracker.update(NODE_WEIGHTS["map_executor_reason_node"] + progress_of_map_val, "Validating map")
 

@@ -50,7 +50,7 @@ def character_executor_reason_node(state: CharacterGraphState):
             state.characters_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.characters_current_try
+            (state.characters_current_try - 1)
             + (state.characters_current_executor_iteration / max_iterations)
         )
         state.characters_progress_tracker.update(
@@ -116,7 +116,7 @@ def character_validation_reason_node(state: CharacterGraphState):
             state.characters_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.characters_current_try
+            (state.characters_current_try - 1)
             + (state.characters_current_validation_iteration / max_iterations)
         )
         state.characters_progress_tracker.update(

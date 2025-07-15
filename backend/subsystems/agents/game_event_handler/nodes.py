@@ -49,7 +49,7 @@ def game_event_executor_reason_node(state: GameEventGraphState):
             state.events_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.events_current_try
+            (state.events_current_try - 1)
             + (state.events_current_executor_iteration / max_iterations)
         )
         state.events_progress_tracker.update(
@@ -111,7 +111,7 @@ def game_event_validation_reason_node(state: GameEventGraphState):
             state.events_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.events_current_try
+            (state.events_current_try - 1)
             + (state.events_current_validation_iteration / max_iterations)
         )
         state.events_progress_tracker.update(

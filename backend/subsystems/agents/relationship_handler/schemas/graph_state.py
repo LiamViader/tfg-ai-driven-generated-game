@@ -54,3 +54,5 @@ class RelationshipGraphState(BaseModel):
     logs_field_to_update: str = Field(default="logs")
     messages_field_to_update: str = Field(default="messages")
 
+    class Config:
+        arbitrary_types_allowed = True

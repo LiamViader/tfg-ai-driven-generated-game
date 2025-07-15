@@ -53,7 +53,7 @@ def relationship_executor_reason_node(state: RelationshipGraphState):
             state.relationships_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.relationships_current_try
+            (state.relationships_current_try - 1)
             + (state.relationships_current_executor_iteration / max_iterations)
         )
         state.relationships_progress_tracker.update(
@@ -115,7 +115,7 @@ def relationship_validation_reason_node(state: RelationshipGraphState):
             state.relationships_max_retries + 1
         )
         progress = weight_by_retry * (
-            state.relationships_current_try
+            (state.relationships_current_try - 1)
             + (state.relationships_current_validation_iteration / max_iterations)
         )
         state.relationships_progress_tracker.update(
