@@ -25,7 +25,7 @@ def start_generation(prompt: str):
                 initial_prompt=prompt,
                 refined_prompt_desired_word_length=200,
                 refinement_pipeline_config=selected_pipeline,
-                progress_tracker=root_tracker
+                generation_progress_tracker=root_tracker
             )
 
             update_global_progress(0.0, "Generación iniciada...")

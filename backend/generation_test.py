@@ -19,12 +19,11 @@ About cars that are alive.
 """
 
 def print_progress(global_progress: float, message: str):
-    percent = round(global_progress * 100, 2)
-    print(f"[PROGRESS] {percent}% - {message}")
+    pass
 
 if __name__ == "__main__":
     pipeline = map_then_characters_pipeline()
-    tracker = ProgressTracker(weight=1.0, update_fn=print_progress)
+    tracker = ProgressTracker(weight=1.0, update_fn=print_progress, debug=True)
     state = GenerationGraphState(
         initial_prompt=USER_PROMPT,
         refined_prompt_desired_word_length=200,

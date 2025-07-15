@@ -42,8 +42,9 @@ class ToolCreatePlayerArgs(InjectedToolContext):
     identity: IdentityModel = Field(..., description="Full identity information")
     physical: PhysicalAttributesModel = Field(..., description="Full physical description")
     psychological: PsychologicalAttributesModel = Field(..., description="Detailed psychological profile")
+    scenario_id: str = Field(..., description="ID of the scenario where the player starts. The scenario must exist. This field is mandatory. ids are of the form 'scenario_001, scemario_002, ...'")
     knowledge: Optional[KnowledgeModel] = Field(default_factory=KnowledgeModel, description="Initial knowledge state")
-    scenario_id: str = Field(..., description="ID of the scenario where the player starts. The scenario must exist.")
+
 
 class ToolModifyIdentityArgs(InjectedToolContext):
     character_id: str = Field(...,description="ID of the character (NPC or player) to modify",)
@@ -200,7 +201,7 @@ def create_player(
     knowledge: Optional[KnowledgeModel]
 ) -> Command:
     "Creates the player character in the specified scenario. The scenario ID must refer to an existing scenario. The 'scenario_id' field is mandatory. Operation fails if a player character already exists."
-
+    print("---ENTERING: CREATE PLAYER TOOL---")
     args = extract_tool_args(locals())
 
     if not knowledge:

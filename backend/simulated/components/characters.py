@@ -256,7 +256,7 @@ class SimulatedCharacters:
 
         scenario_id, character = self._working_state.remove_character_from_scenario(character_id)
         if not scenario_id or not character:
-            raise ValueError("Character is already not present in any scenario.")
+            raise ValueError(f"Character {character_id} is already not present in any scenario.")
         
         return character, scenario_id
     

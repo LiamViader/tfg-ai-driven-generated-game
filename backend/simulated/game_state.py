@@ -169,7 +169,7 @@ class SimulatedGameState:
             raise KeyError(f"Character with ID '{character_id}' not found.")
         
         if character.present_in_scenario == scenario_id:
-            raise ValueError(f"Character is already present in scenario with ID {scenario_id}")
+            raise ValueError(f"Character {character_id} is already present in scenario with ID {scenario_id}")
         
         success, message = self.read_only_map.can_place_character(character,scenario_id)
         if not success:
