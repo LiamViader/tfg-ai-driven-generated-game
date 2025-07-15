@@ -16,6 +16,11 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import ToolLog
 
+NODE_WEIGHTS = {
+    "character_executor_reason_node": 0.7,
+    "character_validation_reason_node": 0.3,
+}
+
 def receive_objective_node(state: CharacterGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
     SimulatedGameStateSingleton.begin_transaction()
@@ -38,6 +43,19 @@ executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_c
 
 def character_executor_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
+
+    if state.characters_progress_tracker is not None:
+        max_iterations = state.characters_max_executor_iterations
+        weight_by_retry = NODE_WEIGHTS["character_executor_reason_node"] / (
+            state.characters_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.characters_current_try
+            + (state.characters_current_executor_iteration / max_iterations)
+        )
+        state.characters_progress_tracker.update(
+            progress, "Generating/Updating characters"
+        )
 
     print("TOOLS BINDED")
     full_prompt = format_character_reason_prompt(
@@ -92,6 +110,20 @@ def receive_result_for_validation_node(state: CharacterGraphState):
 def character_validation_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
+    if state.characters_progress_tracker is not None:
+        max_iterations = state.characters_max_validation_iterations
+        weight_by_retry = NODE_WEIGHTS["character_validation_reason_node"] / (
+            state.characters_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.characters_current_try
+            + (state.characters_current_validation_iteration / max_iterations)
+        )
+        state.characters_progress_tracker.update(
+            NODE_WEIGHTS["character_executor_reason_node"] + progress,
+            "Validating characters",
+        )
+
     state.characters_current_validation_iteration += 1
     if state.characters_current_validation_iteration <= state.characters_max_validation_iterations:
         validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
@@ -137,6 +169,10 @@ def retry_executor_node(state: CharacterGraphState):
 def final_node_success(state: CharacterGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE SUCCESS---")
     SimulatedGameStateSingleton.commit()
+    if state.characters_progress_tracker is not None:
+        state.characters_progress_tracker.update(
+            1.0, "Characters task finalized successfully"
+        )
     return {
         "characters_task_succeeded_final": True,
     }
@@ -145,6 +181,10 @@ def final_node_success(state: CharacterGraphState):
 def final_node_failure(state: CharacterGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
     SimulatedGameStateSingleton.rollback()
+    if state.characters_progress_tracker is not None:
+        state.characters_progress_tracker.update(
+            1.0, "Characters task finalized successfully"
+        )
     return {
         "characters_task_succeeded_final": False,
     }

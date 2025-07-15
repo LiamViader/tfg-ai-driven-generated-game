@@ -7,6 +7,7 @@ import operator
 
 from subsystems.agents.utils.schemas import ToolLog
 from subsystems.agents.utils.logs import log_reducer
+from utils.progress_tracker import ProgressTracker
 
 class CharacterGraphState(BaseModel):
     """Holds context and working memory for the character agent."""
@@ -122,6 +123,10 @@ class CharacterGraphState(BaseModel):
     characters_task_succeeded_final: bool = Field(
         default=False,
         description="Flag indicating whether the agent succeeded on the task at the end of the process",
+    )
+
+    characters_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
     )
 
     # shared with all other agents
