@@ -1,5 +1,7 @@
 """Manual test entrypoint for the complete generation graph."""
-
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from subsystems.generation.refinement_loop.pipelines import (

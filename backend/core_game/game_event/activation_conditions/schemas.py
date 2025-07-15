@@ -42,7 +42,7 @@ class CharacterInteractionOptionModel(ActivationConditionModel):
         "The text that will appear in the UI (character interaction options catalog) for the player to select."
         "It should be written as if it's a line the player character might say to start the conversation, or a natural paraphrase of it."
         "Write something that reflects the intent or wording of the dialogue itself."
-        "Examples: 'Are you okay after what happened?', 'Tell me more about your past', 'I don't trust you', 'Do you know about what Joe dit to Sussan?'"
+        "Examples: 'Are you okay after what happened?', 'Tell me more about your past', 'I don't trust you', 'Did you hear what Joe did to Susan?'"
         "The tone should match the player's intended attitude in this interaction."
         "Label should be concise but descriptive enough. Around 3-10 words is ideal. Max 13 words."
     ))
