@@ -13,7 +13,7 @@ from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
 
 USER_PROMPT = """
-Cars game.
+About cars that are alive.
 """
 
 if __name__ == "__main__":
