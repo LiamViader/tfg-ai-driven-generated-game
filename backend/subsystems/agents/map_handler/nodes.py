@@ -53,8 +53,10 @@ def map_executor_reason_node(state: MapGraphState):
     """
     if state.map_progress_tracker is not None:
         max_iterations = state.map_max_executor_iterations
-        weight_of_map_exec_by_retry = NODE_WEIGHTS["map_executor_reason_node"] / state.map_max_retries
-        progress_of_map_exec = weight_of_map_exec_by_retry * state.map_current_try * (state.map_current_executor_iteration / max_iterations)
+        weight_of_map_exec_by_retry = NODE_WEIGHTS["map_executor_reason_node"] / (state.map_max_retries+1)
+        progress_of_map_exec = weight_of_map_exec_by_retry * (
+            state.map_current_try + (state.map_current_executor_iteration / max_iterations)
+        )
         state.map_progress_tracker.update(progress_of_map_exec, "Generating/Updating map")
 
     print("---ENTERING: REASON EXECUTION NODE---")
@@ -121,8 +123,10 @@ def map_validation_reason_node(state: MapGraphState):
 
     if state.map_progress_tracker is not None:
         max_iterations = state.map_max_validation_iterations
-        weight_of_map_val_by_retry = NODE_WEIGHTS["map_validation_reason_node"] / state.map_max_retries
-        progress_of_map_val = weight_of_map_val_by_retry * state.map_current_try * (state.map_current_validation_iteration / max_iterations)
+        weight_of_map_val_by_retry = NODE_WEIGHTS["map_validation_reason_node"] / (state.map_max_retries+1)
+        progress_of_map_val = weight_of_map_val_by_retry * (
+            state.map_current_try + (state.map_current_validation_iteration / max_iterations)
+        )
         state.map_progress_tracker.update(NODE_WEIGHTS["map_executor_reason_node"] + progress_of_map_val, "Validating map")
 
     state.map_current_validation_iteration+=1

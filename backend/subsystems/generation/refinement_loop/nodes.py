@@ -49,9 +49,10 @@ def map_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = "" # AQUI S'HAURIA DE INJECTAR INFORMACIO D'ENTITATS QUE PUGUIN SER UTILS, FENT RAG A PARTIR DE LES ULTIMES OPERACIONS I TENINT EN COMPTE QUE LI POT INTERESSAR A AQUEST AGENT I DE QUI ERA CADA OPERACIO
     additional_info_str = ""
     current_step=state.refinement_pipeline_config.steps[state.refinement_current_pass]
-
+    
     if state.refinement_progress_tracker is not None:
-        map_tracker = state.refinement_progress_tracker.subtracker(current_step.weight)
+        state.refinement_progress_tracker.update(state.refinement_current_pass/len(state.refinement_pipeline_config.steps), f"Step {state.refinement_current_pass+1} of {len(state.refinement_pipeline_config.steps)}: {current_step.agent_name} agent")
+        map_tracker = state.refinement_progress_tracker.subtracker(1/len(state.refinement_pipeline_config.steps))
     else:
         map_tracker = None
 
@@ -75,8 +76,6 @@ def map_step_finish(state: RefinementLoopGraphState):
     """
     Postprocesses the finished map step.
     """
-    if state.refinement_progress_tracker is not None and state.map_progress_tracker is not None:
-        state.refinement_progress_tracker.update(state.map_progress_tracker.weight)
     return {
         "operations_log_to_summarize": state.map_executor_applied_operations_log,
         "last_step_succeeded": state.map_task_succeeded_final,
