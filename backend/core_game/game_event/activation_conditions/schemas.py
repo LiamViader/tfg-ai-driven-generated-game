@@ -38,6 +38,13 @@ class CharacterInteractionOptionModel(ActivationConditionModel):
     """Makes an event available as a menu option when the player interacts with a specific character."""
     type: Literal["character_interaction"] = "character_interaction"
     character_id: str = Field(..., description="The ID of the character the player must interact with to see this option.")
-    menu_label: str = Field(..., description="The text that will appear in the UI for the player to select. E.g., 'Ask about the stolen artifact', 'About the raising war', 'What time is it?', etc.")
+    menu_label: str = Field(..., description=(
+        "The text that will appear in the UI (character interaction options catalog) for the player to select."
+        "It should be written as if it's a line the player character might say to start the conversation, or a natural paraphrase of it."
+        "Write something that reflects the intent or wording of the dialogue itself."
+        "Examples: 'Are you okay after what happened?', 'Tell me more about your past', 'I don't trust you', 'Do you know about what Joe dit to Sussan?'"
+        "The tone should match the player's intended attitude in this interaction."
+        "Label should be concise but descriptive enough. Around 3-10 words is ideal. Max 13 words."
+    ))
     is_repeatable: bool = Field(False, description="If true, this option will reappear in the catalog even after the event has been completed, so the player can keep playing this interaction.")
 
