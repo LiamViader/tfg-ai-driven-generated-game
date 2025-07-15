@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional, Any, Annotated, Sequence, Literal, Set
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 from copy import deepcopy
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
@@ -8,7 +8,7 @@ import operator
 from core_game.map.schemas import ScenarioModel, Direction, OppositeDirections
 from subsystems.agents.utils.schemas import ToolLog
 from subsystems.agents.utils.logs import log_reducer
-
+from utils.progress_tracker import ProgressTracker
 
 class MapGraphState(BaseModel):
     # Context and objectives
@@ -49,6 +49,10 @@ class MapGraphState(BaseModel):
     # --- Finalizing ---
     map_task_succeeded_final: bool = Field(default=False, description="Flag indicating wether the agent succeeded on the task at the end of the process")
 
+    map_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
+    )
+
     #shared with all other agents
     logs_field_to_update:  str = Field(default="logs", description="Name of the field in the state where tool-generated logs should be appended")
     messages_field_to_update: str = Field(default="messages", description="Name of the field in the state where tool-generated messages should be appended")
@@ -57,3 +61,6 @@ class MapGraphState(BaseModel):
     def get_opposite_direction(direction: Direction) -> Direction:
         """Helper method to get the opposite of a given direction."""
         return OppositeDirections[direction]
+
+    class Config:
+        arbitrary_types_allowed = True

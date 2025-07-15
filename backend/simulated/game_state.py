@@ -12,7 +12,7 @@ from core_game.character.schemas import (
     IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
 )
 from core_game.map.domain import Scenario
-from simulated.versioning.layers.manager import GameStateVersionManager
+from versioning.layers.manager import GameStateVersionManager
 from core_game.game_event.constants import EVENT_STATUS_LITERAL
 from core_game.game_event.activation_conditions.schemas import *
 from core_game.game_event.domain import (

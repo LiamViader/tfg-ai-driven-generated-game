@@ -12,6 +12,7 @@ class PipelineStep(BaseModel):
     max_executor_iterations: int = Field(..., description="Max executor iterations to achieve the objective")
     max_validation_iterations: int = Field(..., description="Max iterations to validate the result")
     max_retries: int = Field(..., description="Max retries for the agent to achieve its task")
+    weight: float = Field(..., description="Weight of the step in the overall pipeline, used for progress compute.")
 
 class PipelineConfig(BaseModel):
     """Defines a complete configuration for a generation pipeline."""

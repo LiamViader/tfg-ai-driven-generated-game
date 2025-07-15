@@ -11,18 +11,27 @@ from subsystems.generation.refinement_loop.pipelines import (
 )
 from utils.visualize_graph import visualize_map_graph
 from core_game.game_state.singleton import GameStateSingleton
+from utils.progress_tracker import ProgressTracker
+
 
 USER_PROMPT = """
 About cars that are alive.
 """
 
+def print_progress(global_progress: float, message: str):
+    percent = round(global_progress * 100, 2)
+    print(f"[PROGRESS] {percent}% - {message}")
+
 if __name__ == "__main__":
     pipeline = map_then_characters_pipeline()
+    tracker = ProgressTracker(weight=1.0, update_fn=print_progress)
     state = GenerationGraphState(
         initial_prompt=USER_PROMPT,
         refined_prompt_desired_word_length=200,
         refinement_pipeline_config=pipeline,
     )
+
+    state.generation_progress_tracker = tracker 
 
     print("--- INVOKE GENERATION GRAPH ---")
     generation_app = get_generation_graph_app()

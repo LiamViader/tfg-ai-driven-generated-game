@@ -1,8 +1,8 @@
 import operator
-from typing import Sequence, List
+from typing import Sequence, List, Optional
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import PrivateAttr, Field
 from subsystems.generation.refinement_loop.schemas.pipeline_config import PipelineConfig
 from subsystems.agents.character_handler.schemas.graph_state import CharacterGraphState
 from subsystems.agents.map_handler.schemas.graph_state import MapGraphState
@@ -11,6 +11,7 @@ from subsystems.agents.narrative_handler.schemas.graph_state import NarrativeGra
 from subsystems.agents.game_event_handler.schemas.graph_state import GameEventGraphState
 from subsystems.summarize_agent_logs.schemas.graph_state import SummarizeLogsGraphState
 from subsystems.agents.utils.schemas import AgentLog
+from utils.progress_tracker import ProgressTracker
 class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipGraphState, NarrativeGraphState, GameEventGraphState, SummarizeLogsGraphState):
     """
     Manages the state of the iterative N-pass enrichment loop.
@@ -32,6 +33,10 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipG
 
     refinement_foundational_world_info: str = Field(default="", description="Foundational info about the world that will be passed to the agents")
 
+    refinement_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
+    )
+
     #Shared with other agents
     refinement_pass_changelog: Annotated[Sequence[AgentLog], operator.add] = Field(
         default_factory=list,
@@ -42,4 +47,7 @@ class RefinementLoopGraphState(CharacterGraphState, MapGraphState, RelationshipG
         default=False,
         description="Indicates whether this process finalized with success."
     )
+    class Config:
+        arbitrary_types_allowed = True
+
 

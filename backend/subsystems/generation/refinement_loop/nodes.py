@@ -24,7 +24,7 @@ def prepare_next_step(state: RefinementLoopGraphState):
         agentName = state.refinement_pipeline_config.steps[state.refinement_current_pass+1].agent_name
     else:
         agentName = state.current_agent_name
-    
+
     return {
         "refinement_current_pass": state.refinement_current_pass+1,
         "current_agent_name": agentName,
@@ -49,6 +49,12 @@ def map_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = "" # AQUI S'HAURIA DE INJECTAR INFORMACIO D'ENTITATS QUE PUGUIN SER UTILS, FENT RAG A PARTIR DE LES ULTIMES OPERACIONS I TENINT EN COMPTE QUE LI POT INTERESSAR A AQUEST AGENT I DE QUI ERA CADA OPERACIO
     additional_info_str = ""
     current_step=state.refinement_pipeline_config.steps[state.refinement_current_pass]
+
+    if state.refinement_progress_tracker is not None:
+        map_tracker = state.refinement_progress_tracker.subtracker(current_step.weight)
+    else:
+        map_tracker = None
+
     return {
         "map_foundational_lore_document": state.refinement_foundational_world_info,
         "map_recent_operations_summary": applied_operations_log,
@@ -61,13 +67,16 @@ def map_step_start(state: RefinementLoopGraphState):
         "map_max_validation_iterations": current_step.max_validation_iterations,
         "map_max_retries": current_step.max_retries,
         "map_executor_applied_operations_log": ClearLogs(),
-        "map_validator_applied_operations_log": ClearLogs()
+        "map_validator_applied_operations_log": ClearLogs(),
+        "map_progress_tracker": map_tracker
     }
 
 def map_step_finish(state: RefinementLoopGraphState):
     """
     Postprocesses the finished map step.
     """
+    if state.refinement_progress_tracker is not None and state.map_progress_tracker is not None:
+        state.refinement_progress_tracker.update(state.map_progress_tracker.weight)
     return {
         "operations_log_to_summarize": state.map_executor_applied_operations_log,
         "last_step_succeeded": state.map_task_succeeded_final,
@@ -206,6 +215,8 @@ def finalize_refinement_loop(state: RefinementLoopGraphState):
     Node called when the refinement_loop has finished
     """
     #TODO CHECK HOW MANY PASSES WERE SUCCESSFULL AND DECIDE WHETHER TO FINALIZE WITH SUCCESS OR WITH FAILURE
+    if state.refinement_progress_tracker is not None:
+        state.refinement_progress_tracker.update(1.0, "Refinement loop finalized successfully")
     return {
         "finalized_with_success": True
     }

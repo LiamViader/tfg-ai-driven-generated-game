@@ -17,6 +17,11 @@ from simulated.singleton import SimulatedGameStateSingleton
 
 from subsystems.agents.utils.logs import ToolLog, ClearLogs
 
+NODE_WEIGHTS = {
+    "map_executor_reason_node": 0.7,
+    "map_validation_reason_node": 0.3,
+}
+
 def receive_objective_node(state: MapGraphState):
     """
     First node of the graph.
@@ -46,6 +51,11 @@ def map_executor_reason_node(state: MapGraphState):
     """
     Reasoning node. The llm requests the tool towards the next step
     """
+    if state.map_progress_tracker is not None:
+        max_iterations = state.map_max_executor_iterations
+        weight_of_map_exec_by_retry = NODE_WEIGHTS["map_executor_reason_node"] / state.map_max_retries
+        progress_of_map_exec = weight_of_map_exec_by_retry * state.map_current_try * (state.map_current_executor_iteration / max_iterations)
+        state.map_progress_tracker.update(progress_of_map_exec, "Generating/Updating map")
 
     print("---ENTERING: REASON EXECUTION NODE---")
 
@@ -109,6 +119,12 @@ def map_validation_reason_node(state: MapGraphState):
     """
     print("---ENTERING: REASON VALIDATION NODE---")
 
+    if state.map_progress_tracker is not None:
+        max_iterations = state.map_max_validation_iterations
+        weight_of_map_val_by_retry = NODE_WEIGHTS["map_validation_reason_node"] / state.map_max_retries
+        progress_of_map_val = weight_of_map_val_by_retry * state.map_current_try * (state.map_current_validation_iteration / max_iterations)
+        state.map_progress_tracker.update(NODE_WEIGHTS["map_executor_reason_node"] + progress_of_map_val, "Validating map")
+
     state.map_current_validation_iteration+=1
     if state.map_current_validation_iteration <= state.map_max_validation_iterations:
         map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools(VALIDATIONTOOLS, tool_choice="any")
@@ -156,6 +172,10 @@ def final_node_success(state: MapGraphState):
     """
     print("---ENTERING: LAST NODE OBJECTIVE SUCESS---")
     SimulatedGameStateSingleton.commit() # commit all changes done by agent
+
+    if state.map_progress_tracker is not None:
+        state.map_progress_tracker.update(1.0, "Map task finalized successfully")
+
     return {
         "map_task_succeeded_final": True,
     }
@@ -167,6 +187,9 @@ def final_node_failure(state: MapGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
 
     SimulatedGameStateSingleton.rollback() # rollback all changes done by agent
+
+    if state.map_progress_tracker is not None:
+        state.map_progress_tracker.update(1.0, "Map task finalized successfully")
 
     return {
         "map_task_succeeded_final": False,

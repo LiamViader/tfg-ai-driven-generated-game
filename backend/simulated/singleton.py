@@ -1,11 +1,11 @@
 # in: core/singleton.py
 
 from core_game.game_state.singleton import GameStateSingleton
-from simulated.versioning.layers.manager import GameStateVersionManager 
+from versioning.layers.manager import GameStateVersionManager 
 from simulated.game_state import SimulatedGameState
-from simulated.versioning.deltas.manager import StateCheckpointManager
+from versioning.deltas.manager import StateCheckpointManager
 import typing 
-from simulated.versioning.deltas.factory import CheckpointManagerFactory
+from versioning.deltas.factory import CheckpointManagerFactory
 
 class SimulatedGameStateSingleton:
     """

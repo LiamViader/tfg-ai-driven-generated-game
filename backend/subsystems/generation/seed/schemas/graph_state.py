@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
 from core_game.narrative.schemas import NarrativeStructureTypeModel
-
+from utils.progress_tracker import ProgressTracker
 class SeedGenerationGraphState(BaseModel):
     """
     Manages the state of the seed generation for the game.
@@ -35,8 +35,15 @@ class SeedGenerationGraphState(BaseModel):
     selected_structure: Optional[NarrativeStructureTypeModel] = Field(default=None, description="Narrative structure selected by the agent")
     structure_selection_justification: Optional[str] = Field(default=None, description="Justification of why the selected structure was chosen")
 
+    seed_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
+        description="Hierarchical tracker for managing nested progress across graphs/subgraphs."
+    )
+
     #shared with other agents
     finalized_with_success: bool = Field(
         default=False,
         description="Indicates whether this process finalized with success."
     )
+    class Config:
+        arbitrary_types_allowed = True

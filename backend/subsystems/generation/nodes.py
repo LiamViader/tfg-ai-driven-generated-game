@@ -7,7 +7,7 @@ from subsystems.image_generation.characters.create.orchestrator import get_creat
 from core_game.character.schemas import CharacterBaseModel
 from core_game.map.schemas import ScenarioModel, ScenarioImageGenerationTemplate
 from typing import Set, Optional, Tuple, List, Dict, Any
-from simulated.versioning.deltas.checkpoints.internal import InternalStateCheckpoint
+from versioning.deltas.checkpoints.internal import InternalStateCheckpoint
 
 
 import os
@@ -17,23 +17,40 @@ from dotenv import load_dotenv, find_dotenv
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 
+NODE_WEIGHTS = {
+    "seed": 0.07,
+    "refinement": 0.63,
+    "generate_images": 0.3,
+}
+
 def start_generation(state: GenerationGraphState):
     """Initial node for the generation workflow."""
     print("---ENTERING: START GENERATION NODE---")
     SimulatedGameStateSingleton.begin_transaction()
 
     manager = SimulatedGameStateSingleton.get_checkpoint_manager()
+
+
     checkpoint_id = manager.create_checkpoint(
         checkpoint_type=InternalStateCheckpoint,
         checkpoint_id="initial_generation_state" # Es buena práctica darle un ID legible
     )
+
+    if state.generation_progress_tracker is not None:
+        seed_tracker = state.generation_progress_tracker.subtracker(NODE_WEIGHTS["seed"])
+    else:
+        seed_tracker = None
     
-    return {"initial_state_checkpoint_id": checkpoint_id}
+    return {
+        "initial_state_checkpoint_id": checkpoint_id,
+        "seed_progress_tracker": seed_tracker,
+    }
 
 def prepare_refinement(state: GenerationGraphState):
     """Intermidiate node between seed generation and refinement, prepares refinement"""
     print("---ENTERING: PREPARE REFINEMENT NODE---")
 
+    
     game_state = SimulatedGameStateSingleton.get_instance()
     refined_prompt = game_state.read_only_session.get_refined_prompt()
     assert refined_prompt is not None, "Refined prompt should not be None at prepare refinement"  
@@ -43,8 +60,15 @@ def prepare_refinement(state: GenerationGraphState):
 
     foundational_info = refined_prompt + "\n In this narrative world, the player has the following goal/objective: " + main_goal
 
+    if state.generation_progress_tracker is not None:
+        state.generation_progress_tracker.update(NODE_WEIGHTS["seed"], "Preparing refinement")
+        refinement_tracker = state.generation_progress_tracker.subtracker(NODE_WEIGHTS["refinement"])
+    else:
+        refinement_tracker = None
+
     return{
-        "refinement_foundational_world_info": foundational_info
+        "refinement_foundational_world_info": foundational_info,
+        "refinement_progress_tracker": refinement_tracker
     }
 
 def ensure_map_connectivity(state: GenerationGraphState):
@@ -295,6 +319,9 @@ def generate_images(state: GenerationGraphState):
     """Node for generating all images for the added entities"""
     print("---ENTERING: PARALLEL IMAGE GENERATION NODE---")
     
+    if state.generation_progress_tracker is not None:
+        state.generation_progress_tracker.update(NODE_WEIGHTS["seed"] + NODE_WEIGHTS["refinement"], "Generating images")
+
     load_dotenv()
     checkpoint_id = state.initial_state_checkpoint_id
     if not checkpoint_id:
@@ -326,6 +353,10 @@ def finalize_generation_success(state: GenerationGraphState):
     SimulatedGameStateSingleton.commit()
     if state.initial_state_checkpoint_id:
         SimulatedGameStateSingleton.get_checkpoint_manager().delete_checkpoint(state.initial_state_checkpoint_id)
+
+    if state.generation_progress_tracker is not None:
+        state.generation_progress_tracker.update(1.0, "Finalizing generation successfully")
+
     return {
         "finalized_with_success": True
     }

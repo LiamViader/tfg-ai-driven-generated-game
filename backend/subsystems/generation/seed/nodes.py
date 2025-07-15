@@ -16,6 +16,15 @@ from utils.message_window import get_valid_messages_window
 from pydantic import ValidationError, BaseModel, Field
 from simulated.singleton import SimulatedGameStateSingleton
 
+NODE_WEIGHTS = {
+    "refine_generation_prompt": 0.3,
+    "generate_main_goal": 0.1,
+    "narrative_structure_reason_node": 0.6,
+}
+
+
+
+
 def receive_generation_prompt(state: SeedGenerationGraphState):
     """
     First node of the graph.
@@ -26,6 +35,10 @@ def receive_generation_prompt(state: SeedGenerationGraphState):
     game_state = SimulatedGameStateSingleton.get_instance()
     game_state.session.set_user_prompt(state.initial_prompt)
     print("---ENTERING: RECEIVE USER PROMPT NODE---")
+
+    if state.seed_progress_tracker is not None:
+        state.seed_progress_tracker.update(0.0, "Refining user prompt")
+
     return {}
 
 def refine_generation_prompt(state: SeedGenerationGraphState):
@@ -128,11 +141,17 @@ def generate_main_goal(state: SeedGenerationGraphState):
     This node uses an llm to generate a narrative main goal from the refined user prompt. 
     This goal purpose is to give direction to the player on the narrative.
     """
+
+
     #save the refined prompt
     game_state = SimulatedGameStateSingleton.get_instance()
     game_state.session.set_refined_prompt(state.refined_prompt)
 
     print("---ENTERING: GENERATE MAIN GOAL NODE---")
+
+        
+    if state.seed_progress_tracker is not None:
+        state.seed_progress_tracker.update(NODE_WEIGHTS["refine_generation_prompt"], "Creating a goal for the player")
 
     class MainGoalValidation(BaseModel):
         valid: bool = Field(..., description="Whether the main goal is actionable, open-ended and coherent with the narrative seed.")
@@ -201,11 +220,17 @@ def generate_main_goal(state: SeedGenerationGraphState):
 def narrative_structure_reason_node(state: SeedGenerationGraphState):
     """Reasoning step for selecting a narrative structure."""
 
+
     #save the main goal
     game_state = SimulatedGameStateSingleton.get_instance()
     game_state.narrative.set_main_goal(state.main_goal)
 
     print("---ENTERING: NARRATIVE STRUCTURE REASON NODE---")
+
+    if state.seed_progress_tracker is not None:
+        max_iterations = state.max_structure_selection_reason_iterations + state.max_structure_forced_selection_iterations
+        progress_of_narrative_structure = NODE_WEIGHTS["narrative_structure_reason_node"] * (state.current_structure_selection_iteration / max_iterations)
+        state.seed_progress_tracker.update(NODE_WEIGHTS["refine_generation_prompt"] + NODE_WEIGHTS["generate_main_goal"] + progress_of_narrative_structure, "Reasoning for narrative structure selection")
 
     #Si s'acosta el màxim d'iteracions, es força a seleccionar la estructura. 2 iteracions de marge per si hi ha errors
     if state.current_structure_selection_iteration < state.max_structure_selection_reason_iterations:
@@ -242,6 +267,10 @@ def final_success_node(state: SeedGenerationGraphState):
     if state.selected_structure is not None:
         game_state.narrative.set_narrative_structure(state.selected_structure)
     SimulatedGameStateSingleton.commit()
+
+    if state.seed_progress_tracker is not None:
+        state.seed_progress_tracker.update(1.0, "Seed generation completed succesfully")
+
     return {
         "finalized_with_success": True
     }
@@ -250,6 +279,10 @@ def final_success_node(state: SeedGenerationGraphState):
 def final_failed_node(state: SeedGenerationGraphState):
     """Last step if something failed."""
     SimulatedGameStateSingleton.rollback()
+
+    if state.seed_progress_tracker is not None:
+        state.seed_progress_tracker.update(1.0, "Seed generation failed")
+
     return {
         "finalized_with_success": False
     }

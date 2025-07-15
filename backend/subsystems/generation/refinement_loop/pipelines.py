@@ -21,6 +21,7 @@ def map_only_pipeline() -> PipelineConfig:
                 max_executor_iterations=7,
                 max_validation_iterations=1,
                 max_retries=2,
+                weight=1.0,
             )
         ],
     )
@@ -41,6 +42,7 @@ def characters_only_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=0,
                 max_retries=0,
+                weight=1.0,
             )
         ],
     )
@@ -61,6 +63,7 @@ def map_then_characters_pipeline() -> PipelineConfig:
                 max_executor_iterations=4,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.5,
             ),
             PipelineStep(
                 step_name="Add Characters",
@@ -71,6 +74,7 @@ def map_then_characters_pipeline() -> PipelineConfig:
                 max_executor_iterations=5,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.5,
             ),
         ],
     )
@@ -91,6 +95,7 @@ def map_characters_relationships_pipeline() -> PipelineConfig:
                 max_executor_iterations=4,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.34,
             ),
             PipelineStep(
                 step_name="Add Characters",
@@ -101,6 +106,7 @@ def map_characters_relationships_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.33,
             ),
             PipelineStep(
                 step_name="Create Relationships",
@@ -111,6 +117,7 @@ def map_characters_relationships_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.33,
             ),
         ],
     )
@@ -131,6 +138,7 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
                 max_executor_iterations=4,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.25,
             ),
             PipelineStep(
                 step_name="Add Characters",
@@ -141,6 +149,7 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.25,
             ),
             PipelineStep(
                 step_name="Create Relationships",
@@ -151,6 +160,7 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.25,
             ),
             PipelineStep(
                 step_name="Create Narrative",
@@ -161,6 +171,7 @@ def map_characters_relationships_narrative_pipeline() -> PipelineConfig:
                 max_executor_iterations=5,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.25,
             ),
         ],
     )
@@ -181,6 +192,7 @@ def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
                 max_executor_iterations=4,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.2,
             ),
             PipelineStep(
                 step_name="Add Characters",
@@ -191,6 +203,7 @@ def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.2,
             ),
             PipelineStep(
                 step_name="Create Relationships",
@@ -201,6 +214,7 @@ def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
                 max_executor_iterations=3,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.2,
             ),
             PipelineStep(
                 step_name="Create Narrative",
@@ -211,6 +225,7 @@ def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
                 max_executor_iterations=5,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.2,
             ),
             PipelineStep(
                 step_name="Create Game Events",
@@ -221,6 +236,7 @@ def map_characters_relationships_narrative_events_pipeline() -> PipelineConfig:
                 max_executor_iterations=4,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.2,
             ),
         ],
     )
@@ -242,6 +258,7 @@ def alternating_expansion_pipeline() -> PipelineConfig:
                 max_executor_iterations=9,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.5
             )
         )
         steps.append(
@@ -256,6 +273,7 @@ def alternating_expansion_pipeline() -> PipelineConfig:
                 max_executor_iterations=7,
                 max_validation_iterations=1,
                 max_retries=1,
+                weight=0.5
         )
     )
 
