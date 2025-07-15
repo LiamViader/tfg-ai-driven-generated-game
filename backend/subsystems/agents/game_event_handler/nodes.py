@@ -15,6 +15,11 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import ToolLog
 
+NODE_WEIGHTS = {
+    "game_event_executor_reason_node": 0.7,
+    "game_event_validation_reason_node": 0.3,
+}
+
 
 def receive_objective_node(state: GameEventGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
@@ -37,6 +42,19 @@ executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_c
 
 def game_event_executor_reason_node(state: GameEventGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
+
+    if state.events_progress_tracker is not None:
+        max_iterations = state.events_max_executor_iterations
+        weight_by_retry = NODE_WEIGHTS["game_event_executor_reason_node"] / (
+            state.events_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.events_current_try
+            + (state.events_current_executor_iteration / max_iterations)
+        )
+        state.events_progress_tracker.update(
+            progress, "Generating/Updating events"
+        )
 
     full_prompt = format_game_event_reason_prompt(
         foundational_lore_document=state.events_foundational_lore_document,
@@ -86,6 +104,20 @@ def receive_result_for_validation_node(state: GameEventGraphState):
 
 def game_event_validation_reason_node(state: GameEventGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
+
+    if state.events_progress_tracker is not None:
+        max_iterations = state.events_max_validation_iterations
+        weight_by_retry = NODE_WEIGHTS["game_event_validation_reason_node"] / (
+            state.events_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.events_current_try
+            + (state.events_current_validation_iteration / max_iterations)
+        )
+        state.events_progress_tracker.update(
+            NODE_WEIGHTS["game_event_executor_reason_node"] + progress,
+            "Validating events",
+        )
     state.events_current_validation_iteration += 1
     if state.events_current_validation_iteration <= state.events_max_validation_iterations:
         validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
@@ -127,6 +159,10 @@ def retry_executor_node(state: GameEventGraphState):
 def final_node_success(state: GameEventGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE SUCCESS---")
     SimulatedGameStateSingleton.commit()
+    if state.events_progress_tracker is not None:
+        state.events_progress_tracker.update(
+            1.0, "Events task finalized successfully"
+        )
     return {
         "events_task_succeeded_final": True,
     }
@@ -135,6 +171,10 @@ def final_node_success(state: GameEventGraphState):
 def final_node_failure(state: GameEventGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
     SimulatedGameStateSingleton.rollback()
+    if state.events_progress_tracker is not None:
+        state.events_progress_tracker.update(
+            1.0, "Events task finalized successfully"
+        )
     return {
         "events_task_succeeded_final": False,
     }

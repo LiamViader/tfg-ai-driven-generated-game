@@ -17,6 +17,11 @@ from utils.message_window import get_valid_messages_window
 from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from subsystems.agents.utils.logs import ToolLog
+
+NODE_WEIGHTS = {
+    "relationship_executor_reason_node": 0.7,
+    "relationship_validation_reason_node": 0.3,
+}
 from simulated.singleton import SimulatedGameStateSingleton
 
 
@@ -41,6 +46,19 @@ executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_c
 
 def relationship_executor_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
+
+    if state.relationships_progress_tracker is not None:
+        max_iterations = state.relationships_max_executor_iterations
+        weight_by_retry = NODE_WEIGHTS["relationship_executor_reason_node"] / (
+            state.relationships_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.relationships_current_try
+            + (state.relationships_current_executor_iteration / max_iterations)
+        )
+        state.relationships_progress_tracker.update(
+            progress, "Generating/Updating relationships"
+        )
 
     full_prompt = format_relationship_reason_prompt(
         foundational_lore_document=state.relationships_foundational_lore_document,
@@ -91,6 +109,20 @@ def receive_result_for_validation_node(state: RelationshipGraphState):
 def relationship_validation_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
+    if state.relationships_progress_tracker is not None:
+        max_iterations = state.relationships_max_validation_iterations
+        weight_by_retry = NODE_WEIGHTS["relationship_validation_reason_node"] / (
+            state.relationships_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.relationships_current_try
+            + (state.relationships_current_validation_iteration / max_iterations)
+        )
+        state.relationships_progress_tracker.update(
+            NODE_WEIGHTS["relationship_executor_reason_node"] + progress,
+            "Validating relationships",
+        )
+
     state.relationships_current_validation_iteration += 1
     if state.relationships_current_validation_iteration <= state.relationships_max_validation_iterations:
         validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
@@ -132,6 +164,10 @@ def retry_executor_node(state: RelationshipGraphState):
 def final_node_success(state: RelationshipGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE SUCCESS---")
     SimulatedGameStateSingleton.commit()
+    if state.relationships_progress_tracker is not None:
+        state.relationships_progress_tracker.update(
+            1.0, "Relationships task finalized successfully"
+        )
     return {
         "relationships_task_succeeded_final": True,
     }
@@ -140,6 +176,10 @@ def final_node_success(state: RelationshipGraphState):
 def final_node_failure(state: RelationshipGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
     SimulatedGameStateSingleton.rollback()
+    if state.relationships_progress_tracker is not None:
+        state.relationships_progress_tracker.update(
+            1.0, "Relationships task finalized successfully"
+        )
     return {
         "relationships_task_succeeded_final": False,
     }

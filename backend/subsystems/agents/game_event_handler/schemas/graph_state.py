@@ -5,6 +5,7 @@ from langgraph.graph.message import add_messages
 
 from subsystems.agents.utils.schemas import ToolLog
 from subsystems.agents.utils.logs import log_reducer
+from utils.progress_tracker import ProgressTracker
 
 
 class GameEventGraphState(BaseModel):
@@ -49,6 +50,10 @@ class GameEventGraphState(BaseModel):
 
     # Finalizing
     events_task_succeeded_final: bool = Field(default=False)
+
+    events_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
+    )
 
     # Shared fields
     logs_field_to_update: str = Field(default="logs")

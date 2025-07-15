@@ -4,6 +4,7 @@ from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
 from subsystems.agents.utils.schemas import ToolLog
 from subsystems.agents.utils.logs import log_reducer
+from utils.progress_tracker import ProgressTracker
 
 class RelationshipGraphState(BaseModel):
     """Holds context and working memory for the relationship agent."""
@@ -44,6 +45,10 @@ class RelationshipGraphState(BaseModel):
 
     # final
     relationships_task_succeeded_final: bool = Field(default=False)
+
+    relationships_progress_tracker: Optional[ProgressTracker] = Field(
+        default=None,
+    )
 
     # shared
     logs_field_to_update: str = Field(default="logs")

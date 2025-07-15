@@ -14,6 +14,11 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import ToolLog
 
+NODE_WEIGHTS = {
+    "narrative_executor_reason_node": 0.7,
+    "narrative_validation_reason_node": 0.3,
+}
+
 
 def receive_objective_node(state: NarrativeGraphState):
     print("---ENTERING: RECEIVE OBJECTIVE NODE---")
@@ -38,6 +43,19 @@ executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_c
 
 def narrative_executor_reason_node(state: NarrativeGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
+
+    if state.narrative_progress_tracker is not None:
+        max_iterations = state.narrative_max_executor_iterations
+        weight_by_retry = NODE_WEIGHTS["narrative_executor_reason_node"] / (
+            state.narrative_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.narrative_current_try
+            + (state.narrative_current_executor_iteration / max_iterations)
+        )
+        state.narrative_progress_tracker.update(
+            progress, "Generating/Updating narrative"
+        )
 
     full_prompt = format_narrative_react_reason_prompt(
         foundational_lore_document=state.narrative_foundational_lore_document,
@@ -86,6 +104,20 @@ def receive_result_for_validation_node(state: NarrativeGraphState):
 
 def narrative_validation_reason_node(state: NarrativeGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
+
+    if state.narrative_progress_tracker is not None:
+        max_iterations = state.narrative_max_validation_iterations
+        weight_by_retry = NODE_WEIGHTS["narrative_validation_reason_node"] / (
+            state.narrative_max_retries + 1
+        )
+        progress = weight_by_retry * (
+            state.narrative_current_try
+            + (state.narrative_current_validation_iteration / max_iterations)
+        )
+        state.narrative_progress_tracker.update(
+            NODE_WEIGHTS["narrative_executor_reason_node"] + progress,
+            "Validating narrative",
+        )
     state.narrative_current_validation_iteration += 1
     validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
     full_prompt = format_narrative_react_validation_prompt(
@@ -123,6 +155,10 @@ def retry_executor_node(state: NarrativeGraphState):
 def final_node_success(state: NarrativeGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE SUCCESS---")
     SimulatedGameStateSingleton.commit()
+    if state.narrative_progress_tracker is not None:
+        state.narrative_progress_tracker.update(
+            1.0, "Narrative task finalized successfully"
+        )
     return {
         "narrative_task_succeeded_final": True,
     }
@@ -131,6 +167,10 @@ def final_node_success(state: NarrativeGraphState):
 def final_node_failure(state: NarrativeGraphState):
     print("---ENTERING: LAST NODE OBJECTIVE FAILED---")
     SimulatedGameStateSingleton.rollback()
+    if state.narrative_progress_tracker is not None:
+        state.narrative_progress_tracker.update(
+            1.0, "Narrative task finalized successfully"
+        )
     return {
         "narrative_task_succeeded_final": False,
     }

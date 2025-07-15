@@ -89,6 +89,13 @@ def characters_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = ""
     additional_info_str = ""
     current_step=state.refinement_pipeline_config.steps[state.refinement_current_pass]
+
+    if state.refinement_progress_tracker is not None:
+        state.refinement_progress_tracker.update(state.refinement_current_pass/len(state.refinement_pipeline_config.steps), f"Step {state.refinement_current_pass+1} of {len(state.refinement_pipeline_config.steps)}: {current_step.agent_name} agent")
+        characters_tracker = state.refinement_progress_tracker.subtracker(1/len(state.refinement_pipeline_config.steps))
+    else:
+        characters_tracker = None
+
     return {
         "characters_foundational_lore_document": state.refinement_foundational_world_info,
         "characters_recent_operations_summary": applied_operations_log,
@@ -101,7 +108,8 @@ def characters_step_start(state: RefinementLoopGraphState):
         "characters_max_validation_iterations": current_step.max_validation_iterations,
         "characters_max_retries": current_step.max_retries,
         "characters_executor_applied_operations_log": ClearLogs(),
-        "characters_validator_applied_operations_log": ClearLogs()
+        "characters_validator_applied_operations_log": ClearLogs(),
+        "characters_progress_tracker": characters_tracker
     }
 
 def characters_step_finish(state: RefinementLoopGraphState):
@@ -120,6 +128,13 @@ def relationship_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = ""
     additional_info_str = ""
     current_step = state.refinement_pipeline_config.steps[state.refinement_current_pass]
+
+    if state.refinement_progress_tracker is not None:
+        state.refinement_progress_tracker.update(state.refinement_current_pass/len(state.refinement_pipeline_config.steps), f"Step {state.refinement_current_pass+1} of {len(state.refinement_pipeline_config.steps)}: {current_step.agent_name} agent")
+        relationships_tracker = state.refinement_progress_tracker.subtracker(1/len(state.refinement_pipeline_config.steps))
+    else:
+        relationships_tracker = None
+
     return {
         "relationships_foundational_lore_document": state.refinement_foundational_world_info,
         "relationships_recent_operations_summary": applied_operations_log,
@@ -133,6 +148,7 @@ def relationship_step_start(state: RefinementLoopGraphState):
         "relationships_max_retries": current_step.max_retries,
         "relationships_executor_applied_operations_log": ClearLogs(),
         "relationships_validator_applied_operations_log": ClearLogs(),
+        "relationships_progress_tracker": relationships_tracker,
     }
 
 def relationship_step_finish(state: RefinementLoopGraphState):
@@ -149,6 +165,13 @@ def narrative_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = ""
     additional_info_str = ""
     current_step = state.refinement_pipeline_config.steps[state.refinement_current_pass]
+
+    if state.refinement_progress_tracker is not None:
+        state.refinement_progress_tracker.update(state.refinement_current_pass/len(state.refinement_pipeline_config.steps), f"Step {state.refinement_current_pass+1} of {len(state.refinement_pipeline_config.steps)}: {current_step.agent_name} agent")
+        narrative_tracker = state.refinement_progress_tracker.subtracker(1/len(state.refinement_pipeline_config.steps))
+    else:
+        narrative_tracker = None
+
     return {
         "narrative_foundational_lore_document": state.refinement_foundational_world_info,
         "narrative_recent_operations_summary": applied_operations_log,
@@ -162,6 +185,7 @@ def narrative_step_start(state: RefinementLoopGraphState):
         "narrative_max_retries": current_step.max_retries,
         "narrative_executor_applied_operations_log": ClearLogs(),
         "narrative_validator_applied_operations_log": ClearLogs(),
+        "narrative_progress_tracker": narrative_tracker,
     }
 
 def narrative_step_finish(state: RefinementLoopGraphState):
@@ -178,6 +202,13 @@ def events_step_start(state: RefinementLoopGraphState):
     relevant_entities_str = ""
     additional_info_str = ""
     current_step = state.refinement_pipeline_config.steps[state.refinement_current_pass]
+
+    if state.refinement_progress_tracker is not None:
+        state.refinement_progress_tracker.update(state.refinement_current_pass/len(state.refinement_pipeline_config.steps), f"Step {state.refinement_current_pass+1} of {len(state.refinement_pipeline_config.steps)}: {current_step.agent_name} agent")
+        events_tracker = state.refinement_progress_tracker.subtracker(1/len(state.refinement_pipeline_config.steps))
+    else:
+        events_tracker = None
+
     return {
         "events_foundational_lore_document": state.refinement_foundational_world_info,
         "events_recent_operations_summary": applied_operations_log,
@@ -191,6 +222,7 @@ def events_step_start(state: RefinementLoopGraphState):
         "events_max_retries": current_step.max_retries,
         "events_executor_applied_operations_log": ClearLogs(),
         "events_validator_applied_operations_log": ClearLogs(),
+        "events_progress_tracker": events_tracker,
     }
 
 def events_step_finish(state: RefinementLoopGraphState):
