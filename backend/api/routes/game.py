@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.post("/generate", response_model=GenerationStatusModel)
 def launch_generation(user_prompt: str = "Improvise"):
+    print("SADDS")
     if get_status().status == "running":
         raise HTTPException(status_code=400, detail="A generation is already in progress")
     return generator.start_generation(user_prompt)

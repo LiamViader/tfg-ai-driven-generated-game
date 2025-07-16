@@ -22,6 +22,7 @@ from versioning.deltas.detectors.internal.root_internal import InternalDiffDetec
 from versioning.deltas.checkpoints.changeset import ChangesetCheckpoint
 from versioning.deltas.checkpoints.internal import InternalStateCheckpoint
 from versioning.deltas.schemas import DiffResultModel
+from core_game.game_event.schemas import GameEventsManagerModel
 
 class StateCheckpointManager:
     """
@@ -141,3 +142,33 @@ class StateCheckpointManager:
         detector_to_use = detector_override if detector_override is not None else self._default_internal_diff_detector
             
         return detector_to_use.detect(cp_from, cp_to)
+    
+    def create_empty_checkpoint(
+        self,
+        checkpoint_type: Type[StateCheckpointBase],
+        checkpoint_id: Optional[str] = None
+    ) -> str:
+        """
+        Crea un checkpoint vacío (sin datos), útil como base para comparar contra el estado actual.
+        """
+        if checkpoint_id is None:
+            checkpoint_id = str(uuid4())
+
+        if checkpoint_id in self._checkpoints:
+            raise RuntimeError(f"Checkpoint '{checkpoint_id}' already exists")
+
+        # Instancia manualmente un checkpoint vacío según el tipo
+        if checkpoint_type is ChangesetCheckpoint:
+            empty_cp = ChangesetCheckpoint(
+                map_snapshot=GameMapModel(),
+                characters_snapshot=CharactersModel(),
+                game_events_snapshot=GameEventsManagerModel(),
+            )
+        else:
+            empty_cp = InternalStateCheckpoint(
+                map_snapshot=GameMapModel(),
+                characters_snapshot=CharactersModel(),
+            )
+
+        self._checkpoints[checkpoint_id] = empty_cp
+        return checkpoint_id

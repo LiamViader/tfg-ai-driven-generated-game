@@ -18,14 +18,14 @@ namespace Api.Models
         public string zone;
         public string image_path;
 
-        public ScenarioConnectionOperation[] connections;
+        public ScenarioConnectionChange[] connections;
     }
 
     [Serializable]
-    public class ScenarioConnectionOperation
+    public class ScenarioConnectionChange
     {
         public string op;          // "add", "remove", "update"
-        public string direction;   // e.g. "north"
-        public string value;       // id of connection
+        public string direction;   // e.g. "north", "east", etc.
+        public string value;       // ID de la conexión (puede ser null en "remove")
     }
 }

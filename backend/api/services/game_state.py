@@ -14,14 +14,15 @@ from fastapi import HTTPException
 def get_full_game_state():
     cp_manager = SimulatedGameStateSingleton.get_checkpoint_manager()
 
+    empty_cp = cp_manager.create_empty_checkpoint(ChangesetCheckpoint)
+
+    changeset = cp_manager.generate_changeset(from_id=empty_cp)
+
     current_cp_id = cp_manager.create_checkpoint(
         ChangesetCheckpoint,
     )
 
-    full_state = SimulatedGameStateSingleton.get_instance()
-    print("SUMMARY", full_state.read_only_map.get_cluster_summary(True))
-
-    changeset = cp_manager.generate_changeset(from_id=current_cp_id)
+    cp_manager.delete_checkpoint(empty_cp)
 
     return {
         "checkpoint_id": current_cp_id,

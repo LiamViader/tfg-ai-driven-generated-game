@@ -9,10 +9,14 @@ namespace Api.Models
         public string op;      // "add", "remove", "update"
         public string id;
 
-        // Campos posibles en add/update:
-        public string from;
-        public string to;
-        public string direction;
-        public string type;
+        public string scenario_a_id;
+        public string scenario_b_id;
+        public string direction_from_a;
+        public string connection_type;
+
+        public string travel_description;
+        public string[] traversal_conditions;
+        public string exit_appearance_description;
+        public bool is_blocked;
     }
 }

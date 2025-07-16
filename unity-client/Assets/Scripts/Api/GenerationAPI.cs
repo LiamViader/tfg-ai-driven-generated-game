@@ -9,6 +9,7 @@ public static class GenerationAPI
 
     public static IEnumerator StartGeneration(string prompt, Action<GenerationStatus> onSuccess = null, Action<string> onError = null)
     {
+        Debug.Log("STARTING GENERATION.");
         string url = $"{baseUrl}/generate";
         var payload = new { user_prompt = prompt };
 

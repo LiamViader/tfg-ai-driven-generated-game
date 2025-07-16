@@ -6,6 +6,7 @@ from simulated.game_state import SimulatedGameState
 from versioning.deltas.detectors.changeset.root import ChangesetDetector
 from versioning.deltas.detectors.changeset.map.collection import MapDetector as ChangesetMapDetector
 from versioning.deltas.detectors.changeset.map.entity import ScenarioDetector as ChangesetScenarioDetector
+from versioning.deltas.detectors.changeset.map.entity import ConnectionInfoDetector as ChangesetConnectionInfoDetector
 from versioning.deltas.detectors.changeset.characters.collection import CharactersDetector as ChangesetCharactersDetector
 from versioning.deltas.detectors.changeset.characters.entity import CharacterDetector as ChangesetCharacterDetector
 # You would also import game_events detector here if you had one
@@ -26,8 +27,10 @@ class CheckpointManagerFactory:
     def create_manager(self, state: SimulatedGameState) -> StateCheckpointManager:
         # --- 1. Construct tree for changeset detectors ---
         changeset_scenario_detector = ChangesetScenarioDetector()
+        changeset_connection_info_detector = ChangesetConnectionInfoDetector()
         changeset_map_detector = ChangesetMapDetector(
-            scenario_detector=changeset_scenario_detector
+            scenario_detector=changeset_scenario_detector,
+            connection_detector=changeset_connection_info_detector
         )
         
         changeset_character_detector = ChangesetCharacterDetector()
