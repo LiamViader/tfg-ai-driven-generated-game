@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using Newtonsoft.Json;
 
 public static class HttpUtils
 {
@@ -24,7 +25,7 @@ public static class HttpUtils
 
         try
         {
-            T data = JsonUtility.FromJson<T>(responseText);
+            T data = JsonConvert.DeserializeObject<T>(responseText);
             onSuccess?.Invoke(data);
         }
         catch (Exception ex)
@@ -36,7 +37,7 @@ public static class HttpUtils
 
     public static IEnumerator Post<T>(string url, object payload, Action<T> onSuccess, Action<string> onError = null)
     {
-        string json = JsonUtility.ToJson(payload);
+        string json = JsonConvert.SerializeObject(payload);
         byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
 
         using var request = new UnityWebRequest(url, "POST");
@@ -57,7 +58,7 @@ public static class HttpUtils
 
         try
         {
-            T data = JsonUtility.FromJson<T>(responseText);
+            T data = JsonConvert.DeserializeObject<T>(responseText);
             onSuccess?.Invoke(data);
         }
         catch (Exception ex)
@@ -67,9 +68,10 @@ public static class HttpUtils
         }
     }
 
+
     public static IEnumerator Post(string url, object payload, Action onSuccess = null, Action<string> onError = null)
     {
-        string json = JsonUtility.ToJson(payload);
+        string json = JsonConvert.SerializeObject(payload); // 🔁 cambiado aquí
         byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
 
         using var request = new UnityWebRequest(url, "POST");

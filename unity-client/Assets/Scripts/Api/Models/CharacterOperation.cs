@@ -1,80 +1,76 @@
 using System;
 using UnityEngine;
 
+using System;
+using System.Collections.Generic;
+
 namespace Api.Models
 {
-    [Serializable]
     public class CharacterOperation
     {
-        public string op;       // "add", "remove", "update"
-        public string id;
+        public string? op { get; set; }  // "add", "remove", "update"
+        public string? id { get; set; }
 
-        public string type;
-        public string image_path;
-        public string present_in_scenario;
+        public string? type { get; set; }
+        public string? image_path { get; set; }
+        public string? present_in_scenario { get; set; }
 
-        public IdentityAttributes identity;
-        public PhysicalAttributes physical;
-        public PsychologicalAttributes psychological;
-        public KnowledgeAttributes knowledge;
-        public DynamicState dynamic_state;
-        public NarrativeAttributes narrative;
+        public IdentityAttributes? identity { get; set; }
+        public PhysicalAttributes? physical { get; set; }
+        public PsychologicalAttributes? psychological { get; set; }
+        public KnowledgeAttributes? knowledge { get; set; }
+        public DynamicState? dynamic_state { get; set; }
+        public NarrativeAttributes? narrative { get; set; }
     }
 
-    [Serializable]
     public class IdentityAttributes
     {
-        public string full_name;
-        public string alias;
-        public int age;
-        public string gender;
-        public string profession;
-        public string species;
-        public string alignment;
+        public string? full_name { get; set; }
+        public string? alias { get; set; }
+        public int? age { get; set; }
+        public string? gender { get; set; }
+        public string? profession { get; set; }
+        public string? species { get; set; }
+        public string? alignment { get; set; }
     }
 
-    [Serializable]
     public class PhysicalAttributes
     {
-        public string appearance;
-        public string visual_prompt;
-        public string distinctive_features;
-        public string clothing_style;
-        public string characteristic_items;
+        public string? appearance { get; set; }
+        public string? visual_prompt { get; set; }
+        public string? distinctive_features { get; set; }
+        public string? clothing_style { get; set; }
+        public string? characteristic_items { get; set; }
     }
 
-    [Serializable]
     public class PsychologicalAttributes
     {
-        public string personality_summary;
-        public string[] personality_tags;
-        public string[] motivations;
-        public string[] values;
-        public string[] fears_and_weaknesses;
-        public string communication_style;
-        public string backstory;
-        public string quirks;
+        public string? personality_summary { get; set; }
+        public List<string>? personality_tags { get; set; }
+        public List<string>? motivations { get; set; }
+        public List<string>? values { get; set; }
+        public List<string>? fears_and_weaknesses { get; set; }
+        public string? communication_style { get; set; }
+        public string? backstory { get; set; }
+        public string? quirks { get; set; }
     }
 
-    [Serializable]
     public class KnowledgeAttributes
     {
-        public string background_knowledge;
-        public string acquired_knowledge;
+        public string? background_knowledge { get; set; }
+        public string? acquired_knowledge { get; set; }
     }
 
-    [Serializable]
     public class DynamicState
     {
-        public string current_emotion;
-        public string immediate_goal;
+        public string? current_emotion { get; set; }
+        public string? immediate_goal { get; set; }
     }
 
-    [Serializable]
     public class NarrativeAttributes
     {
-        public string narrative_role;
-        public int current_narrative_importance;
-        public string[] narrative_purposes;
+        public string? narrative_role { get; set; }
+        public int? current_narrative_importance { get; set; }
+        public List<string>? narrative_purposes { get; set; }
     }
 }

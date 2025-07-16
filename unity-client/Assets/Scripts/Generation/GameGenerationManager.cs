@@ -78,17 +78,16 @@ public class GameGenerationManager : MonoBehaviour
 
     private IEnumerator LoadFullState()
     {
-        bool loaded = false;
+        bool hasError = false;
 
-        yield return StartCoroutine(GenerationAPI.GetFullState(
+        yield return StartCoroutine(StateAPI.GetFullState(
             onSuccess: changeset =>
             {
                 Debug.Log("Full game state received:");
                 Debug.Log(JsonUtility.ToJson(changeset, true));
-                ui.HideLoadingUI();
-                ui.SetInteractable(true);
-                loaded = true;
-                // TODO: Pass changeset to your game state system
+
+                var applier = new ChangeSetApplier();
+                applier.Apply(changeset);
             },
             onError: error =>
             {
@@ -96,10 +95,19 @@ public class GameGenerationManager : MonoBehaviour
                 ui.ShowError("Failed to retrieve game state.");
                 ui.HideLoadingUI();
                 ui.SetInteractable(true);
-                loaded = true;
+                hasError = true;
             }
         ));
 
-        yield return null;
+        if (hasError)
+            yield break;
+
+
+        ImageLoadTracker.Instance.OnAllImagesLoaded(() =>
+        {
+            ui.HideLoadingUI();
+            ui.SetInteractable(true);
+            GameManager.Instance.InitializeWorld();
+        });
     }
 }

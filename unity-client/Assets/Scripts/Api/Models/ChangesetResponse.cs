@@ -3,17 +3,15 @@ using UnityEngine;
 
 namespace Api.Models
 {
-    [Serializable]
     public class ChangesetResponse
     {
         public string checkpoint_id;
         public ChangeBlock changes;
     }
 
-    [Serializable]
     public class ChangeBlock
     {
-        public MapChanges map;
-        public CharactersChanges characters;
+        public MapChanges? map { get; set; }
+        public CharactersChanges? characters { get; set; }
     }
 }

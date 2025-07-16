@@ -259,7 +259,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
             
             image_path = os.path.join(output_dir, f"{base_filename}{extension}")
             counter = 1
-
+            unique_filename = base_filename
             # Loop to find unique name
             while os.path.exists(image_path):
                 counter += 1
@@ -272,7 +272,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
                     f.write(base64.b64decode(scenario_state.image_base64))
                 print(f"  - Image saved to {image_path}")
                 assert scenario_state.generation_payload is not None
-                SimulatedGameStateSingleton.get_instance().map.attach_new_image(scenario_state.scenario.id, image_path, scenario_state.generation_payload)
+                SimulatedGameStateSingleton.get_instance().map.attach_new_image(scenario_state.scenario.id, f"scenarios/{unique_filename}", scenario_state.generation_payload)
             except Exception as e:
                 print(f"  -  ERROR saving image to {image_path}: {e}")
 
@@ -296,7 +296,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
             
             image_path = os.path.join(output_dir, f"{base_filename}{extension}")
             counter = 1
-
+            unique_filename = base_filename
             # Loop to find unique name
             while os.path.exists(image_path):
                 counter += 1
@@ -309,7 +309,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
                     f.write(base64.b64decode(character_state.image_base64))
                 print(f"  - Image saved to {image_path}")
                 assert character_state.generated_image_prompt is not None
-                SimulatedGameStateSingleton.get_instance().characters.attach_new_image(character_state.character.id, image_path, character_state.generated_image_prompt)
+                SimulatedGameStateSingleton.get_instance().characters.attach_new_image(character_state.character.id, f"characters/{unique_filename}", character_state.generated_image_prompt)
             except Exception as e:
                 print(f"  -  ERROR saving image to {image_path}: {e}")
 

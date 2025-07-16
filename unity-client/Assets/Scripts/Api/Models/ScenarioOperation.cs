@@ -1,31 +1,30 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Api.Models
 {
-    [Serializable]
     public class ScenarioOperation
     {
-        public string op;       // "add", "remove", "update"
-        public string id;
+        public string? op { get; set; }   // "add", "remove", "update"
+        public string? id { get; set; }
 
-        public string name;
-        public string visual_description;
-        public string narrative_context;
-        public string summary_description;
-        public string indoor_or_outdoor;
-        public string type;
-        public string zone;
-        public string image_path;
+        public string? name { get; set; }
+        public string? visual_description { get; set; }
+        public string? narrative_context { get; set; }
+        public string? summary_description { get; set; }
+        public string? indoor_or_outdoor { get; set; }
+        public string? type { get; set; }
+        public string? zone { get; set; }
+        public string? image_path { get; set; }
 
-        public ScenarioConnectionChange[] connections;
+        public List<ScenarioConnectionChange>? connections { get; set; }
     }
 
-    [Serializable]
     public class ScenarioConnectionChange
     {
-        public string op;          // "add", "remove", "update"
-        public string direction;   // e.g. "north", "east", etc.
-        public string value;       // ID de la conexión (puede ser null en "remove")
+        public string? op { get; set; }         // "add", "remove", "update"
+        public string? direction { get; set; }  // e.g. "north", "east"
+        public string? value { get; set; }      // ID de la conexión, o null en remove
     }
 }

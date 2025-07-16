@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from api.routes import game
+from api.routes import assets
+
+
 
 app = FastAPI(
     title="Backend del Juego Generado por IA",
@@ -8,6 +11,8 @@ app = FastAPI(
 )
 
 app.include_router(game.router, prefix="/game", tags=["Game"])
+app.include_router(assets.router, prefix="/assets", tags=["assets"])
+
 
 # Aditional route to know if it's running
 @app.get("/")

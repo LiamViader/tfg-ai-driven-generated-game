@@ -4,10 +4,9 @@ using UnityEngine;
 
 namespace Api.Models
 {
-    [Serializable]
     public class CharactersChanges
     {
-        public string player_character_id;
-        public List<CharacterOperation> registry;
+        public string? player_character_id { get; set; }
+        public List<CharacterOperation>? registry { get; set; }
     }
 }
