@@ -48,16 +48,21 @@ def relationship_executor_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
 
     if state.relationships_progress_tracker is not None:
-        max_iterations = state.relationships_max_executor_iterations
-        weight_by_retry = NODE_WEIGHTS["relationship_executor_reason_node"] / (
-            state.relationships_max_retries + 1
+        max_retries = state.relationships_max_retries + 1
+        max_iterations = state.relationships_max_executor_iterations or 1
+        progress_from_previous_tries = state.relationships_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_within_execution_phase = (
+            state.relationships_current_executor_iteration / max_iterations
         )
-        progress = weight_by_retry * (
-            (state.relationships_current_try - 1)
-            + (state.relationships_current_executor_iteration / max_iterations)
+        current_phase_progress = (
+            progress_within_execution_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["relationship_executor_reason_node"]
         )
+        total_local_progress = progress_from_previous_tries + current_phase_progress
         state.relationships_progress_tracker.update(
-            progress, "Generating/Updating relationships"
+            total_local_progress, "Generating/Updating relationships"
         )
 
     full_prompt = format_relationship_reason_prompt(
@@ -110,16 +115,28 @@ def relationship_validation_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
     if state.relationships_progress_tracker is not None:
-        max_iterations = state.relationships_max_validation_iterations
-        weight_by_retry = NODE_WEIGHTS["relationship_validation_reason_node"] / (
-            state.relationships_max_retries + 1
+        max_retries = state.relationships_max_retries + 1
+        max_iterations = state.relationships_max_validation_iterations + 1 or 1
+        progress_from_completed_tries = state.relationships_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_from_this_try_execution = (
+            weight_of_current_try_block * NODE_WEIGHTS["relationship_executor_reason_node"]
         )
-        progress = weight_by_retry * (
-            (state.relationships_current_try - 1)
-            + (state.relationships_current_validation_iteration / max_iterations)
+        progress_within_validation_phase = (
+            state.relationships_current_validation_iteration / max_iterations
+        )
+        progress_from_this_try_validation = (
+            progress_within_validation_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["relationship_validation_reason_node"]
+        )
+        total_local_progress = (
+            progress_from_completed_tries
+            + progress_from_this_try_execution
+            + progress_from_this_try_validation
         )
         state.relationships_progress_tracker.update(
-            NODE_WEIGHTS["relationship_executor_reason_node"] + progress,
+            total_local_progress,
             "Validating relationships",
         )
 

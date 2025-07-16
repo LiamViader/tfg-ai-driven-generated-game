@@ -44,16 +44,21 @@ def game_event_executor_reason_node(state: GameEventGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
 
     if state.events_progress_tracker is not None:
-        max_iterations = state.events_max_executor_iterations
-        weight_by_retry = NODE_WEIGHTS["game_event_executor_reason_node"] / (
-            state.events_max_retries + 1
+        max_retries = state.events_max_retries + 1
+        max_iterations = state.events_max_executor_iterations or 1
+        progress_from_previous_tries = state.events_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_within_execution_phase = (
+            state.events_current_executor_iteration / max_iterations
         )
-        progress = weight_by_retry * (
-            (state.events_current_try - 1)
-            + (state.events_current_executor_iteration / max_iterations)
+        current_phase_progress = (
+            progress_within_execution_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["game_event_executor_reason_node"]
         )
+        total_local_progress = progress_from_previous_tries + current_phase_progress
         state.events_progress_tracker.update(
-            progress, "Generating/Updating events"
+            total_local_progress, "Generating/Updating events"
         )
 
     full_prompt = format_game_event_reason_prompt(
@@ -106,16 +111,28 @@ def game_event_validation_reason_node(state: GameEventGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
     if state.events_progress_tracker is not None:
-        max_iterations = state.events_max_validation_iterations
-        weight_by_retry = NODE_WEIGHTS["game_event_validation_reason_node"] / (
-            state.events_max_retries + 1
+        max_retries = state.events_max_retries + 1
+        max_iterations = state.events_max_validation_iterations + 1 or 1
+        progress_from_completed_tries = state.events_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_from_this_try_execution = (
+            weight_of_current_try_block * NODE_WEIGHTS["game_event_executor_reason_node"]
         )
-        progress = weight_by_retry * (
-            (state.events_current_try - 1)
-            + (state.events_current_validation_iteration / max_iterations)
+        progress_within_validation_phase = (
+            state.events_current_validation_iteration / max_iterations
+        )
+        progress_from_this_try_validation = (
+            progress_within_validation_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["game_event_validation_reason_node"]
+        )
+        total_local_progress = (
+            progress_from_completed_tries
+            + progress_from_this_try_execution
+            + progress_from_this_try_validation
         )
         state.events_progress_tracker.update(
-            NODE_WEIGHTS["game_event_executor_reason_node"] + progress,
+            total_local_progress,
             "Validating events",
         )
     state.events_current_validation_iteration += 1
