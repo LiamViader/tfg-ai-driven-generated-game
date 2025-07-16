@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 public class ScenarioVisualManager : MonoBehaviour
 {
     public static ScenarioVisualManager Instance;
@@ -21,14 +22,66 @@ public class ScenarioVisualManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public void SetFocusScenario(string scenarioId)
+    public void SetFocusScenario(string newScenarioId)
     {
 
-        RefreshVisualScenarios(scenarioId);
+        if (_currentScenarioId == newScenarioId)
+            return;
 
-        FocusCameraOn(scenarioId);
+        string prevScenarioId = _currentScenarioId;
+        _currentScenarioId = newScenarioId;
 
-        // 4. (Opcional) Transición visual: fade, desplazamiento, etc.
+        RefreshVisualScenarios(newScenarioId);
+
+        FocusCameraOn(newScenarioId);
+
+        StartCoroutine(TransitionBetweenScenarios(prevScenarioId, newScenarioId));
+    }
+
+
+    private IEnumerator TransitionBetweenScenarios(string fromId, string toId)
+    {
+        float duration = 0.5f;
+
+        CanvasGroup fromGroup = GetCanvasGroup(fromId);
+        CanvasGroup toGroup = GetCanvasGroup(toId);
+
+        if (toGroup != null) toGroup.alpha = 0f;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float progress = t / duration;
+
+            if (fromGroup != null)
+                fromGroup.alpha = Mathf.Lerp(1f, 0f, progress);
+
+            if (toGroup != null)
+                toGroup.alpha = Mathf.Lerp(0f, 1f, progress);
+
+            yield return null;
+        }
+
+        if (fromGroup != null)
+        {
+            fromGroup.alpha = 0f;
+            fromGroup.interactable = false;
+            fromGroup.blocksRaycasts = false;
+        }
+
+        if (toGroup != null)
+        {
+            toGroup.alpha = 1f;
+            toGroup.interactable = true;
+            toGroup.blocksRaycasts = true;
+        }
+
+        foreach (var kvp in _activeScenarios)
+        {
+            bool isCurrent = kvp.Key == toId;
+            kvp.Value.SetActive(isCurrent);
+        }
     }
 
     private void FocusCameraOn(string scenarioId)
@@ -81,5 +134,19 @@ public class ScenarioVisualManager : MonoBehaviour
     {
         var view = go.GetComponent<ScenarioView>() ?? go.AddComponent<ScenarioView>();
         view.Initialize(data);
+
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = go.AddComponent<CanvasGroup>();
+        }
+        cg.interactable = false;
+        cg.blocksRaycasts = false;
+    }
+    private CanvasGroup GetCanvasGroup(string scenarioId)
+    {
+        if (scenarioId == null) return null;
+        if (!_activeScenarios.TryGetValue(scenarioId, out var go)) return null;
+        return go.GetComponent<CanvasGroup>();
     }
 }

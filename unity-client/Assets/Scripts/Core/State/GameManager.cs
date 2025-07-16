@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -126,7 +128,31 @@ public class GameManager : MonoBehaviour
 
     public void InitializeWorld()
     {
+        StartCoroutine(InitializeWorldCoroutine());
+    }
 
+    private IEnumerator InitializeWorldCoroutine()
+    {
+        string targetScene = "GameScene";
+
+        if (SceneManager.GetActiveScene().name != targetScene)
+        {
+            var loadOp = SceneManager.LoadSceneAsync(targetScene);
+
+            while (!loadOp.isDone)
+                yield return null;
+        }
+
+        var player = GetCharacter(PlayerCharacterId);
+        if (player == null || string.IsNullOrEmpty(player.presentInScenario))
+        {
+            Debug.LogError("No se puede encontrar el personaje del jugador o su escenario.");
+            yield break;
+        }
+
+        SetCurrentScenario(player.presentInScenario);
+
+        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId);
     }
 }
 
