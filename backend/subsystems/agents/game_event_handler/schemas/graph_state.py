@@ -27,7 +27,7 @@ class GameEventGraphState(BaseModel):
 
     # Flow control
     events_max_retries: int = Field(default=1)
-    events_current_try: int = Field(default=1)
+    events_current_try: int = Field(default=0)
 
     # Executor agent
     events_executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list)

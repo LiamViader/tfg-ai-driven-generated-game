@@ -22,7 +22,7 @@ class RelationshipGraphState(BaseModel):
 
     # flow control
     relationships_max_retries: int = Field(default=1)
-    relationships_current_try: int = Field(default=1)
+    relationships_current_try: int = Field(default=0)
 
     # executor
     relationships_executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list)

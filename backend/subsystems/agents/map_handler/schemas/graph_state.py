@@ -24,7 +24,7 @@ class MapGraphState(BaseModel):
 
     # --- flux control ---
     map_max_retries: int = Field(default=1, description="Max retries of the whole process if validation fails")
-    map_current_try: int = Field(default=1, description="Current try of the whole process")
+    map_current_try: int = Field(default=0, description="Current try of the whole process")
     
 
     # --- Executor Agent memo ---

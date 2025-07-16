@@ -56,7 +56,7 @@ class CharacterGraphState(BaseModel):
         default=1, description="Max retries of the whole process if validation fails"
     )
     characters_current_try: int = Field(
-        default=1, description="Current try of the whole process"
+        default=0, description="Current try of the whole process"
     )
 
     # --- Executor Agent memo ---

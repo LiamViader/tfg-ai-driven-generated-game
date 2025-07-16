@@ -19,7 +19,7 @@ class NarrativeGraphState(BaseModel):
     narrative_initial_summary: str = Field(default="")
 
     narrative_max_retries: int = Field(default=1)
-    narrative_current_try: int = Field(default=1)
+    narrative_current_try: int = Field(default=0)
 
     narrative_executor_messages: Annotated[Sequence[BaseMessage], add_messages] = Field(default_factory=list)
     narrative_current_executor_iteration: int = Field(default=0)
