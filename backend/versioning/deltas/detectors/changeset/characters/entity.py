@@ -38,11 +38,27 @@ class CharacterDetector(ChangeDetector[CharacterBaseModel]):
         }
 
         # Detectors for simple fields at the top level of CharacterBaseModel
-        self.top_level_field_detectors: List[ChangeDetector] = [
+        self.top_level_field_detectors: List[FieldChangeDetector] = [
             FieldChangeDetector("present_in_scenario"),
             FieldChangeDetector("image_path"),
             FieldChangeDetector("type"),
         ]
+
+
+    def get_public_fields_for(self, model: CharacterBaseModel) -> set[str]:
+        """
+        Dynamically returns the set of public fields based on the character's type.
+        """
+        # Empezamos con los campos comunes a todos los personajes
+        fields = set(self.common_attribute_detectors.keys())
+        for detector in self.top_level_field_detectors:
+            fields.add(detector.field_name)
+
+        # Si el modelo es un NPC, añadimos los campos específicos de NPC
+        if isinstance(model, NonPlayerCharacterModel):
+            fields.update(self.npc_attribute_detectors.keys())
+            
+        return fields
 
     def detect(self, old: CharacterBaseModel, new: CharacterBaseModel) -> Dict[str, Any] | None:
         """

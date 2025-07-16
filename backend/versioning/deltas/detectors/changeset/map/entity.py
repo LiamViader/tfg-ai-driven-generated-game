@@ -17,7 +17,7 @@ class ScenarioDetector(ChangeDetector[ScenarioModel]):
         and specialized detectors for complex attributes.
         """
         # 2. La lista ahora solo contiene los campos simples
-        self.field_detectors: List[ChangeDetector] = [
+        self.field_detectors: List[FieldChangeDetector] = [
             FieldChangeDetector("name"),
             FieldChangeDetector("visual_description"),
             FieldChangeDetector("narrative_context"),
@@ -29,6 +29,12 @@ class ScenarioDetector(ChangeDetector[ScenarioModel]):
         ]
         # 3. Instanciamos nuestro detector especializado
         self.connections_detector = ScenarioConnectionsDetector()
+
+    @property
+    def public_field_names(self) -> List[str]:
+        """Returns the names this detector considers public."""
+        # Asumimos que todos los field_detectors son de tipo FieldChangeDetector
+        return [detector.field_name for detector in self.field_detectors]
 
     def detect(self, old: ScenarioModel, new: ScenarioModel) -> Dict[str, Any] | None:
         """
@@ -56,7 +62,7 @@ class ConnectionInfoDetector(ChangeDetector[ConnectionModel]):
         Initializes the detector with a list of simple field detectors
         """
         # 2. La lista ahora solo contiene los campos simples
-        self.field_detectors: List[ChangeDetector] = [
+        self.field_detectors: List[FieldChangeDetector] = [
             FieldChangeDetector("name"),
             FieldChangeDetector("scenario_a_id"),
             FieldChangeDetector("scenario_b_id"),
@@ -69,6 +75,12 @@ class ConnectionInfoDetector(ChangeDetector[ConnectionModel]):
         ]
         # 3. Instanciamos nuestro detector especializado
         self.connections_detector = ScenarioConnectionsDetector()
+
+    @property
+    def public_field_names(self) -> List[str]:
+        """Returns the names this detector considers public."""
+        # Asumimos que todos los field_detectors son de tipo FieldChangeDetector
+        return [detector.field_name for detector in self.field_detectors]
 
     def detect(self, old: ConnectionModel, new: ConnectionModel) -> Dict[str, Any] | None:
         """

@@ -16,6 +16,12 @@ public class GameManager : MonoBehaviour
     private string _lastCheckpointId;
     public string LastCheckpointId => _lastCheckpointId;
 
+    [SerializeField]
+    private GameObject scenarioPrefab; // <- asigna en el editor
+
+    [SerializeField]
+    private int scenarioLoadRadius = 2;
+
     public void SetCheckpointId(string checkpointId)
     {
         // TODO send delete last checkpoint to backend to free memory
@@ -87,7 +93,42 @@ public class GameManager : MonoBehaviour
             scenario.characterIds.Remove(characterId);
     }
 
-    // Optional: activeScenario management too (for GameObjects)
+    public HashSet<string> GetScenariosInRadius(string fromId, int radius)
+    {
+        var visited = new HashSet<string>();
+        var queue = new Queue<(string id, int depth)>();
+        queue.Enqueue((fromId, 0));
+        visited.Add(fromId);
+
+        while (queue.Count > 0)
+        {
+            var (currentId, depth) = queue.Dequeue();
+            if (depth >= radius) continue;
+
+            var currentScenario = GetScenario(currentId);
+            if (currentScenario == null) continue;
+
+            foreach (var connId in currentScenario.connectionIdsByDirection.Values)
+            {
+                var conn = GetConnection(connId);
+                if (conn == null) continue;
+
+                var neighborId = conn.scenarioAId == currentId ? conn.scenarioBId : conn.scenarioAId;
+                if (neighborId != null && !visited.Contains(neighborId))
+                {
+                    visited.Add(neighborId);
+                    queue.Enqueue((neighborId, depth + 1));
+                }
+            }
+        }
+
+        return visited;
+    }
+
+    public void InitializeWorld()
+    {
+
+    }
 }
 
 

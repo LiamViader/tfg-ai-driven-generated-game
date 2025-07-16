@@ -83,8 +83,6 @@ class ScenarioModel(BaseModel):
     indoor_or_outdoor: IndoorOrOutdoor = Field(..., description=SCENARIO_FIELDS["indoor_or_outdoor"])
     type: str = Field(..., description=SCENARIO_FIELDS["type"])
     zone: str = Field(..., description=SCENARIO_FIELDS["zone"])
-    was_added_this_run: bool = Field(default=True,description="Flag indicating if the scenario was added this run of the graph")
-    was_modified_this_run: bool = Field(default=False,description="Flag indicating if the scenario was modified this run of the graph")
     valid_from: Optional[float] = Field(default=None, description="Timestamp of when this scenario version was created. If it was the first scenario version then set to None")
     image_path: Optional[str] = Field(default=None, description="Path of the image for the character representation")
     image_generation_prompt: Optional[ScenarioImageGenerationTemplate] = Field(default=None, description="Prompt used for generating the current image.")

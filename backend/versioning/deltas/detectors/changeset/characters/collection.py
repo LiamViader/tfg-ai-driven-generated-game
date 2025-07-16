@@ -22,7 +22,13 @@ class CharactersDetector(ChangeDetector[CharactersModel]):
         old_ids, new_ids = set(old_chars), set(new_chars)
         
         for id in sorted(new_ids - old_ids):
-            registry_ops.append({"op": "add", "id": id, **new_chars[id].model_dump()})
+            model = new_chars[id]
+            
+            public_fields = self.character_detector.get_public_fields_for(model)
+            
+            dumped_data = model.model_dump(include=public_fields)
+            
+            registry_ops.append({"op": "add", "id": id, **dumped_data})
         
         for id in sorted(old_ids - new_ids):
             registry_ops.append({"op": "remove", "id": id})
