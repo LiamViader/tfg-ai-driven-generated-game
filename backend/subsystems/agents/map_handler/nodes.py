@@ -53,19 +53,12 @@ def map_executor_reason_node(state: MapGraphState):
     """
     if state.map_progress_tracker is not None:
         max_retries = state.map_max_retries + 1
-        print("MAX RETRIES:", max_retries)
         max_iterations = state.map_max_executor_iterations or 1
-        print("MAX ITERATIONS:", max_iterations)
         progress_from_previous_tries = state.map_current_try / max_retries 
-        print("Progress from previous tries:", progress_from_previous_tries)
         weight_of_current_try_block = 1 / max_retries
-        print("Weight of current try block:", weight_of_current_try_block)
         progress_within_execution_phase = state.map_current_executor_iteration / max_iterations
-        print("Progress within execution phase:", progress_within_execution_phase)
         current_phase_progress = progress_within_execution_phase * weight_of_current_try_block * NODE_WEIGHTS["map_executor_reason_node"]
-        print("Current phase progress:", current_phase_progress)
         total_local_progress = progress_from_previous_tries + current_phase_progress
-        print("Total local progress:", total_local_progress)
         state.map_progress_tracker.update(total_local_progress, "Generating/Updating map")
 
     print("---ENTERING: REASON EXECUTION NODE---")
@@ -132,7 +125,7 @@ def map_validation_reason_node(state: MapGraphState):
 
     if state.map_progress_tracker is not None:
         max_retries = state.map_max_retries + 1
-        max_iterations = state.map_max_validation_iterations or 1
+        max_iterations = state.map_max_validation_iterations + 1 or 1
         progress_from_completed_tries = state.map_current_try / max_retries
         weight_of_current_try_block = 1 / max_retries
         progress_from_this_try_execution = weight_of_current_try_block * NODE_WEIGHTS["map_executor_reason_node"]
