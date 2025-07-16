@@ -18,6 +18,9 @@ def get_full_game_state():
         ChangesetCheckpoint,
     )
 
+    full_state = SimulatedGameStateSingleton.get_instance()
+    print("SUMMARY", full_state.read_only_map.get_cluster_summary(True))
+
     changeset = cp_manager.generate_changeset(from_id=current_cp_id)
 
     return {

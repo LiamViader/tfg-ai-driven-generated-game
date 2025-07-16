@@ -10,6 +10,7 @@ public class GenerationUI : MonoBehaviour
 
     [Header("Loading Section")]
     [SerializeField] private GameObject loadingPanel;
+    [SerializeField] private GameObject inputPanel;
     [SerializeField] private Image progressBarFillImage;
     [SerializeField] private TMP_Text statusMessageText;
     [SerializeField] private TMP_Text errorText;
@@ -66,6 +67,7 @@ public class GenerationUI : MonoBehaviour
     public void ShowLoadingUI(string initialMessage = "")
     {
         loadingPanel.SetActive(true);
+        inputPanel.SetActive(false);
         UpdateProgressBar(0f);
         statusMessageText.text = initialMessage;
     }
@@ -73,6 +75,7 @@ public class GenerationUI : MonoBehaviour
     public void HideLoadingUI()
     {
         loadingPanel.SetActive(false);
+        inputPanel.SetActive(true);
     }
 
     public void SetInteractable(bool interactable)

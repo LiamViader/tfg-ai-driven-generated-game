@@ -24,7 +24,9 @@ class ChangesetDetector(ChangeDetector[ChangesetCheckpoint]):
         final 'changes' dictionary.
         """
         changes: Dict[str, Any] = {}
-        
+        print("DEBUG: Starting ChangesetDetector.detect()")
+        print(f"DEBUG: old_cp.map_snapshot.scenarios = {list(old_cp.map_snapshot.scenarios.keys())}")
+        print(f"DEBUG: new_cp.map_snapshot.scenarios = {list(new_cp.map_snapshot.scenarios.keys())}")
         # 1. Detectar cambios en el mapa
         map_changes = self.map_detector.detect(old_cp.map_snapshot, new_cp.map_snapshot)
         if map_changes:

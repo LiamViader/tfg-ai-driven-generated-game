@@ -12,4 +12,4 @@ app.include_router(game.router, prefix="/game", tags=["Game"])
 # Aditional route to know if it's running
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Servidor del juego en marcha"}
+    return {"status": "ok", "message": "Server running"}

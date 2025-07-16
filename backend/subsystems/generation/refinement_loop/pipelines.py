@@ -5,6 +5,25 @@ from __future__ import annotations
 from .schemas.pipeline_config import PipelineConfig, PipelineStep
 from .constants import AgentName
 
+def fast_test_pipeline() -> PipelineConfig:
+    """Pipeline for fast testing with a single map generation step."""
+    return PipelineConfig(
+        name="fast_test",
+        description="Fast test pipeline with a single map generation step.",
+        steps=[
+            PipelineStep(
+                step_name="Map Generation",
+                agent_name=AgentName.MAP,
+                objective_prompt="Create a small map with three connected scenarios.",
+                rules_and_constraints=[],
+                other_guidelines="Keep it brief.",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=0,
+                weight=1.0,
+            )
+        ],
+    )
 
 def map_only_pipeline() -> PipelineConfig:
     """Single step pipeline that only runs the map agent."""

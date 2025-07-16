@@ -5,7 +5,7 @@ using Api.Models;
 
 public static class GenerationAPI
 {
-    private static readonly string baseUrl = "http://localhost:8000";
+    private static readonly string baseUrl = "http://localhost:8000/game";
 
     public static IEnumerator StartGeneration(string prompt, Action<GenerationStatus> onSuccess = null, Action<string> onError = null)
     {
