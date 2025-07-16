@@ -215,6 +215,10 @@ MonoBehaviour:
   _spriteRenderer: {fileID: 4141204307718719046}
   _characterSpawnArea: {fileID: 8104550364840371648}
   _characterPrefab: {fileID: 7759183513103156469, guid: 1eed92da1d7a53f40801c9ad1e728fdc, type: 3}
+  _minCharacterScale: 0.7
+  _maxCharacterScale: 1
+  _minSpawnDistance: 1
+  _yWeight: 2
 --- !u!225 &923832267440843781
 CanvasGroup:
   m_ObjectHideFlags: 0

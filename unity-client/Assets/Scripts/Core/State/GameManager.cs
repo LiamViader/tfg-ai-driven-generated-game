@@ -17,11 +17,6 @@ public class GameManager : MonoBehaviour
     private string _lastCheckpointId;
     public string LastCheckpointId => _lastCheckpointId;
 
-    [SerializeField]
-    private GameObject scenarioPrefab; // <- asigna en el editor
-
-    [SerializeField]
-    private int scenarioLoadRadius = 2;
 
     public void SetCheckpointId(string checkpointId)
     {
