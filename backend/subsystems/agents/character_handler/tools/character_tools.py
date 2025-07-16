@@ -42,7 +42,6 @@ class ToolCreatePlayerArgs(InjectedToolContext):
     identity: IdentityModel = Field(..., description="Full identity information")
     physical: PhysicalAttributesModel = Field(..., description="Full physical description")
     psychological: PsychologicalAttributesModel = Field(..., description="Detailed psychological profile")
-    scenario_id: str = Field(..., description="ID of the scenario where the player starts. The scenario must exist. This field is mandatory. ids are of the form 'scenario_001, scemario_002, ...'")
     knowledge: Optional[KnowledgeModel] = Field(default_factory=KnowledgeModel, description="Initial knowledge state")
 
 
@@ -105,8 +104,8 @@ class ToolDeleteCharacterArgs(InjectedToolContext):
     character_id: str = Field(..., description="ID of the NPC to delete. The player character cannot be deleted.")
 
 class ToolPlaceCharacterArgs(InjectedToolContext):
-    character_id: str = Field(..., description="ID of the character to place or move")
-    new_scenario_id: str = Field(..., description="ID of the destination scenario. If the character was already in a scenario, it will be relocated here")
+    character_id: str = Field(..., description="ID of the character (player or npc) to place or move")
+    new_scenario_id: str = Field(..., description="ID of the destination scenario e.g scenario_001, scenario_004 etc. If the character was already in a scenario, it will be relocated here")
 
 class ToolRemoveCharacterFromScenarioArgs(InjectedToolContext):
     character_id: str = Field(..., description="ID of the NPC to unplace; the player cannot be removed from its scenario.")
@@ -194,13 +193,12 @@ def create_player(
     identity: IdentityModel,
     physical: PhysicalAttributesModel,
     psychological: PsychologicalAttributesModel,
-    scenario_id: str,
     messages_field_to_update: Annotated[str, InjectedState("messages_field_to_update")],
     logs_field_to_update: Annotated[str, InjectedState("logs_field_to_update")],
     tool_call_id: Annotated[str, InjectedToolCallId],
     knowledge: Optional[KnowledgeModel]
 ) -> Command:
-    "Creates the player character in the specified scenario. The scenario ID must refer to an existing scenario. The 'scenario_id' field is mandatory. Operation fails if a player character already exists."
+    "Creates the player character. Operation fails if a player character already exists."
     print("---ENTERING: CREATE PLAYER TOOL---")
     args = extract_tool_args(locals())
 
@@ -210,12 +208,11 @@ def create_player(
     simulated_state = SimulatedGameStateSingleton.get_instance()
     
     try:
-        player, scenario = simulated_state.create_player(
+        player = simulated_state.create_player(
             identity=identity,
             physical=physical,
             psychological=psychological,
             knowledge=knowledge,
-            scenario_id=scenario_id,
         )
     except Exception as e:
         return Command(update={
@@ -224,8 +221,8 @@ def create_player(
         })
     
     return Command(update={
-        logs_field_to_update: [get_log_item("create_player", args, False, True, f"Player '{player.identity.full_name}' created with id {player.id} in scenario {scenario.name} with id {scenario.id}.")],
-        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_characters.characters_count(), "create_player", True, f"Player '{player.identity.full_name}' created with id {player.id} in scenario {scenario.name} with id {scenario.id}."), tool_call_id=tool_call_id)]
+        logs_field_to_update: [get_log_item("create_player", args, False, True, f"Player '{player.identity.full_name}' created with id {player.id}.")],
+        messages_field_to_update: [ToolMessage(get_observation(simulated_state.read_only_characters.characters_count(), "create_player", True, f"Player '{player.identity.full_name}' created with id {player.id}."), tool_call_id=tool_call_id)]
     })
 
 @tool(args_schema=ToolModifyIdentityArgs)
@@ -623,7 +620,7 @@ def remove_character_from_scenario(
     character_id: str,
 ) -> Command:
     """
-    Removes an NPC from their current scenario. This means they are no longer present in any location and are considered temporarly inactive or absent from the game world. Player cannot be removed from a scenario, if you want to move it use the place_character.
+    Removes an NPC from their current scenario. This means they are no longer present in any location and are considered temporarly inactive or absent from the game world. Player CANNOT be removed from a scenario, if you want to move it use the place_character.
     """
     args = extract_tool_args(locals())
 

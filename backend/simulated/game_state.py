@@ -132,9 +132,8 @@ class SimulatedGameState:
         identity: IdentityModel,
         physical: PhysicalAttributesModel,
         psychological: PsychologicalAttributesModel,
-        scenario_id: str,
         knowledge: Optional[KnowledgeModel] = None
-    ) -> Tuple[PlayerCharacter, Scenario]:
+    ) -> PlayerCharacter:
         # TODO: This logic coordinates multiple components.
         # Consider moving to a dedicated service if used elsewhere.
         if self.read_only_characters.has_player():
@@ -147,19 +146,11 @@ class SimulatedGameState:
             physical=physical,
             psychological=psychological,
             knowledge=knowledge,
-            present_in_scenario=scenario_id
         )
-
-        player = PlayerCharacter(player_model)
-        can_place, msg = self.read_only_map.can_place_player(player, scenario_id)
-        if not can_place:
-            rollback_character_id()
-            raise ValueError(msg)
         
         final_player = self.characters.create_player_instance(player_model)
-        scenario = self.map.place_player(player, scenario_id)
 
-        return final_player, scenario
+        return final_player
     
     def place_character(self, character_id: str, scenario_id: str) -> Tuple[BaseCharacter,Scenario]:
         # TODO
@@ -217,10 +208,8 @@ class SimulatedGameState:
         # 4. Find a safe scenario and place the character
         for scenario_id in shuffled_scenario_ids:
             print(f"  - Checking scenario '{scenario_id}' for placement...")
-            if isinstance(character, PlayerCharacter):
-                can_place, message = self.read_only_map.can_place_player(character, scenario_id)
-            else:
-                can_place, message = self.read_only_map.can_place_character(character, scenario_id)
+
+            can_place, message = self.read_only_map.can_place_character(character, scenario_id)
             
             if can_place:
                 print(f"    - ✅ Safe to place. Placing character '{character_id}' in scenario '{scenario_id}'.")

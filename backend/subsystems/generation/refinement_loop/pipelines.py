@@ -68,7 +68,7 @@ def map_then_characters_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Add Characters",
                 agent_name=AgentName.CHARACTERS,
-                objective_prompt="Add 1 NPC and the player to the previously generated map.",
+                objective_prompt="Add 1 NPC and the player to the previously generated map. Place them in different scenarios.",
                 rules_and_constraints=[],
                 other_guidelines="Ensure the characters fit within the scenarios created. Made the characters have so little short data",
                 max_executor_iterations=5,

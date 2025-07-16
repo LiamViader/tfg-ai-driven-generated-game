@@ -222,12 +222,6 @@ class SimulatedMap:
         """Returns a list of filtered scenarios by an attribute"""
         return self._working_state.find_scenarios_by_attribute(attribute_to_filter,value_to_match)
 
-    def can_place_player(self, player: PlayerCharacter, scenario_id: str) -> Tuple[bool,str]:
-        """Checks if it can place the player to a certain scenario. Returns result and message in case of negative result"""
-        if not self._working_state.find_scenario(scenario_id=scenario_id):
-            return (False, f"Scenario with ID '{scenario_id}' does not exist.")
-        else:
-            return (True, "")
 
     def can_place_character(self, character: BaseCharacter, scenario_id: str) -> Tuple[bool,str]:
         """Checks if it can place the player to a certain scenario. Returns result and message in case of negative result"""
@@ -235,14 +229,6 @@ class SimulatedMap:
             return (False, f"Scenario with ID '{scenario_id}' does not exist.")
         else:
             return (True, "")
-
-    
-    def place_player(self, player: PlayerCharacter, scenario_id: str)->Scenario:
-        scenario=self._working_state.place_player(player, scenario_id)
-        if not scenario:
-            raise KeyError(f"Scenario with ID '{scenario_id}' does not exist.")
-        
-        return scenario
     
     
     def place_character(self, character: BaseCharacter, scenario_id: str)->Scenario:              

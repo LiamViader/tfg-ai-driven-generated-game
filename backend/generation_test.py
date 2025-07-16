@@ -15,7 +15,7 @@ from utils.progress_tracker import ProgressTracker
 
 
 USER_PROMPT = """
-All characters are living cars.
+Spain.
 """
 
 def print_progress(global_progress: float, message: str):
