@@ -8,7 +8,6 @@ public class GameManager : MonoBehaviour
     private readonly Dictionary<string, ScenarioData> _scenarios = new();
     private readonly Dictionary<string, CharacterData> _characters = new();
     private readonly Dictionary<string, ConnectionData> _connections = new();
-    private readonly Dictionary<string, GameObject> _activeScenarios = new();
 
     public string CurrentScenarioId { get; private set; }
     public string PlayerCharacterId { get; private set; }
