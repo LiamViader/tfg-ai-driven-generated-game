@@ -3,15 +3,17 @@ from api.services.generation_status import (
     update_global_progress,
     set_done,
     set_error,
-    reset
+    reset,
+    get_status,
 )
 from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from core_game.game_state.singleton import GameStateSingleton
 from subsystems.generation.refinement_loop.pipelines import map_then_characters_pipeline
 from utils.progress_tracker import ProgressTracker
+from api.schemas.status import GenerationStatusModel
 
-def start_generation(prompt: str):
+def start_generation(prompt: str) -> GenerationStatusModel:
     reset()
 
     def _run():
@@ -28,7 +30,7 @@ def start_generation(prompt: str):
                 generation_progress_tracker=root_tracker
             )
 
-            update_global_progress(0.0, "Generación iniciada...")
+            update_global_progress(0.0, "Generation Initialized...")
             app = get_generation_graph_app()
             result = app.invoke(state, {"recursion_limit": 1000})
 
@@ -37,4 +39,13 @@ def start_generation(prompt: str):
             set_error(str(e))
 
     Thread(target=_run).start()
-    return {"status": "started"}
+    status = GenerationStatusModel(
+        status="started",
+        progress=0.0,
+        message="Generation process has been launched",
+        detail="You can poll /generate/status to track progress"
+    )
+    return status
+
+def get_generation_status() -> GenerationStatusModel:
+    return get_status()

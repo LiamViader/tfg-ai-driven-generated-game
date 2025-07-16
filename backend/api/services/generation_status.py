@@ -1,27 +1,32 @@
-current_status = {
-    "status": "idle",     # idle | running | done | error
+from typing import Literal
+from api.schemas.status import GenerationStatusModel
+
+# Dict for internal state
+_current_status: dict = {
+    "status": "idle",
     "progress": 0.0,
-    "message": "Esperando a iniciar generación..."
+    "message": "Waiting to start generation...",
+    "detail": "You can poll /generate/status to track progress"
 }
 
 def update_global_progress(global_progress: float, message: str = ""):
-    current_status["progress"] = global_progress
-    current_status["message"] = message
+    _current_status["progress"] = global_progress
+    _current_status["message"] = message
 
 def set_done():
-    current_status["status"] = "done"
-    current_status["progress"] = 1.0
-    current_status["message"] = "Generación completada"
+    _current_status["status"] = "done"
+    _current_status["progress"] = 1.0
+    _current_status["message"] = "Generation completed"
 
 def set_error(message: str):
-    current_status["status"] = "error"
-    current_status["progress"] = 0.0
-    current_status["message"] = message
+    _current_status["status"] = "error"
+    _current_status["progress"] = 0.0
+    _current_status["message"] = message
 
 def reset():
-    current_status["status"] = "running"
-    current_status["progress"] = 0.01
-    current_status["message"] = "Inicializando generación..."
+    _current_status["status"] = "running"
+    _current_status["progress"] = 0.0
+    _current_status["message"] = "Starting generation..."
 
-def get_status():
-    return current_status
+def get_status() -> GenerationStatusModel:
+    return GenerationStatusModel(**_current_status)
