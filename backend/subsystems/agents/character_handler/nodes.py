@@ -45,16 +45,21 @@ def character_executor_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
 
     if state.characters_progress_tracker is not None:
-        max_iterations = state.characters_max_executor_iterations
-        weight_by_retry = NODE_WEIGHTS["character_executor_reason_node"] / (
-            state.characters_max_retries + 1
+        max_retries = state.characters_max_retries + 1
+        max_iterations = state.characters_max_executor_iterations or 1
+        progress_from_previous_tries = state.characters_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_within_execution_phase = (
+            state.characters_current_executor_iteration / max_iterations
         )
-        progress = weight_by_retry * (
-            (state.characters_current_try - 1)
-            + (state.characters_current_executor_iteration / max_iterations)
+        current_phase_progress = (
+            progress_within_execution_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["character_executor_reason_node"]
         )
+        total_local_progress = progress_from_previous_tries + current_phase_progress
         state.characters_progress_tracker.update(
-            progress, "Generating/Updating characters"
+            total_local_progress, "Generating/Updating characters"
         )
 
     print("TOOLS BINDED")
@@ -111,16 +116,28 @@ def character_validation_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON VALIDATION NODE---")
 
     if state.characters_progress_tracker is not None:
-        max_iterations = state.characters_max_validation_iterations
-        weight_by_retry = NODE_WEIGHTS["character_validation_reason_node"] / (
-            state.characters_max_retries + 1
+        max_retries = state.characters_max_retries + 1
+        max_iterations = state.characters_max_validation_iterations + 1 or 1
+        progress_from_completed_tries = state.characters_current_try / max_retries
+        weight_of_current_try_block = 1 / max_retries
+        progress_from_this_try_execution = (
+            weight_of_current_try_block * NODE_WEIGHTS["character_executor_reason_node"]
         )
-        progress = weight_by_retry * (
-            (state.characters_current_try - 1)
-            + (state.characters_current_validation_iteration / max_iterations)
+        progress_within_validation_phase = (
+            state.characters_current_validation_iteration / max_iterations
+        )
+        progress_from_this_try_validation = (
+            progress_within_validation_phase
+            * weight_of_current_try_block
+            * NODE_WEIGHTS["character_validation_reason_node"]
+        )
+        total_local_progress = (
+            progress_from_completed_tries
+            + progress_from_this_try_execution
+            + progress_from_this_try_validation
         )
         state.characters_progress_tracker.update(
-            NODE_WEIGHTS["character_executor_reason_node"] + progress,
+            total_local_progress,
             "Validating characters",
         )
 
