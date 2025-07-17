@@ -11,17 +11,32 @@ public static class AssetsAPI
     {
         string url = $"{baseUrl}?path={UnityWebRequest.EscapeURL(relativePath)}";
 
-        using var request = UnityWebRequestTexture.GetTexture(url);
+        using var request = UnityWebRequest.Get(url);
+
         yield return request.SendWebRequest();
 
         if (request.result != UnityWebRequest.Result.Success || request.responseCode >= 400)
         {
-            Debug.LogError($"[AssetsAPI] Failed to load image: {request.error} ({request.responseCode})");
+            Debug.LogError($"[AssetsAPI] Failed to load image bytes: {request.error} ({request.responseCode})");
             onError?.Invoke(request.error);
             yield break;
         }
 
-        var texture = DownloadHandlerTexture.GetContent(request);
-        onSuccess?.Invoke(texture);
+        byte[] imageData = request.downloadHandler.data;
+
+
+        Texture2D readableTexture = new Texture2D(2, 2);
+
+
+        if (readableTexture.LoadImage(imageData))
+        {
+            onSuccess?.Invoke(readableTexture);
+        }
+        else
+        {
+            string errorMsg = "Failed to load downloaded image data into texture.";
+            Debug.LogError($"[AssetsAPI] {errorMsg}");
+            onError?.Invoke(errorMsg);
+        }
     }
 }

@@ -11,9 +11,9 @@ Material:
   m_Shader: {fileID: -6465566751694194690, guid: 7b5aca7e95b05d84c9b24063237a03d8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - _ACTIVATEEFFECT
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -58,12 +58,12 @@ Material:
     - _CellsEffect: 0.21
     - _EnableExternalAlpha: 0
     - _FresnelStrength: 0
-    - _HoverStrength: 1
+    - _HoverStrength: 0
     - _OutlineSpeed: 1
-    - _OutlineThickness: 0.0081
+    - _OutlineThickness: 0.0075
     - _ScanlineSpeed: 0.4
     - _ScanlineThickness: 0.04
-    - _StepAlpha: 0.415
+    - _StepAlpha: 0.688
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

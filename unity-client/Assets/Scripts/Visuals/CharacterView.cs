@@ -35,6 +35,7 @@ public class CharacterView : MonoBehaviour
             shadowScale.x *= scaleFactor;
             shadowScale.y *= scaleFactor;
             _shadowSpriteRenderer.transform.localScale = shadowScale;
+            UpdateColliderToMatchSprite(sprite);
 
         }
         else
@@ -46,6 +47,20 @@ public class CharacterView : MonoBehaviour
 
 
     }
+
+    private void UpdateColliderToMatchSprite(Sprite sprite)
+    {
+        BoxCollider2D collider = _characterSpriteRenderer.GetComponent<BoxCollider2D>();
+        if (collider == null) collider = _characterSpriteRenderer.gameObject.AddComponent<BoxCollider2D>();
+        collider.offset = Vector2.zero;
+
+        collider.isTrigger = true;
+
+
+        collider.size = sprite.bounds.size;
+        collider.offset = new Vector2(0, collider.size.y/2);
+    }
+
     private void UpdateSortingOrder()
     {
         _characterSpriteRenderer.sortingOrder = -(int)(transform.position.y * 100);

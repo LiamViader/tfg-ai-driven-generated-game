@@ -21,7 +21,6 @@ public class GameManager : MonoBehaviour
 
     public void SetCheckpointId(string checkpointId)
     {
-        // TODO send delete last checkpoint to backend to free memory
         _lastCheckpointId = checkpointId;
     }
 
@@ -34,6 +33,7 @@ public class GameManager : MonoBehaviour
         }
         else Destroy(gameObject);
     }
+
 
     // Accessors
     public ScenarioData GetScenario(string id) => _scenarios.TryGetValue(id, out var s) ? s : null;
