@@ -4,6 +4,7 @@ public class CharacterView : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _characterSpriteRenderer;
     [SerializeField] private SpriteRenderer _shadowSpriteRenderer;
+    [SerializeField] private HandleCharacterMaterial _materialHandler;
 
     public void Initialize(CharacterData data)
     {
@@ -35,6 +36,7 @@ public class CharacterView : MonoBehaviour
             shadowScale.x *= scaleFactor;
             shadowScale.y *= scaleFactor;
             _shadowSpriteRenderer.transform.localScale = shadowScale;
+            _materialHandler.SetMaterialToSprite(_characterSpriteRenderer);
             UpdateColliderToMatchSprite(sprite);
 
         }

@@ -99,7 +99,8 @@ GameObject:
   - component: {fileID: 6036086425427032837}
   - component: {fileID: 2283816131541082143}
   - component: {fileID: 7560782588204561079}
-  m_Layer: 0
+  - component: {fileID: 4868122887023289495}
+  m_Layer: 8
   m_Name: CharacterRenderer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -189,10 +190,10 @@ BoxCollider2D:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 55
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -235,6 +236,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   alphaThreshold: 0.5
+--- !u!114 &4868122887023289495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3415538456602252023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f977af44e423c234988a7b44ba3a5c2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _baseMaterial: {fileID: 2100000, guid: 1d0657114304dc149b7279e0c0b8ae36, type: 2}
 --- !u!1 &7759183513103156469
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,3 +297,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _characterSpriteRenderer: {fileID: 6036086425427032837}
   _shadowSpriteRenderer: {fileID: 4715796546683351347}
+  _materialHandler: {fileID: 4868122887023289495}

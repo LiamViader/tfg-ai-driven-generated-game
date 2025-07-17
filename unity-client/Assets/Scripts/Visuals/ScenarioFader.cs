@@ -21,6 +21,10 @@ public class ScenarioFader : MonoBehaviour
                 c.a = alpha;
                 renderer.material.color = c;
             }
+            if (renderer.material.HasProperty("_AlphaOverride"))
+            {
+                renderer.material.SetFloat("_AlphaOverride", alpha);
+            }
         }
     }
 

@@ -1,73 +1,73 @@
 using UnityEngine;
 
-// Requiere que el GameObject tenga estos dos componentes.
 [RequireComponent(typeof(SpriteRenderer))]
 [RequireComponent(typeof(Collider2D))]
 public class PixelPerfectDetector : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
 
-    // Puedes ajustar este umbral. Un valor > 0 significa que el píxel no es totalmente transparente.
     [Tooltip("The alpha threshold for a pixel to be considered 'clickable'.")]
     [SerializeField] private float alphaThreshold = 0.1f;
 
     void Awake()
     {
-        // Guardamos una referencia al SpriteRenderer para no tener que buscarlo cada vez.
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    /// <summary>
-    /// Este método de Unity se llama automáticamente cuando se hace clic
-    /// en cualquier Collider2D de este GameObject.
-    /// </summary>
+    // El método OnMouseDown ahora usa nuestra nueva función pública.
+    // Sigue funcionando para los clics.
     void OnMouseDown()
     {
-        if (IsClickOnVisiblePixel())
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (IsPixelVisibleAt(mouseWorldPos))
         {
-            // ¡El clic fue en una parte visible del personaje!
-            // Aquí pones lo que quieres que pase.
             Debug.Log($"CLICK PRECISO sobre {gameObject.name}!");
-        }
-        else
-        {
-            Debug.Log($"Clic en el área de {gameObject.name}, pero en una zona transparente.");
+            // Aquí iría tu lógica de clic
         }
     }
 
     /// <summary>
-    /// Comprueba si el clic del ratón actual está sobre un píxel no transparente del sprite.
+    /// Comprueba si en una posición específica del mundo hay un píxel visible de este sprite.
+    /// Este método es AHORA PÚBLICO para que otros scripts puedan llamarlo.
     /// </summary>
-    private bool IsClickOnVisiblePixel()
+    /// <param name="worldPosition">La posición en el mundo a comprobar (ej. la del ratón).</param>
+    /// <returns>True si el píxel en esa posición no es transparente.</returns>
+    public bool IsPixelVisibleAt(Vector3 worldPosition)
     {
-        // 1. Convertir la posición del ratón en la pantalla a la posición en el mundo del juego
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (spriteRenderer.sprite == null) return false;
 
-        // 2. Convertir la posición del mundo a la posición local del sprite
-        Vector2 localPos = transform.InverseTransformPoint(mouseWorldPos);
+        // Convertir la posición del mundo a la posición local del sprite
+        Vector2 localPos = transform.InverseTransformPoint(worldPosition);
 
-        // 3. Obtener la información del sprite
+        // Obtener la información del sprite
         Sprite sprite = spriteRenderer.sprite;
         Texture2D texture = sprite.texture;
-        Rect spriteRect = sprite.textureRect; // El área del sprite dentro de la textura total
+        Rect spriteRect = sprite.textureRect;
 
-        // 4. Calcular la coordenada del píxel correspondiente a la posición local
-        // Esto convierte las unidades de Unity a píxeles de la textura
+        // Calcular la coordenada del píxel correspondiente
         float pixelsPerUnit = sprite.pixelsPerUnit;
         Vector2 pivot = sprite.pivot;
 
-        // Calculamos la coordenada del píxel desde la esquina inferior izquierda de la textura
         int pixelX = Mathf.FloorToInt(spriteRect.x + localPos.x * pixelsPerUnit + pivot.x);
         int pixelY = Mathf.FloorToInt(spriteRect.y + localPos.y * pixelsPerUnit + pivot.y);
 
-        // 5. Comprobar si las coordenadas están dentro de los límites de la textura
+        // Comprobar si las coordenadas están dentro de la textura
         if (pixelX < 0 || pixelX >= texture.width || pixelY < 0 || pixelY >= texture.height)
         {
-            return false; // El clic está fuera de la textura
+            return false;
         }
 
-        // 6. Obtener el color del píxel y comprobar su transparencia (alfa)
-        Color pixelColor = texture.GetPixel(pixelX, pixelY);
-        return pixelColor.a > alphaThreshold;
+        // Obtener el color del píxel y comprobar su transparencia
+        try
+        {
+            Color pixelColor = texture.GetPixel(pixelX, pixelY);
+            return pixelColor.a > alphaThreshold;
+        }
+        catch (UnityException e)
+        {
+            // Este error ocurre si la textura no tiene "Read/Write" activado.
+            Debug.LogError($"Error al leer píxel en '{gameObject.name}'. ¿La textura se cargó como 'leíble'? Error: {e.Message}");
+            return false;
+        }
     }
 }
