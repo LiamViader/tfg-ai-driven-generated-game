@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour
     private string _lastCheckpointId;
     public string LastCheckpointId => _lastCheckpointId;
 
+    [SerializeField] private AssignCameraToCanvas _assignCameraToCanvas;
 
     public void SetCheckpointId(string checkpointId)
     {
@@ -148,7 +149,7 @@ public class GameManager : MonoBehaviour
         }
 
         SetCurrentScenario(player.presentInScenario);
-
+        _assignCameraToCanvas.Assign();
         ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, true);
     }
 }

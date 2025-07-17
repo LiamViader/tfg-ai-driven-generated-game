@@ -1,40 +1,48 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteAlways]
-[RequireComponent(typeof(Camera))]
-public class FixedAspectCamera : MonoBehaviour
+public class AspectRatioUtility : MonoBehaviour
 {
-    [Header("Target aspect ratio")]
-    [SerializeField] private Vector2 targetAspectRatio = new Vector2(16, 9);
-
-    [Header("Scenario settings")]
-    [SerializeField] private float scenarioHeightInPixels = 1440f;
-    [SerializeField] private float pixelsPerUnit = 100;
-
-    private Camera _camera;
-
-    void Awake()
+    void Start()
     {
-        _camera = GetComponent<Camera>();
-        UpdateViewport();
+        Adjust();
     }
 
-#if UNITY_EDITOR
-    void Update()
+    public void Adjust()
     {
-        if (!Application.isPlaying)
-            UpdateViewport();
-    }
-#endif
+        float targetaspect = 16.0f / 9.0f;
 
-    void UpdateViewport()
-    {
-        if (_camera == null)
-            _camera = GetComponent<Camera>();
+        float windowaspect = (float)Screen.width / (float)Screen.height;
 
-        // 1. Calcular height del escenario en unidades
-        float scenarioHeightInUnits = scenarioHeightInPixels / pixelsPerUnit;
-        _camera.orthographicSize = scenarioHeightInUnits / 2f;
+        float scaleheight = windowaspect / targetaspect;
+
+        Camera camera = GetComponent<Camera>();
+
+        if (scaleheight < 1.0f)
+        {
+            Rect rect = camera.rect;
+
+            rect.width = 1.0f;
+            rect.height = scaleheight;
+            rect.x = 0;
+            rect.y = (1.0f - scaleheight) / 2.0f;
+
+            camera.rect = rect;
+        }
+        else
+        {
+            float scalewidth = 1.0f / scaleheight;
+
+            Rect rect = camera.rect;
+
+            rect.width = scalewidth;
+            rect.height = 1.0f;
+            rect.x = (1.0f - scalewidth) / 2.0f;
+            rect.y = 0;
+
+            camera.rect = rect;
+        }
 
     }
 }

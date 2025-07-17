@@ -172,8 +172,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5732507132452825900, guid: 69496e27296060a4da9739bec7363345, type: 3}
+      propertyPath: m_ClearFlags
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5732507132452825900, guid: 69496e27296060a4da9739bec7363345, type: 3}
       propertyPath: orthographic size
       value: 7.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8647722880595955971, guid: 69496e27296060a4da9739bec7363345, type: 3}
+      propertyPath: m_CameraType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
