@@ -9,82 +9,82 @@ namespace Api.Models
     [Serializable]
     public class CharacterOperation
     {
-        public string? op { get; set; }  // "add", "remove", "update"
-        public string? id { get; set; }
+        public string? op;  // "add", "remove", "update"
+        public string? id;
 
-        public string? type { get; set; }
-        public string? image_path { get; set; }
-        public string? present_in_scenario { get; set; }
+        public string? type;
+        public string? image_path;
+        public string? present_in_scenario;
 
-        public IdentityAttributes? identity { get; set; }
-        public PhysicalAttributes? physical { get; set; }
-        public PsychologicalAttributes? psychological { get; set; }
-        public KnowledgeAttributes? knowledge { get; set; }
-        public DynamicState? dynamic_state { get; set; }
-        public NarrativeAttributes? narrative { get; set; }
+        public IdentityAttributes? identity;
+        public PhysicalAttributes? physical;
+        public PsychologicalAttributes? psychological;
+        public KnowledgeAttributes? knowledge;
+        public DynamicState? dynamic_state;
+        public NarrativeAttributes? narrative;
     }
 
     [Serializable]
     public class IdentityAttributes
     {
-        public string? full_name { get; set; }
-        public string? alias { get; set; }
-        public int? age { get; set; }
-        public string? gender { get; set; }
-        public string? profession { get; set; }
-        public string? species { get; set; }
-        public string? alignment { get; set; }
+        public string? full_name;
+        public string? alias;
+        public int? age;
+        public string? gender;
+        public string? profession;
+        public string? species;
+        public string? alignment;
     }
 
     [Serializable]
     public class PhysicalAttributes
     {
-        public string? appearance { get; set; }
-        public string? visual_prompt { get; set; }
-        public List<string>? distinctive_features { get; set; } // CORREGIDO: Era string?, ahora es una lista.
-        public string? clothing_style { get; set; }
-        public List<string>? characteristic_items { get; set; }
+        public string? appearance;
+        public string? visual_prompt;
+        public List<string>? distinctive_features; 
+        public string? clothing_style;
+        public List<string>? characteristic_items;
     }
 
     [Serializable]
     public class PsychologicalAttributes
     {
-        public string? personality_summary { get; set; }
-        public List<string>? personality_tags { get; set; }
-        public List<string>? motivations { get; set; }
-        public List<string>? values { get; set; }
-        public List<string>? fears_and_weaknesses { get; set; }
-        public string? communication_style { get; set; }
-        public string? backstory { get; set; }
-        public List<string>? quirks { get; set; }
+        public string? personality_summary;
+        public List<string>? personality_tags;
+        public List<string>? motivations;
+        public List<string>? values;
+        public List<string>? fears_and_weaknesses;
+        public string? communication_style;
+        public string? backstory;
+        public List<string>? quirks;
     }
 
     [Serializable]
     public class KnowledgeAttributes
     {
-        public List<string>? background_knowledge { get; set; } // CORREGIDO: Era string?, ahora es una lista.
-        public List<string>? acquired_knowledge { get; set; } // CORREGIDO: Era string?, ahora es una lista.
+        public List<string>? background_knowledge;
+        public List<string>? acquired_knowledge; 
     }
 
     [Serializable]
     public class DynamicState
     {
-        public string? current_emotion { get; set; }
-        public string? immediate_goal { get; set; }
+        public string? current_emotion;
+        public string? immediate_goal;
     }
 
     [Serializable]
     public class NarrativePurpose
     {
-        public string? mission { get; set; }
-        public bool is_hidden { get; set; }
+        public string? mission;
+        public bool is_hidden;  
     }
 
     [Serializable]
     public class NarrativeAttributes
     {
-        public string? narrative_role { get; set; }
-        public string? current_narrative_importance { get; set; } // CORREGIDO: Era int?, ahora string para coincidir con el Enum.
-        public List<NarrativePurpose>? narrative_purposes { get; set; } // CORREGIDO: Era List<string>?, ahora una lista de objetos.
+        public string? narrative_role;
+        public string? current_narrative_importance;
+        public List<NarrativePurpose>? narrative_purposes;
     }
 }

@@ -14,7 +14,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage, AI
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from simulated.singleton import SimulatedGameStateSingleton
-
+import httpx
 from subsystems.agents.utils.logs import ToolLog, ClearLogs
 
 NODE_WEIGHTS = {
@@ -44,8 +44,8 @@ def receive_objective_node(state: MapGraphState):
         "map_task_succeeded_final": False,
     }
 
-
-executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+timeout_executor = httpx.Timeout(None)
+executor_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_executor).bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def map_executor_reason_node(state: MapGraphState):
     """
@@ -139,11 +139,13 @@ def map_validation_reason_node(state: MapGraphState):
 
         state.map_progress_tracker.update(total_local_progress, "Validating map")
 
+    timeout_validation = httpx.Timeout(None)
+
     state.map_current_validation_iteration+=1
     if state.map_current_validation_iteration <= state.map_max_validation_iterations:
-        map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools(VALIDATIONTOOLS, tool_choice="any")
+        map_validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools(VALIDATIONTOOLS, tool_choice="any")
     else:
-        map_validation_llm = ChatOpenAI(model="gpt-4.1-mini",).bind_tools([validate_simulated_map], tool_choice="any")
+        map_validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools([validate_simulated_map], tool_choice="any")
     
     full_prompt=format_map_react_validation_prompt(
         state.map_current_objective,

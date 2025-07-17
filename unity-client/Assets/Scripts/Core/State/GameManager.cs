@@ -79,6 +79,8 @@ public class GameManager : MonoBehaviour
 
     public void AddCharacterToScenario(string scenarioId, string characterId)
     {
+        Debug.Log("TRYING TO ADD CHARACTER TO SCENARIO");
+        Debug.Log(characterId);
         if (_scenarios.TryGetValue(scenarioId, out var scenario) && !scenario.characterIds.Contains(characterId))
             scenario.characterIds.Add(characterId);
     }
@@ -147,7 +149,7 @@ public class GameManager : MonoBehaviour
 
         SetCurrentScenario(player.presentInScenario);
 
-        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId);
+        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, true);
     }
 }
 

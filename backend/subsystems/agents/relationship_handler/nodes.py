@@ -17,6 +17,7 @@ from utils.message_window import get_valid_messages_window
 from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from subsystems.agents.utils.logs import ToolLog
+import httpx
 
 NODE_WEIGHTS = {
     "relationship_executor_reason_node": 0.7,
@@ -42,7 +43,8 @@ def receive_objective_node(state: RelationshipGraphState):
         "relationships_task_succeeded_final": False,
     }
 
-executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+timeout_executor = httpx.Timeout(None)
+executor_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_executor).bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def relationship_executor_reason_node(state: RelationshipGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
@@ -140,11 +142,12 @@ def relationship_validation_reason_node(state: RelationshipGraphState):
             "Validating relationships",
         )
 
+    timeout_validation = httpx.Timeout(None)
     state.relationships_current_validation_iteration += 1
     if state.relationships_current_validation_iteration <= state.relationships_max_validation_iterations:
-        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools(VALIDATIONTOOLS, tool_choice="any")
     else:
-        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools([validate_simulated_relationships], tool_choice="any")
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools([validate_simulated_relationships], tool_choice="any")
 
     full_prompt = format_relationship_validation_prompt(
         state.relationships_current_objective,

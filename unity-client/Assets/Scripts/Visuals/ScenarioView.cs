@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class ScenarioView : MonoBehaviour
@@ -8,12 +8,13 @@ public class ScenarioView : MonoBehaviour
     [SerializeField]
     private BoxCollider2D _characterSpawnArea;
     [SerializeField] private GameObject _characterPrefab;
-    [SerializeField] private float _minCharacterScale = 0.7f;
+    [SerializeField] private float _minCharacterScale = 0.65f;
     [SerializeField] private float _maxCharacterScale = 1f;
-    [SerializeField] private float _minSpawnDistance = 2f;
+    [SerializeField] private float _minSpawnDistance = 3f;
     [SerializeField] private float _yWeight = 2f;
 
     private List<Vector2> _spawnedPositions = new();
+    private readonly Dictionary<string, GameObject> _spawnedCharacters = new();
 
     public void Initialize(ScenarioData data)
     {
@@ -23,17 +24,30 @@ public class ScenarioView : MonoBehaviour
                 data.backgroundImage,
                 new Rect(0, 0, data.backgroundImage.width, data.backgroundImage.height),
                 new Vector2(0.5f, 0.5f), 
-                150f                    
+                100f                    
             );
 
             _spriteRenderer.sprite = sprite;
         }
         else
         {
+            //USAR PLACEHOLDER
             Debug.LogWarning("ScenarioData has no background image.");
         }
     }
 
+    public void SpawnCharacters(List<string> characterIds)
+    {
+        Debug.Log("SPAWNING ALL CHARACTERs IN SCENARIO");
+        foreach (var id in characterIds)
+        {
+            if (id == GameManager.Instance.PlayerCharacterId) continue;
+
+            var character = GameManager.Instance.GetCharacter(id);
+            if (character != null)
+                SpawnCharacter(character);
+        }
+    }
 
     public void SpawnCharacter(CharacterData character)
     {
@@ -57,14 +71,31 @@ public class ScenarioView : MonoBehaviour
         characterGO.transform.localScale = Vector3.one * scale;
 
         _spawnedPositions.Add(spawnPoint);
-
+        _spawnedCharacters[character.id] = characterGO;
+        Debug.Log("SPAWNING CHARACTER");
         CharacterView view = characterGO.GetComponent<CharacterView>();
         if (view != null)
         {
+            Debug.Log("TRYING TO SET SPRITE RENDERER");
             SpriteRenderer sr = characterGO.GetComponentInChildren<SpriteRenderer>();
             if (sr != null)
             {
-                sr.flipX = Random.value < 0.5f;
+                float left = _characterSpawnArea.bounds.min.x;
+                float right = _characterSpawnArea.bounds.max.x;
+                float threshold = 0.05f * (right - left);
+
+                if (spawnPoint.x - left < threshold)
+                {
+                    sr.flipX = false; // too much to the left
+                }
+                else if (right - spawnPoint.x < threshold)
+                {
+                    sr.flipX = true; // Too much to the right
+                }
+                else
+                {
+                    sr.flipX = Random.value < 0.5f; // center then random
+                }
             }
 
             view.Initialize(character);
@@ -75,9 +106,21 @@ public class ScenarioView : MonoBehaviour
         }
     }
 
+    public void ClearCharacters()
+    {
+        foreach (var go in _spawnedCharacters.Values)
+        {
+            if (go != null)
+                Destroy(go);
+        }
+
+        _spawnedCharacters.Clear();
+        _spawnedPositions.Clear();
+    }
+
     private Vector2 FindValidSpawnPoint()
     {
-        const int maxTries = 100;
+        const int maxTries = 30;
         for (int i = 0; i < maxTries; i++)
         {
             Vector2 candidate = GetRandomPointInBox(_characterSpawnArea);
@@ -85,7 +128,7 @@ public class ScenarioView : MonoBehaviour
                 return candidate;
         }
 
-        // Si no encuentra un punto v�lido, simplemente devuelve uno
+        // Si no encuentra un punto válido, simplemente devuelve uno
         Debug.LogWarning("SpawnCharacter: couldn't find distant-enough point after 100 tries.");
         return GetRandomPointInBox(_characterSpawnArea);
     }
@@ -114,4 +157,7 @@ public class ScenarioView : MonoBehaviour
 
         return new Vector2(x, y);
     }
+
+
+
 }

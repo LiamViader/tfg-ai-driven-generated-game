@@ -25,6 +25,82 @@ def fast_test_pipeline() -> PipelineConfig:
         ],
     )
 
+
+def slow_test_pipeline() -> PipelineConfig:
+    """Pipeline for testing a more complex game"""
+    return PipelineConfig(
+        name="fast_test",
+        description="Fast test pipeline with a single map generation step.",
+        steps=[
+            PipelineStep(
+                step_name="Map Generation",
+                agent_name=AgentName.MAP,
+                objective_prompt="Create a small map with three connected scenarios.",
+                rules_and_constraints=[],
+                other_guidelines="Keep it brief.",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=0,
+                weight=0.25,
+            ),
+            PipelineStep(
+                step_name="Add Characters",
+                agent_name=AgentName.CHARACTERS,
+                objective_prompt="Add 2 NPCs and the player to the previously generated map. Place them in different scenarios.",
+                rules_and_constraints=[],
+                other_guidelines="Ensure the characters fit within the scenarios created. Make the characters interesting, unique, surprising",
+                max_executor_iterations=5,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.5,
+            ),
+            PipelineStep(
+                step_name="Create Relationships",
+                agent_name=AgentName.RELATIONSHIP,
+                objective_prompt="Create relationships between the characters.",
+                rules_and_constraints=[],
+                other_guidelines="Ensure the relationships make sense with the character backgrounds and map.",
+                max_executor_iterations=3,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.33,
+            ),
+            PipelineStep(
+                step_name="Create Narrative",
+                agent_name=AgentName.NARRATIVE,
+                objective_prompt="Create 2-3 narrative beats for the current narrative stage and 1 failure condition.",
+                rules_and_constraints=[],
+                other_guidelines="",
+                max_executor_iterations=5,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.25,
+            ),
+            PipelineStep(
+                step_name="Map Generation",
+                agent_name=AgentName.MAP,
+                objective_prompt="Add and connect 2-3 new scenarios. They should make sense with the existing characters and context. At the end the map must contain one single cluster",
+                rules_and_constraints=[],
+                other_guidelines="Keep it brief.",
+                max_executor_iterations=7,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.25,
+            ),
+            PipelineStep(
+                step_name="Add Characters",
+                agent_name=AgentName.CHARACTERS,
+                objective_prompt="Add and place 5 NPCs they will be the last added to the game so it should feel complete with the existing.",
+                rules_and_constraints=[],
+                other_guidelines="Ensure the characters fit within the scenarios created. Make the characters interesting, unique, surprising",
+                max_executor_iterations=6,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.5,
+            ),
+        ],
+    )
+
 def map_only_pipeline() -> PipelineConfig:
     """Single step pipeline that only runs the map agent."""
     return PipelineConfig(

@@ -29,7 +29,7 @@ public class ScenarioVisualManager : MonoBehaviour
         }
     }
 
-    public void SetFocusScenario(string newScenarioId)
+    public void SetFocusScenario(string newScenarioId, bool immediately)
     {
 
         if (_currentScenarioId == newScenarioId)
@@ -41,10 +41,44 @@ public class ScenarioVisualManager : MonoBehaviour
         RefreshVisualScenarios(newScenarioId);
 
         FocusCameraOn(newScenarioId);
+        if (immediately)
+        {
+            TransitionBetweenScenariosImmediately(prevScenarioId, newScenarioId);
+        }
+        else
+        {
+            StartCoroutine(TransitionBetweenScenarios(prevScenarioId, newScenarioId));
+        }
 
-        StartCoroutine(TransitionBetweenScenarios(prevScenarioId, newScenarioId));
+
     }
 
+    private void TransitionBetweenScenariosImmediately(string fromId, string toId)
+    {
+        CanvasGroup fromGroup = GetCanvasGroup(fromId);
+        CanvasGroup toGroup = GetCanvasGroup(toId);
+
+
+        if (fromGroup != null)
+        {
+            fromGroup.alpha = 0f;
+            fromGroup.interactable = false;
+            fromGroup.blocksRaycasts = false;
+        }
+
+        if (toGroup != null)
+        {
+            toGroup.alpha = 1f;
+            toGroup.interactable = true;
+            toGroup.blocksRaycasts = true;
+        }
+
+        foreach (var kvp in _activeScenarios)
+        {
+            bool isCurrent = kvp.Key == toId;
+            kvp.Value.SetActive(isCurrent);
+        }
+    }
 
     private IEnumerator TransitionBetweenScenarios(string fromId, string toId)
     {
@@ -141,7 +175,7 @@ public class ScenarioVisualManager : MonoBehaviour
     {
         var view = go.GetComponent<ScenarioView>() ?? go.AddComponent<ScenarioView>();
         view.Initialize(data);
-
+        view.SpawnCharacters(data.characterIds);
         var cg = go.GetComponent<CanvasGroup>();
         if (cg == null)
         {

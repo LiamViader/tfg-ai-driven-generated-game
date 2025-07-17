@@ -12,7 +12,7 @@ class CharactersDetector(ChangeDetector[CharactersModel]):
         final_changes: Dict[str, Any] = {}
         
         # 1. Detects if player id has changed
-        if old.player_character_id != new.player_character_id:
+        if old.player_character_id != new.player_character_id and new.player_character_id:
             final_changes["player_character_id"] = new.player_character_id
 
         registry_ops: List[Dict[str, Any]] = []

@@ -13,6 +13,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import ToolLog
+import httpx
 
 NODE_WEIGHTS = {
     "narrative_executor_reason_node": 0.7,
@@ -39,7 +40,8 @@ def receive_objective_node(state: NarrativeGraphState):
         "narrative_task_succeeded_final": False,
     }
 
-executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+timeout_executor = httpx.Timeout(None)
+executor_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_executor).bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def narrative_executor_reason_node(state: NarrativeGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
@@ -135,8 +137,14 @@ def narrative_validation_reason_node(state: NarrativeGraphState):
             total_local_progress,
             "Validating narrative",
         )
+    timeout_validation = httpx.Timeout(None)
     state.narrative_current_validation_iteration += 1
-    validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
+
+    if state.narrative_current_validation_iteration <= state.narrative_max_validation_iterations:
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools(VALIDATIONTOOLS, tool_choice="any")
+    else:
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools([validate_simulated_narrative], tool_choice="any")
+        
     full_prompt = format_narrative_react_validation_prompt(
         state.narrative_current_objective,
         state.narrative_executor_agent_relevant_logs,

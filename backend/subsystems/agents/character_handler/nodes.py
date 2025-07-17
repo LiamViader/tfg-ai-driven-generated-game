@@ -15,6 +15,9 @@ from langchain_core.messages import BaseMessage, HumanMessage, RemoveMessage
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from simulated.singleton import SimulatedGameStateSingleton
 from subsystems.agents.utils.logs import ToolLog
+import httpx
+
+
 
 NODE_WEIGHTS = {
     "character_executor_reason_node": 0.7,
@@ -38,8 +41,8 @@ def receive_objective_node(state: CharacterGraphState):
         "characters_task_succeeded_final": False,
     }
 
-
-executor_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(EXECUTORTOOLS, tool_choice="any")
+timeout_executor = httpx.Timeout(None)
+executor_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_executor).bind_tools(EXECUTORTOOLS, tool_choice="any")
 
 def character_executor_reason_node(state: CharacterGraphState):
     print("---ENTERING: REASON EXECUTION NODE---")
@@ -140,12 +143,12 @@ def character_validation_reason_node(state: CharacterGraphState):
             total_local_progress,
             "Validating characters",
         )
-
+    timeout_validation = httpx.Timeout(None)
     state.characters_current_validation_iteration += 1
     if state.characters_current_validation_iteration <= state.characters_max_validation_iterations:
-        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools(VALIDATIONTOOLS, tool_choice="any")
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools(VALIDATIONTOOLS, tool_choice="any")
     else:
-        validation_llm = ChatOpenAI(model="gpt-4.1-mini").bind_tools([validate_simulated_characters], tool_choice="any")
+        validation_llm = ChatOpenAI(model="gpt-4.1-mini", timeout=timeout_validation).bind_tools([validate_simulated_characters], tool_choice="any")
 
     full_prompt = format_character_validation_prompt(
         state.characters_current_objective,

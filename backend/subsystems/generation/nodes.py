@@ -259,7 +259,7 @@ def _save_images(result_data: Dict[str, Any]) -> bool:
             
             image_path = os.path.join(output_dir, f"{base_filename}{extension}")
             counter = 1
-            unique_filename = base_filename
+            unique_filename = f"{base_filename}{extension}"
             # Loop to find unique name
             while os.path.exists(image_path):
                 counter += 1
