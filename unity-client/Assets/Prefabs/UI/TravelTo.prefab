@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5583927480742448507}
   - component: {fileID: 8871254251206811285}
   - component: {fileID: 4763789743368349968}
+  - component: {fileID: 3734006954712340991}
   m_Layer: 5
   m_Name: TravelTo
   m_TagString: Untagged
@@ -77,6 +78,25 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3734006954712340991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 789563578872820396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34cc9792df9625b4da21d8612d823ab2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _northButton: {fileID: 6685052415911343233}
+  _southButton: {fileID: 3974624700090895548}
+  _eastButton: {fileID: 805569233291864424}
+  _westButton: {fileID: 8405702604522265048}
+  animationDuration: 0.8
+  _showOptionsButton: {fileID: 6522536834264031781}
+  _backgroundBlocker: {fileID: 0}
 --- !u!1 &1139403302228778051
 GameObject:
   m_ObjectHideFlags: 0
@@ -89,6 +109,7 @@ GameObject:
   - component: {fileID: 1349998167028223230}
   - component: {fileID: 7603538640721283561}
   - component: {fileID: 3974624700090895548}
+  - component: {fileID: 31107328400543117}
   m_Layer: 5
   m_Name: SouthOption
   m_TagString: Untagged
@@ -198,6 +219,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &31107328400543117
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1139403302228778051}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1253875328422397283
 GameObject:
   m_ObjectHideFlags: 0
@@ -210,6 +243,7 @@ GameObject:
   - component: {fileID: 2203910701434902263}
   - component: {fileID: 5871333019008857695}
   - component: {fileID: 6685052415911343233}
+  - component: {fileID: 8375777391669459521}
   m_Layer: 5
   m_Name: NorthOption
   m_TagString: Untagged
@@ -319,6 +353,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &8375777391669459521
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1253875328422397283}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &2243927619537422616
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,6 +377,7 @@ GameObject:
   - component: {fileID: 5156398321034775188}
   - component: {fileID: 9136341644402712116}
   - component: {fileID: 805569233291864424}
+  - component: {fileID: 5423487667101957644}
   m_Layer: 5
   m_Name: EastOption
   m_TagString: Untagged
@@ -440,6 +487,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &5423487667101957644
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2243927619537422616}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &3977533546787777351
 GameObject:
   m_ObjectHideFlags: 0
@@ -665,7 +724,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: North
+  m_text: 'W - '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
@@ -801,7 +860,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: North
+  m_text: 'S - '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
@@ -937,7 +996,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: North
+  m_text: 'N - '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
@@ -1171,6 +1230,7 @@ GameObject:
   - component: {fileID: 7216138782239489800}
   - component: {fileID: 8382094975071872998}
   - component: {fileID: 8405702604522265048}
+  - component: {fileID: 7583483378722771102}
   m_Layer: 5
   m_Name: WestOption
   m_TagString: Untagged
@@ -1280,6 +1340,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &7583483378722771102
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8692881475302065309}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &8728853597076439185
 GameObject:
   m_ObjectHideFlags: 0
@@ -1345,7 +1417,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: North
+  m_text: 'E - '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
