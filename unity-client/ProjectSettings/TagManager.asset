@@ -41,6 +41,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: CanvasBackground
+    uniqueID: 1535433511
+    locked: 0
   - name: Background
     uniqueID: 215705233
     locked: 0
@@ -50,7 +53,7 @@ TagManager:
   - name: Characters
     uniqueID: 948528569
     locked: 0
-  - name: Canvas
+  - name: Overlay
     uniqueID: 3873675507
     locked: 0
   m_RenderingLayers:

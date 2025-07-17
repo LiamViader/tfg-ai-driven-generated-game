@@ -29,7 +29,7 @@ public class ScenarioVisualManager : MonoBehaviour
         }
     }
 
-    public void SetFocusScenario(string newScenarioId, bool immediately)
+    public void SetFocusScenario(string newScenarioId, bool immediately, System.Action onScenarioChangeVisually = null)
     {
 
         if (_currentScenarioId == newScenarioId)
@@ -43,87 +43,103 @@ public class ScenarioVisualManager : MonoBehaviour
         FocusCameraOn(newScenarioId);
         if (immediately)
         {
-            TransitionBetweenScenariosImmediately(prevScenarioId, newScenarioId);
+            TransitionBetweenScenariosImmediately(prevScenarioId, newScenarioId, onScenarioChangeVisually);
         }
         else
         {
-            StartCoroutine(TransitionBetweenScenarios(prevScenarioId, newScenarioId));
+            StartCoroutine(TransitionBetweenScenarios2(prevScenarioId, newScenarioId, onScenarioChangeVisually));
         }
+
 
 
     }
 
-    private void TransitionBetweenScenariosImmediately(string fromId, string toId)
+    private void TransitionBetweenScenariosImmediately(string fromId, string toId, System.Action onScenarioChangeVisually = null)
     {
-        CanvasGroup fromGroup = GetCanvasGroup(fromId);
-        CanvasGroup toGroup = GetCanvasGroup(toId);
-
-
-        if (fromGroup != null)
-        {
-            fromGroup.alpha = 0f;
-            fromGroup.interactable = false;
-            fromGroup.blocksRaycasts = false;
-        }
-
-        if (toGroup != null)
-        {
-            toGroup.alpha = 1f;
-            toGroup.interactable = true;
-            toGroup.blocksRaycasts = true;
-        }
 
         foreach (var kvp in _activeScenarios)
         {
             bool isCurrent = kvp.Key == toId;
             kvp.Value.SetActive(isCurrent);
         }
+
     }
 
-    private IEnumerator TransitionBetweenScenarios(string fromId, string toId)
+    private IEnumerator TransitionBetweenScenarios1(string fromId, string toId, System.Action onScenarioChangeVisually = null)
     {
         float duration = 0.5f;
 
-        CanvasGroup fromGroup = GetCanvasGroup(fromId);
-        CanvasGroup toGroup = GetCanvasGroup(toId);
+        var fromFader = GetFader(fromId);
+        var toFader = GetFader(toId);
 
-        if (toGroup != null) toGroup.alpha = 0f;
+        if (toFader != null)
+            toFader.SetAlpha(0f);
 
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            float progress = t / duration;
+        if (_activeScenarios.TryGetValue(toId, out var toGo))
+            toGo.SetActive(true);
 
-            if (fromGroup != null)
-                fromGroup.alpha = Mathf.Lerp(1f, 0f, progress);
+        if (_activeScenarios.TryGetValue(fromId, out var fromGo))
+            fromGo.SetActive(true);
 
-            if (toGroup != null)
-                toGroup.alpha = Mathf.Lerp(0f, 1f, progress);
+        bool done = false;
 
+        if (fromFader != null)
+            fromFader.FadeTo(0f, duration);
+
+        if (toFader != null)
+            yield return toFader.FadeTo(1f, duration, () => done = true);
+
+        while (!done)
             yield return null;
-        }
 
-        if (fromGroup != null)
-        {
-            fromGroup.alpha = 0f;
-            fromGroup.interactable = false;
-            fromGroup.blocksRaycasts = false;
-        }
-
-        if (toGroup != null)
-        {
-            toGroup.alpha = 1f;
-            toGroup.interactable = true;
-            toGroup.blocksRaycasts = true;
-        }
+        
 
         foreach (var kvp in _activeScenarios)
+            kvp.Value.SetActive(kvp.Key == toId);
+
+        onScenarioChangeVisually?.Invoke();
+    }
+
+    private IEnumerator TransitionBetweenScenarios2(string fromId, string toId, System.Action onScenarioChangeVisually = null)
+    {
+        float duration = 1f;
+
+        var fromFader = GetFader(fromId);
+        var toFader = GetFader(toId);
+
+        // Activar el nuevo escenario (pero mantenerlo invisible)
+        if (_activeScenarios.TryGetValue(toId, out var toGo))
+            toGo.SetActive(true);
+
+        if (_activeScenarios.TryGetValue(fromId, out var fromGo))
+            fromGo.SetActive(true);
+
+        if (toFader != null)
+            toFader.SetAlpha(0f); // invisible antes de empezar
+
+        // Fade out del escenario anterior
+        if (fromFader != null)
         {
-            bool isCurrent = kvp.Key == toId;
-            kvp.Value.SetActive(isCurrent);
+            bool doneFrom = false;
+            yield return fromFader.FadeTo(0f, duration*2, () => doneFrom = true);
+            while (!doneFrom) yield return null;
+        }
+
+        // Desactivar el escenario anterior
+        if (_activeScenarios.TryGetValue(fromId, out var fromGo2))
+            fromGo2.SetActive(false);
+
+        onScenarioChangeVisually?.Invoke();
+
+        // Fade in del nuevo escenario
+        if (toFader != null)
+        {
+            bool doneTo = false;
+            yield return toFader.FadeTo(1f, duration, () => doneTo = true);
+            while (!doneTo) yield return null;
         }
     }
+
 
     private void FocusCameraOn(string scenarioId)
     {
@@ -154,7 +170,7 @@ public class ScenarioVisualManager : MonoBehaviour
                 _activeScenarios[id] = go;
             }
 
-            _activeScenarios[id].SetActive(true);
+            _activeScenarios[id].SetActive(false);
         }
 
         var toRemove = new List<string>();
@@ -184,10 +200,11 @@ public class ScenarioVisualManager : MonoBehaviour
         cg.interactable = false;
         cg.blocksRaycasts = false;
     }
-    private CanvasGroup GetCanvasGroup(string scenarioId)
+    private ScenarioFader GetFader(string scenarioId)
     {
         if (scenarioId == null) return null;
         if (!_activeScenarios.TryGetValue(scenarioId, out var go)) return null;
-        return go.GetComponent<CanvasGroup>();
+        return go.GetComponent<ScenarioFader>();
     }
+
 }

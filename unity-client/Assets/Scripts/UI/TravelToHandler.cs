@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using System.Collections.Generic;
@@ -63,13 +63,16 @@ public class TravelToHandler : MonoBehaviour
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() =>
         {
-            HideAllExcept(button); // Oculta las dem·s r·pido
-
-            // Ocultar esta m·s lento tras un pequeÒo delay
+            _isAnimating = true;
+            HideAllExcept(button);
+            GameManager.Instance.TravelTo(connectedScenarioId);
             DOVirtual.DelayedCall(delayAfterClick, () =>
             {
-                HideButton(button, hideDurationSelected, 0f);
-                UIManager.Instance.HideBlocker();
+                HideBlocker();
+                HideButton(button, hideDurationSelected, 0f, () =>
+                {
+                    _isAnimating = false; // desbloquear al terminar el √∫ltimo bot√≥n
+                });
             });
         });
 
@@ -79,28 +82,38 @@ public class TravelToHandler : MonoBehaviour
     }
     private void HideAllExcept(Button except)
     {
-        if (_isAnimating) return;
+        int toHide = 0;
+        int hidden = 0;
 
         foreach (var button in _allButtons)
         {
             if (button == except || !button.gameObject.activeSelf) continue;
+            toHide++;
+
             HideButton(button, hideDurationNormal, 0f);
         }
+
+        if (toHide == 0)
+            _isAnimating = false;
     }
 
-    private void HideButton(Button button, float duration, float delay)
+    private void HideButton(Button button, float duration, float delay, System.Action onComplete = null)
     {
         RectTransform rt = button.GetComponent<RectTransform>();
         CanvasGroup cg = GetOrAddCanvasGroup(button.gameObject);
 
-        Vector2 originalPos = _originalPositions[button];
-        Vector2 targetPos = originalPos + (Vector2.down * fadeOnlyHideOffset);
+        Vector2 targetPos = _originalPositions[button];
 
         Sequence s = DOTween.Sequence();
         s.AppendInterval(delay);
         s.Join(rt.DOAnchorPos(targetPos, duration).SetEase(Ease.InOutQuad));
         s.Join(cg.DOFade(0f, duration).SetEase(Ease.Linear));
-        s.OnComplete(() => button.gameObject.SetActive(false));
+        s.Join(rt.DOScale(0.9f, duration).SetEase(Ease.InOutQuad));
+        s.OnComplete(() =>
+        {
+            button.gameObject.SetActive(false);
+            onComplete?.Invoke();
+        });
     }
 
     public void ShowOptions()
@@ -108,7 +121,7 @@ public class TravelToHandler : MonoBehaviour
         if (_isAnimating) return;
         _isAnimating = true;
 
-        UIManager.Instance.ShowBlocker(() =>
+        ShowBlocker(() =>
         {
             if (_isAnimating) return;
             HideAll();
@@ -120,7 +133,7 @@ public class TravelToHandler : MonoBehaviour
         var currentScenario = GameManager.Instance.GetScenario(GameManager.Instance.CurrentScenarioId);
         if (currentScenario == null)
         {
-            Debug.LogError("No se encontrÛ el escenario actual.");
+            Debug.LogError("No se encontr√≥ el escenario actual.");
             _isAnimating = false;
             return;
         }
@@ -154,42 +167,28 @@ public class TravelToHandler : MonoBehaviour
     public void HideAll()
     {
         if (_isAnimating) return;
+        HideBlocker();
         _isAnimating = true;
 
-        UIManager.Instance.HideBlocker();
-
+        int total = 0;
         int completed = 0;
-        int total = _allButtons.Count;
 
         foreach (var button in _allButtons)
         {
-            if (!button.gameObject.activeSelf)
+            if (!button.gameObject.activeSelf) continue;
+
+            total++;
+            HideButton(button, hideDurationNormal, 0f, () =>
             {
-                completed++;
-                continue;
-            }
-
-            RectTransform rt = button.GetComponent<RectTransform>();
-            CanvasGroup cg = GetOrAddCanvasGroup(button.gameObject);
-
-            Vector2 originalPos = _originalPositions[button];
-            Vector2 targetPos = originalPos + (Vector2.down * fadeOnlyHideOffset); // ocultar hacia abajo
-
-            Sequence s = DOTween.Sequence();
-            s.Join(rt.DOAnchorPos(targetPos, hideDurationNormal).SetEase(Ease.InOutQuad));
-            s.Join(cg.DOFade(0f, hideDurationNormal).SetEase(Ease.Linear));
-            s.OnComplete(() =>
-            {
-                button.gameObject.SetActive(false);
                 completed++;
                 if (completed >= total)
                     _isAnimating = false;
             });
         }
 
-        // Si ninguno estaba activo, desbloquear igual
-        if (completed >= total)
+        if (total == 0)
             _isAnimating = false;
+
     }
 
     private CanvasGroup GetOrAddCanvasGroup(GameObject go)
@@ -199,4 +198,26 @@ public class TravelToHandler : MonoBehaviour
             cg = go.AddComponent<CanvasGroup>();
         return cg;
     }
+
+    public void ShowBlocker(System.Action onClickOutside)
+    {
+        if (_backgroundBlocker == null) return;
+
+        _backgroundBlocker.gameObject.SetActive(true);
+        _backgroundBlocker.onClick.RemoveAllListeners();
+        _backgroundBlocker.onClick.AddListener(() =>
+        {
+            onClickOutside?.Invoke();
+            if (!_isAnimating) HideBlocker();
+        });
+    }
+
+    public void HideBlocker()
+    {
+        if (_backgroundBlocker == null) return;
+
+        _backgroundBlocker.onClick.RemoveAllListeners();
+        _backgroundBlocker.gameObject.SetActive(false);
+    }
+
 }

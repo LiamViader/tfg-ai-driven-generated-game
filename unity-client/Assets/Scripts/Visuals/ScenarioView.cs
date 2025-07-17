@@ -38,7 +38,6 @@ public class ScenarioView : MonoBehaviour
 
     public void SpawnCharacters(List<string> characterIds)
     {
-        Debug.Log("SPAWNING ALL CHARACTERs IN SCENARIO");
         foreach (var id in characterIds)
         {
             if (id == GameManager.Instance.PlayerCharacterId) continue;
@@ -72,11 +71,9 @@ public class ScenarioView : MonoBehaviour
 
         _spawnedPositions.Add(spawnPoint);
         _spawnedCharacters[character.id] = characterGO;
-        Debug.Log("SPAWNING CHARACTER");
         CharacterView view = characterGO.GetComponent<CharacterView>();
         if (view != null)
         {
-            Debug.Log("TRYING TO SET SPRITE RENDERER");
             SpriteRenderer sr = characterGO.GetComponentInChildren<SpriteRenderer>();
             if (sr != null)
             {

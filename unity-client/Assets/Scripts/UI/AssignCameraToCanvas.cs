@@ -1,22 +1,23 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class AssignCameraToCanvas : MonoBehaviour
 {
-    [SerializeField] private Canvas targetCanvas;
+    [SerializeField] private List<Canvas> targetCanvas;
 
     void Awake()
     {
-        if (targetCanvas != null && Camera.main != null)
-        {
-            targetCanvas.worldCamera = Camera.main;
-        }
+        Assign(); // Llama al método en Awake también
     }
 
     public void Assign()
     {
-        if (targetCanvas != null && Camera.main != null)
+        if (Camera.main == null || targetCanvas == null) return;
+
+        foreach (var canvas in targetCanvas)
         {
-            targetCanvas.worldCamera = Camera.main;
+            if (canvas != null)
+                canvas.worldCamera = Camera.main;
         }
     }
 }

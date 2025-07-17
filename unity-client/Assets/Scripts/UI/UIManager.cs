@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using Unity.Burst.CompilerServices;
+
 
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
-
-    [SerializeField] private Button backgroundBlocker;
+    [SerializeField] private TMP_Text _playerNameText;
+    [SerializeField] private Image _playerImage;
+    [SerializeField] private Image _backgroundImage;
 
     void Awake()
     {
@@ -19,28 +23,63 @@ public class UIManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        if (backgroundBlocker != null)
-            backgroundBlocker.gameObject.SetActive(false);
     }
 
-    public void ShowBlocker(System.Action onClickOutside)
+    public void SetPlayerData(CharacterData player)
     {
-        if (backgroundBlocker == null) return;
-
-        backgroundBlocker.gameObject.SetActive(true);
-        backgroundBlocker.onClick.RemoveAllListeners();
-        backgroundBlocker.onClick.AddListener(() =>
+        if (player != null)
         {
-            onClickOutside?.Invoke();
-            HideBlocker();
-        });
+            if (_playerNameText != null)
+            {
+                string name = "";
+                if (player.fullName != null)
+                {
+                    name = player.fullName;
+                }
+                string alias = "";
+                if (player.alias != null)
+                {
+                    alias = " - " + player.alias;
+                }
+                _playerNameText.text = name + alias;
+            }
+
+        }
+
     }
 
-    public void HideBlocker()
+    public void SetPlayerImage(Texture2D image)
     {
-        if (backgroundBlocker == null) return;
+        if (_playerImage == null || image == null) return;
 
-        backgroundBlocker.onClick.RemoveAllListeners();
-        backgroundBlocker.gameObject.SetActive(false);
+        Rect rect = new Rect(0, 0, image.width, image.height);
+        Vector2 pivot = new Vector2(0.5f, 0.5f);
+        float pixelsPerUnit = 150f; // Aquí defines los 150 pixels por unidad
+
+        Sprite sprite = Sprite.Create(image, rect, pivot, pixelsPerUnit);
+
+        _playerImage.sprite = sprite;
+        _playerImage.preserveAspect = true;
+
+        AspectRatioFitter fitter = _playerImage.GetComponent<AspectRatioFitter>();
+        if (fitter != null)
+        {
+            float aspect = (float)image.width / image.height;
+            fitter.aspectRatio = aspect;
+        }
+        Debug.Log("IMAGE SET");
     }
+
+    public void SetPlayerBackgroundImage(Texture2D background)
+    {
+        if (_backgroundImage == null || background == null) return;
+
+        Rect rect = new Rect(0, 0, background.width, background.height);
+        Vector2 pivot = new Vector2(0.5f, 0.5f);
+        Sprite sprite = Sprite.Create(background, rect, pivot);
+
+        _backgroundImage.sprite = sprite;
+        _backgroundImage.preserveAspect = true;
+    }
+
 }

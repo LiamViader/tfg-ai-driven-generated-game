@@ -44,13 +44,26 @@ public class GameManager : MonoBehaviour
     public IEnumerable<ConnectionData> GetAllConnections() => _connections.Values;
 
     public void SetCurrentScenario(string id) => CurrentScenarioId = id;
-    public void SetPlayerCharacterId(string id) => PlayerCharacterId = id;
+    public void SetPlayerCharacterId(string id) {
+        PlayerCharacterId = id;
+        CharacterData player = GetCharacter(id);
+        if (player != null)
+        {
+            UIManager.Instance.SetPlayerData(player);
+        }
+    }
 
     // Controlled mutation
     public void AddOrUpdateScenario(ScenarioData scenario) => _scenarios[scenario.id] = scenario;
     public void RemoveScenario(string id) => _scenarios.Remove(id);
 
-    public void AddOrUpdateCharacter(CharacterData character) => _characters[character.id] = character;
+    public void AddOrUpdateCharacter(CharacterData character) {
+        _characters[character.id] = character;
+        if (character.id != PlayerCharacterId)
+        {
+            UIManager.Instance.SetPlayerData(character);
+        }
+    }
     public void RemoveCharacter(string id) => _characters.Remove(id);
 
     public void AddOrUpdateConnection(ConnectionData connection) => _connections[connection.connectionId] = connection;
@@ -80,8 +93,6 @@ public class GameManager : MonoBehaviour
 
     public void AddCharacterToScenario(string scenarioId, string characterId)
     {
-        Debug.Log("TRYING TO ADD CHARACTER TO SCENARIO");
-        Debug.Log(characterId);
         if (_scenarios.TryGetValue(scenarioId, out var scenario) && !scenario.characterIds.Contains(characterId))
             scenario.characterIds.Add(characterId);
     }
@@ -124,6 +135,23 @@ public class GameManager : MonoBehaviour
         return visited;
     }
 
+    public void TravelTo(string scenarioId)
+    {
+        if (GetScenario(scenarioId) != null)
+        {
+            SetCurrentScenario(scenarioId);
+            ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, false, () =>
+            {
+                ScenarioData scenarioTo = GetScenario(scenarioId);
+                if (scenarioTo != null)
+                {
+                    UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+                }
+            });
+
+        }
+    }
+
     public void InitializeWorld()
     {
         StartCoroutine(InitializeWorldCoroutine());
@@ -148,9 +176,17 @@ public class GameManager : MonoBehaviour
             yield break;
         }
 
+        UIManager.Instance.SetPlayerImage(player.portrait);
         SetCurrentScenario(player.presentInScenario);
         _assignCameraToCanvas.Assign();
-        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, true);
+        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, true, () =>
+        {
+            ScenarioData scenarioTo = GetScenario(CurrentScenarioId);
+            if (scenarioTo != null)
+            {
+                UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+            }
+        });
     }
 }
 
