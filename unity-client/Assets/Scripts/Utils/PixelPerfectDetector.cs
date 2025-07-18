@@ -15,15 +15,11 @@ public class PixelPerfectDetector : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    // El método OnMouseDown ahora usa nuestra nueva función pública.
-    // Sigue funcionando para los clics.
-    void OnMouseDown()
+
+
+    public void ClickCharacter()
     {
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        if (IsPixelVisibleAt(mouseWorldPos))
-        {
-            _characterView.OnClick();
-        }
+        _characterView.OnClick();
     }
 
     /// <summary>

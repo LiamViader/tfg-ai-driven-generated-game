@@ -10,7 +10,7 @@ public class ScenarioView : MonoBehaviour
     [SerializeField] private GameObject _characterPrefab;
     [SerializeField] private float _minCharacterScale = 0.65f;
     [SerializeField] private float _maxCharacterScale = 1f;
-    [SerializeField] private float _minSpawnDistance = 3f;
+    [SerializeField] private float _minSpawnDistance = 7f;
     [SerializeField] private float _yWeight = 2f;
 
     private List<Vector2> _spawnedPositions = new();
@@ -118,16 +118,43 @@ public class ScenarioView : MonoBehaviour
     private Vector2 FindValidSpawnPoint()
     {
         const int maxTries = 30;
+        Vector2 bestCandidate = Vector2.zero;
+        float maxMinDistance = -1f;
+
         for (int i = 0; i < maxTries; i++)
         {
             Vector2 candidate = GetRandomPointInBox(_characterSpawnArea);
+
             if (IsFarFromOthers(candidate))
                 return candidate;
+
+            float minDistanceToAny = GetMinDistanceToOthers(candidate);
+            if (minDistanceToAny > maxMinDistance)
+            {
+                maxMinDistance = minDistanceToAny;
+                bestCandidate = candidate;
+            }
         }
 
-        // Si no encuentra un punto válido, simplemente devuelve uno
-        Debug.LogWarning("SpawnCharacter: couldn't find distant-enough point after 100 tries.");
-        return GetRandomPointInBox(_characterSpawnArea);
+        Debug.LogWarning("SpawnCharacter: couldn't find distant-enough point, using best fallback.");
+        return bestCandidate;
+    }
+
+    private float GetMinDistanceToOthers(Vector2 candidate)
+    {
+        float minDistance = float.MaxValue;
+
+        foreach (var pos in _spawnedPositions)
+        {
+            float dx = Mathf.Abs(candidate.x - pos.x);
+            float dy = Mathf.Abs(candidate.y - pos.y);
+            float weightedDistance = dx + dy * _yWeight;
+
+            if (weightedDistance < minDistance)
+                minDistance = weightedDistance;
+        }
+
+        return minDistance;
     }
 
     private bool IsFarFromOthers(Vector2 candidate)

@@ -30,6 +30,11 @@ public class MouseHoverManager : MonoBehaviour
 
             lastHoveredCharacter = currentlyHovered;
         }
+
+        if (Input.GetMouseButtonDown(0) && currentlyHovered != null)
+        {
+            currentlyHovered.ClickCharacter();
+        }
     }
 
 
@@ -62,8 +67,6 @@ public class MouseHoverManager : MonoBehaviour
 
     private void OnHoverStart(PixelPerfectDetector character)
     {
-        Debug.Log($"HOVER START on {character.name}");
-        // Aquí puedes añadir efectos visuales, como cambiar el material.
         HandleCharacterMaterial material_handler = character.GetComponent<HandleCharacterMaterial>();
         if (material_handler != null)
         {
@@ -74,8 +77,6 @@ public class MouseHoverManager : MonoBehaviour
 
     private void OnHoverEnd(PixelPerfectDetector character)
     {
-        Debug.Log($"HOVER END on {character.name}");
-        // Revertimos los efectos visuales.
         HandleCharacterMaterial material_handler = character.GetComponent<HandleCharacterMaterial>();
         if (material_handler != null)
         {
