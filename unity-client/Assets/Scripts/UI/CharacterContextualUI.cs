@@ -77,7 +77,7 @@ public class CharacterContextualUI : MonoBehaviour
 
     public void ShowContextualMenu(Transform contextualMenuOrigin, bool right, System.Action onHide = null)
     {
-        if (_canvas == null || IsAnimatingShow || IsAnimatingHide || _showing) return;
+        if (_canvas == null || IsAnimatingShow || IsAnimatingHide) return;
 
         _onHideCallback = onHide;
 
@@ -156,16 +156,17 @@ public class CharacterContextualUI : MonoBehaviour
             if (cg == null)
                 cg = item.gameObject.AddComponent<CanvasGroup>();
 
-            hideSequence.Join(rt.DOScaleY(0f, duration).SetEase(Ease.InBack));
-            hideSequence.Join(cg.DOFade(0f, duration * 0.8f).SetEase(Ease.Linear));
+            hideSequence.Join(rt.DOScaleX(0f, duration).SetEase(Ease.InBack));
+            hideSequence.Join(cg.DOFade(0f, duration * 1.5f).SetEase(Ease.Linear));
         }
+
         _showing = false;
+        _onHideCallback?.Invoke();
+        _onHideCallback = null;
         hideSequence.OnComplete(() =>
         {
             IsAnimatingHide = false;
             onComplete?.Invoke();
-            _onHideCallback?.Invoke();
-            _onHideCallback = null;
         });
     }
 }
