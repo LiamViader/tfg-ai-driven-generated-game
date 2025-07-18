@@ -8,6 +8,7 @@ public class PixelPerfectDetector : MonoBehaviour
 
     [Tooltip("The alpha threshold for a pixel to be considered 'clickable'.")]
     [SerializeField] private float alphaThreshold = 0.1f;
+    [SerializeField] private CharacterView _characterView;
 
     void Awake()
     {
@@ -21,8 +22,7 @@ public class PixelPerfectDetector : MonoBehaviour
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if (IsPixelVisibleAt(mouseWorldPos))
         {
-            Debug.Log($"CLICK PRECISO sobre {gameObject.name}!");
-            // Aquí iría tu lógica de clic
+            _characterView.OnClick();
         }
     }
 

@@ -5,13 +5,13 @@ using System.Collections.Generic;
 public class ScenarioFader : MonoBehaviour
 {
     private List<Renderer> _renderers = new();
-    private bool _renderersSet = false;
+    private List<CanvasGroup> _canvasGroups = new();
+    private bool _componentsCollected = false;
     public void SetAlpha(float alpha)
     {
-        if (!_renderersSet)
+        if (!_componentsCollected)
         {
-            GetComponentsInChildren(true, _renderers);
-            _renderersSet = true;
+            CollectComponents();
         }
         foreach (var renderer in _renderers)
         {
@@ -26,14 +26,17 @@ public class ScenarioFader : MonoBehaviour
                 renderer.material.SetFloat("_AlphaOverride", alpha);
             }
         }
+        foreach (var cg in _canvasGroups)
+        {
+            cg.alpha = alpha;
+        }
     }
 
     public Coroutine FadeTo(float targetAlpha, float duration, System.Action onComplete = null)
     {
-        if (!_renderersSet)
+        if (!_componentsCollected)
         {
-            GetComponentsInChildren(true, _renderers);
-            _renderersSet = true;
+            CollectComponents();
         }
 
         return StartCoroutine(FadeRoutine(targetAlpha, duration, onComplete));
@@ -54,5 +57,11 @@ public class ScenarioFader : MonoBehaviour
 
         SetAlpha(targetAlpha);
         onComplete?.Invoke();
+    }
+    private void CollectComponents()
+    {
+        GetComponentsInChildren(true, _renderers);
+        GetComponentsInChildren(true, _canvasGroups);
+        _componentsCollected = true;
     }
 }

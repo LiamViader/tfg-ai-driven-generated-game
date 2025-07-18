@@ -4,7 +4,11 @@ public class CharacterView : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _characterSpriteRenderer;
     [SerializeField] private SpriteRenderer _shadowSpriteRenderer;
+    [SerializeField] private Animator _characterAnimator;
     [SerializeField] private HandleCharacterMaterial _materialHandler;
+    [SerializeField] private CharacterContextualUI _characterContextualUI;
+    [SerializeField] private Transform _contextualMenuOriginRight;
+    [SerializeField] private Transform _contextualMenuOriginLeft;
 
     public void Initialize(CharacterData data)
     {
@@ -38,7 +42,7 @@ public class CharacterView : MonoBehaviour
             _shadowSpriteRenderer.transform.localScale = shadowScale;
             _materialHandler.SetMaterialToSprite(_characterSpriteRenderer);
             UpdateColliderToMatchSprite(sprite);
-
+            UpdateContextualMenuOrigins();
         }
         else
         {
@@ -63,9 +67,39 @@ public class CharacterView : MonoBehaviour
         collider.offset = new Vector2(0, collider.size.y/2);
     }
 
+    private void UpdateContextualMenuOrigins()
+    {
+        Bounds bounds = _characterSpriteRenderer.bounds;
+
+        Vector3 topLeft = new Vector3(bounds.min.x-0.2f, bounds.max.y-0.5f, transform.position.z);
+        Vector3 topRight = new Vector3(bounds.max.x +0.2f, bounds.max.y-0.5f, transform.position.z);
+
+        if (_contextualMenuOriginLeft != null)
+            _contextualMenuOriginLeft.position = topLeft;
+
+        if (_contextualMenuOriginRight != null)
+            _contextualMenuOriginRight.position = topRight;
+    }
+
+
     private void UpdateSortingOrder()
     {
         _characterSpriteRenderer.sortingOrder = -(int)(transform.position.y * 100);
     }
+
+
+    public void OnClick()
+    {
+        _characterAnimator.SetTrigger("ClickTrigger");
+        ShowContextualMenu();
+    }
+
+    public void ShowContextualMenu()
+    {
+        _characterContextualUI.ShowContextualMenu(_contextualMenuOriginRight);
+    }
+
+    
+
 }
 
