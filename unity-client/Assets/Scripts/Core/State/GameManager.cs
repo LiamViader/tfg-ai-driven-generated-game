@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Linq; 
 
 public class GameManager : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class GameManager : MonoBehaviour
     private readonly Dictionary<string, ScenarioData> _scenarios = new();
     private readonly Dictionary<string, CharacterData> _characters = new();
     private readonly Dictionary<string, ConnectionData> _connections = new();
+    private readonly Dictionary<string, Dictionary<string, CharacterOptionEventData>> _characterContextualOptions = new();
 
     public string CurrentScenarioId { get; private set; }
     public string PlayerCharacterId { get; private set; }
@@ -40,6 +42,28 @@ public class GameManager : MonoBehaviour
     public CharacterData GetCharacter(string id) => _characters.TryGetValue(id, out var c) ? c : null;
     public ConnectionData GetConnection(string id) => _connections.TryGetValue(id, out var c) ? c : null;
 
+    public List<CharacterOptionEventData> GetCharacterContextualOptions(string characterId)
+    {
+        if (_characterContextualOptions.TryGetValue(characterId, out var optionsDict))
+        {
+            // Devuelve una lista de los valores del diccionario interno
+            return optionsDict.Values.ToList();
+        }
+        return new List<CharacterOptionEventData>();
+    }
+    public CharacterOptionEventData GetCharacterContextualOption(string characterId, string condition_id)
+    {
+        if (_characterContextualOptions.TryGetValue(characterId, out var optionsDict))
+        {
+            if (optionsDict.TryGetValue(condition_id, out var data))
+            {
+                // Devuelve una lista de los valores del diccionario interno
+                return data;
+            }
+        }
+        return null;
+    }
+
     public IEnumerable<ScenarioData> GetAllScenarios() => _scenarios.Values;
     public IEnumerable<ConnectionData> GetAllConnections() => _connections.Values;
 
@@ -59,7 +83,7 @@ public class GameManager : MonoBehaviour
 
     public void AddOrUpdateCharacter(CharacterData character) {
         _characters[character.id] = character;
-        if (character.id != PlayerCharacterId)
+        if (character.id == PlayerCharacterId)
         {
             UIManager.Instance.SetPlayerData(character);
         }
@@ -102,6 +126,29 @@ public class GameManager : MonoBehaviour
         foreach (var scenario in _scenarios.Values)
             scenario.characterIds.Remove(characterId);
     }
+
+    public void AddOrUpdateCharacterContextualOption(string characterId, CharacterOptionEventData optionData, string conditionId)
+    {
+        if (!_characterContextualOptions.ContainsKey(characterId))
+        {
+            _characterContextualOptions[characterId] = new Dictionary<string, CharacterOptionEventData>();
+        }
+        _characterContextualOptions[characterId][conditionId] = optionData;
+
+        UIManager.Instance.CharacterOptionsUpdated(characterId);
+    }
+
+    public void RemoveCharacterContextualOption(string characterId, string conditionId)
+    {
+        if (_characterContextualOptions.TryGetValue(characterId, out var optionsDict))
+        {
+            if (optionsDict.Remove(conditionId))
+            {
+                UIManager.Instance.CharacterOptionsUpdated(characterId);
+            }
+        }
+    }
+
 
     public HashSet<string> GetScenariosInRadius(string fromId, int radius)
     {
@@ -187,6 +234,11 @@ public class GameManager : MonoBehaviour
                 UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
             }
         });
+    }
+
+    public void TriggerEvent(string eventId)
+    {
+        Debug.Log($"Triggering event: {eventId}");
     }
 }
 

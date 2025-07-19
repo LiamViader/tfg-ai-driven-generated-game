@@ -34,29 +34,29 @@ class ToolCreateNPCConversationEventArgs(InjectedToolContext):
     description: str = Field(..., description="The director's brief for the scene, guiding a future AI in writing the dialogue. For best results, provide context on the conversation's Topic, Goal, Tone, and others. (Max. 150-200 words)")
     npc_ids: List[str] = Field(..., description="List of IDs for the NPCs in the conversation. Must contain at least one ID. A single ID creates a monologue. Player CANNOT be in the list")
     activation_conditions: List[ActivationConditionsNPCConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
+    source_beat_id: Optional[str] = Field(default=None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 class ToolCreatePlayerNPCConversationEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this event. Example: 'Elara asks player (Julius) about the key'.")
     description: str = Field(..., description="The director's brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), and the overall narrative goal. (Max. 150-200 words)")
-    npc_ids: List[str] = Field(..., description="List of IDs for the NPCs participating in the conversation. Must contain at least one NPC. Player CANNOT be in the list, it is included automatically")
+    npc_ids: List[str] = Field(..., description="List of IDs for the NPCs (NONE PLAYER CHARACTERS) participating in the conversation. Must contain at least one NPC. Player CANNOT be in the list, it is included automatically")
     activation_conditions: List[ActivationConditionsPlayerConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
+    source_beat_id: Optional[str] = Field(default=None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 class ToolCreateCutsceneEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this cutscene. Example: 'The Castle Gates Explode'.")
     description: str = Field(..., description="The director's brief for the cutscene. This is a high-level script that guides a future AI in generating the final visuals and texts for the cutscene. Describe the sequence of key moments, outlining the core action, setting, topic, and any important dialogue or narration, including who is speaking (e.g., Narrator, a specific character ID, or 'Player'). (Max. 150-200 words)")
-    involved_character_ids: Optional[List[str]] = Field(None, description="Optional: A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player character id can be here too")
-    involved_scenario_ids: Optional[List[str]] = Field(None, description="Optional: A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
+    involved_character_ids: Optional[List[str]] = Field(default=None, description="Optional: A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player character id can be here too")
+    involved_scenario_ids: Optional[List[str]] = Field(default=None, description="Optional: A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
     activation_conditions: List[ActivationConditionsCutscene] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
+    source_beat_id: Optional[str] = Field(default=None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 
 class ToolCreateNarratorInterventionEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for the narrator intervention. Example: 'It starts raining ashes'.")
     description: str = Field(..., description="The director's brief for the intervention. This text will be used by a future AI to write the narrator's exact lines. Describe the observation, topic, information, or internal thought the player should experience.")
     activation_conditions: List[ActivationConditionsNarrator] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
-    source_beat_id: Optional[str] = Field(None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
+    source_beat_id: Optional[str] = Field(default=None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")
 
 # --- Schemas for other tools ---
 
@@ -65,7 +65,7 @@ class ToolLinkActivationConditionsToEventArgs(InjectedToolContext):
     activation_conditions: List[ActivationConditionsUnion] = Field(..., description="The set of conditions that will be added to trigger this event.")
 
 class ToolListEventsArgs(InjectedToolContext):
-    status_filter: Optional[EVENT_STATUS_LITERAL] = Field(None, description="Optional: Filter the list to show events only with this status.")
+    status_filter: Optional[EVENT_STATUS_LITERAL] = Field(default=None, description="Optional: Filter the list to show events only with this status.")
 
 class ToolGetEventDetailsArgs(InjectedToolContext):
     event_id: str = Field(..., description="The ID of the event to inspect.")
@@ -97,7 +97,7 @@ class ToolFinalizeSimulationArgs(InjectedToolContext):
 class ToolValidateSimulatedGameEventsArgs(InjectedToolContext):
     does_game_events_meet_criteria: bool = Field(..., description="True if events meet the objective")
     assessment_reasoning: str = Field(..., description="Reasoning behind the validation outcome")
-    suggested_improvements: Optional[str] = Field(None, description="Suggestions on how to improve if validation failed")
+    suggested_improvements: Optional[str] = Field(default=None, description="Suggestions on how to improve if validation failed")
 
 
 # ---------------------------------------------------

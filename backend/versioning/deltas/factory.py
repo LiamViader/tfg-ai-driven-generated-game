@@ -9,6 +9,7 @@ from versioning.deltas.detectors.changeset.map.entity import ScenarioDetector as
 from versioning.deltas.detectors.changeset.map.entity import ConnectionInfoDetector as ChangesetConnectionInfoDetector
 from versioning.deltas.detectors.changeset.characters.collection import CharactersDetector as ChangesetCharactersDetector
 from versioning.deltas.detectors.changeset.characters.entity import CharacterDetector as ChangesetCharacterDetector
+from versioning.deltas.detectors.changeset.game_events.collection import GameEventsDetector as ChangesetGameEventsDetector
 # You would also import game_events detector here if you had one
 
 # --- Imports for the Internal Diff Detector Tree ---
@@ -40,7 +41,8 @@ class CheckpointManagerFactory:
 
         default_changeset_detector = ChangesetDetector(
             map_detector=changeset_map_detector,
-            characters_detector=changeset_characters_collection_detector
+            characters_detector=changeset_characters_collection_detector,
+            game_events_detector = ChangesetGameEventsDetector()
         )
 
         # --- 2. Construct tree for internal diffs ---

@@ -111,3 +111,48 @@ class SimulatedGameEvents:
                 f"Event '{event_id}' must be DISABLED or COMPLETED to be enabled."
             )
         return self._working_state.enable_event(event_id)
+
+    def get_initial_summary(self) -> str:
+        """
+        Returns a formatted string summarizing all game events, grouped by narrative beat and then by status.
+        """
+        grouped_events = self._working_state.get_all_events_grouped()
+        summary_lines = ["Summary (For more details use query tools):"]
+
+        if not grouped_events:
+            summary_lines.append("- No events currently defined.")
+            return "\n".join(summary_lines)
+
+        # Sort beats for consistent output (e.g., "BEATLESS" first, then by ID)
+        sorted_beats = sorted(grouped_events.keys(), key=lambda x: (x != "BEATLESS", x))
+
+        for beat_id in sorted_beats:
+            status_groups = grouped_events[beat_id]
+            beat_title = f"Narrative Beat: {beat_id}" if beat_id != "BEATLESS" else "Events without a specific Beat (BEATLESS)"
+            summary_lines.append(f"\n## {beat_title}")
+
+            # Sort statuses for consistent output (e.g., AVAILABLE, RUNNING, COMPLETED, DISABLED)
+            sorted_statuses = sorted(status_groups.keys(), key=lambda x: (
+                x != "AVAILABLE", x != "RUNNING", x != "COMPLETED", x != "DISABLED", x
+            ))
+
+            for status in sorted_statuses:
+                events_in_status = status_groups[status]
+                summary_lines.append(f"### Status: {status}")
+                if not events_in_status:
+                    summary_lines.append("  - No events in this status.")
+                else:
+                    # Sort events by ID or title for consistent display
+                    sorted_events = sorted(events_in_status, key=lambda e: e.id)
+                    for event in sorted_events:
+                        summary_lines.append(f"  - Event ID: {event.id}")
+                        summary_lines.append(f"    Title: {event.title}")
+                        summary_lines.append(f"    Description: {event.description}")
+                        summary_lines.append(f"    Type: {event.type}")
+                        if event.activation_conditions:
+                            conditions_summary = ", ".join([cond.model_data.type for cond in event.activation_conditions])
+                            summary_lines.append(f"    Activation Conditions: {conditions_summary}")
+                        else:
+                            summary_lines.append("    Activation Conditions: None")
+
+        return "\n".join(summary_lines)

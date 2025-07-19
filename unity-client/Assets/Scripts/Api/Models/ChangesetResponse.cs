@@ -16,5 +16,6 @@ namespace Api.Models
     {
         public MapChanges? map;
         public CharactersChanges? characters;
+        public GameEventChanges? events;
     }
 }

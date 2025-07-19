@@ -341,9 +341,9 @@ class SimulatedGameState:
         
         if source_beat_id and not self.read_only_narrative.get_beat(source_beat_id):
             raise ValueError(f"Source beat with ID '{source_beat_id}' not found.")
-
+        print("VALIDATING ACTIVATION CONDITIONS")
         self._validate_activation_conditions(activation_conditions)
-
+        print("ADDING EVENT")
         event_model = PlayerNPCConversationEventModel(
             title=title,
             description=description,
@@ -354,6 +354,7 @@ class SimulatedGameState:
         )
 
         created_event = self.events.add_event(event_model)
+        print("EVENT ADDED")
         return created_event
 
     def create_available_cutscene(

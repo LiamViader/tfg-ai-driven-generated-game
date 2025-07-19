@@ -28,15 +28,17 @@ class BaseGameEvent:
 
     def __init__(self, model: GameEventModel):
         self._data = model
-        self.activation_conditions: List[ActivationCondition] = []
+        self._activation_conditions: List[ActivationCondition] = [] # Initialize here
         self._build_condition_wrappers()
 
     def _build_condition_wrappers(self):
         """Instantiates domain objects for the activation conditions."""
+        # Always clear before rebuilding to avoid duplicates if called multiple times
+        self._activation_conditions = []
         for condition_model in self._data.activation_conditions:
             wrapper_class = CONDITION_WRAPPER_MAP.get(condition_model.type)
             if wrapper_class:
-                self.activation_conditions.append(wrapper_class(model=condition_model))
+                self._activation_conditions.append(wrapper_class(model=condition_model))
 
     @property
     def id(self) -> str:
@@ -68,8 +70,14 @@ class BaseGameEvent:
         """Returns the source beat id"""
         return self._data.type
     
-    def get_activation_conditions(self) -> List[ActivationCondition]:
-        return self.activation_conditions
+    @property
+    def activation_conditions(self) -> List[ActivationCondition]:
+        return self._activation_conditions
+    
+
+    @activation_conditions.setter
+    def activation_conditions(self, value: List[ActivationCondition]) -> None:
+        self._activation_conditions = value
 
     def get_model(self) -> GameEventModel:
         """Return the underlying Pydantic model."""
@@ -79,6 +87,7 @@ class NPCConversationEvent(BaseGameEvent):
     """Domain logic for an NPC-only conversation."""
 
     def __init__(self, model: NPCConversationEventModel):
+        super().__init__(model)
         self._data = model
 
     def add_message(self, message: NPCMessage) -> None:
@@ -89,6 +98,7 @@ class PlayerNPCConversationEvent(BaseGameEvent):
     """Domain logic for a conversation involving the player and NPCs."""
 
     def __init__(self, model: PlayerNPCConversationEventModel):
+        super().__init__(model)
         self._data = model
 
     def add_message(self, message: NPCMessage) -> None:
@@ -99,6 +109,7 @@ class NarratorInterventionEvent(BaseGameEvent):
     """Domain logic for narrator interventions."""
 
     def __init__(self, model: NarratorInterventionEventModel):
+        super().__init__(model)
         self._data = model
 
     def add_message(self, message: NarratorMessage) -> None:
@@ -122,6 +133,7 @@ class CutsceneEvent(BaseGameEvent):
     """Domain logic for cutscene events."""
 
     def __init__(self, model: CutsceneEventModel):
+        super().__init__(model)
         self._data = model
 
     def add_frame(self, frame: CutsceneFrameModel) -> None:
@@ -176,7 +188,7 @@ class GameEventsManager:
             else:
                 self._beatless_event_ids.add(event_id)
 
-            for condition in domain_event.get_activation_conditions():
+            for condition in domain_event.activation_conditions:
                 if isinstance(condition, CharacterInteractionOption):
                     self._interaction_options_by_character[condition.character_id].add(event_id)
 
@@ -285,6 +297,7 @@ class GameEventsManager:
         (Internal Logic) Adds a pre-validated event model to the internal state
         and updates all necessary indexes. This is the final step.
         """
+        print("ADDING AND INDEXING EVENT")
         wrapper_class = WRAPPER_MAP.get(event_model.type)
         if not wrapper_class:
             raise TypeError(f"Internal Error: Event type '{event_model.type}' is unknown and cannot be processed.")
@@ -299,10 +312,10 @@ class GameEventsManager:
         else:
             self._beatless_event_ids.add(domain_event.id)
 
-        for condition in domain_event.get_activation_conditions():
+        for condition in domain_event.activation_conditions:
             if isinstance(condition, CharacterInteractionOption):
                 self._interaction_options_by_character[condition.character_id].add(domain_event.id)
-        
+        print("RETURNING DOMAIN EVENT")
         return domain_event
     
     def link_conditions_to_event(self, event_id: str, conditions: List[ActivationConditionModel]):
@@ -390,7 +403,7 @@ class GameEventsManager:
             self._beatless_event_ids.discard(event_id)
 
         # Clean interaction indexes
-        for condition in event.get_activation_conditions():
+        for condition in event.activation_conditions:
             if isinstance(condition, CharacterInteractionOption):
                 char_set = self._interaction_options_by_character.get(condition.character_id)
                 if char_set:

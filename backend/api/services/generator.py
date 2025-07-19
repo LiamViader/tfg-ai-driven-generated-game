@@ -9,7 +9,7 @@ from api.services.generation_status import (
 from subsystems.generation.orchestrator import get_generation_graph_app
 from subsystems.generation.schemas.graph_state import GenerationGraphState
 from core_game.game_state.singleton import GameStateSingleton
-from subsystems.generation.refinement_loop.pipelines import map_then_characters_pipeline, fast_test_pipeline, slow_test_pipeline
+from subsystems.generation.refinement_loop.pipelines import map_then_characters_pipeline, fast_test_pipeline, slow_test_pipeline, fast_test_events_pipeline
 from utils.progress_tracker import ProgressTracker
 from api.schemas.status import GenerationStatusModel
 
@@ -18,14 +18,14 @@ def start_generation(prompt: str) -> GenerationStatusModel:
 
     def _run():
         try:
-            selected_pipeline = slow_test_pipeline()
+            selected_pipeline = fast_test_events_pipeline()
 
             # root tracker
             root_tracker = ProgressTracker(update_fn=update_global_progress)
 
             state = GenerationGraphState(
                 initial_prompt=prompt,
-                refined_prompt_desired_word_length=200,
+                refined_prompt_desired_word_length=400,
                 refinement_pipeline_config=selected_pipeline,
                 generation_progress_tracker=root_tracker
             )

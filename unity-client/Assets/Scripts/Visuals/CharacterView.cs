@@ -10,8 +10,11 @@ public class CharacterView : MonoBehaviour
     [SerializeField] private Transform _contextualMenuOriginRight;
     [SerializeField] private Transform _contextualMenuOriginLeft;
 
+    public string CharacterId { get; private set; }
     public void Initialize(CharacterData data)
     {
+        CharacterId = data.id;
+
         if (data.portrait != null)
         {
             Sprite sprite = Sprite.Create(
@@ -47,6 +50,17 @@ public class CharacterView : MonoBehaviour
         else
         {
             // IMATGE PLACEHOLDER
+        }
+
+        if (_characterContextualUI != null)
+        {
+            _characterContextualUI.Initialize(CharacterId);
+            // Si UIManager centraliza el registro, llama a UIManager para registrar este UI
+            UIManager.Instance.RegisterCharacterContextualUI(CharacterId, _characterContextualUI);
+        }
+        else
+        {
+            Debug.LogError($"CharacterContextualUI not assigned for character {data.id} in CharacterView.");
         }
 
         UpdateSortingOrder();
@@ -87,6 +101,13 @@ public class CharacterView : MonoBehaviour
         _characterSpriteRenderer.sortingOrder = -(int)(transform.position.y * 100);
     }
 
+    void OnDestroy()
+    {
+        if (UIManager.Instance != null && _characterContextualUI != null)
+        {
+            UIManager.Instance.UnregisterCharacterContextualUI(CharacterId);
+        }
+    }
 
     public void OnClick()
     {

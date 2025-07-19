@@ -32,6 +32,11 @@ public class ChangeSetApplier
             if (!string.IsNullOrEmpty(changes.characters.player_character_id))
                 GameManager.Instance.SetPlayerCharacterId(changes.characters.player_character_id);
         }
+
+        if (changes.events != null && changes.events.character_interaction_options_delta != null)
+        {
+            ApplyGameEventCharacterOptions(changes.events.character_interaction_options_delta);
+        }
     }
 
     void ApplyScenarios(List<ScenarioOperation> scenarioChanges)
@@ -275,6 +280,59 @@ public class ChangeSetApplier
                         GameManager.Instance.RemoveCharacterFromScenarios(ch.id);
                         break;
                     }
+            }
+        }
+    }
+
+    void ApplyGameEventCharacterOptions(Dictionary<string, List<GameEventCharacterOptionOperation>> characterOptionsDelta)
+    {
+        foreach (var entry in characterOptionsDelta)
+        {
+            string characterId = entry.Key;
+            List<GameEventCharacterOptionOperation> operations = entry.Value;
+
+            foreach (var op in operations)
+            {
+                if (op == null || string.IsNullOrEmpty(op.op) || string.IsNullOrEmpty(op.condition_id))
+                {
+                    Debug.LogWarning($"Skipping invalid character option operation: op='{op?.op}', condition_id='{op?.condition_id}'");
+                    continue;
+                }
+
+                switch (op.op)
+                {
+                    case "add":
+                        CharacterOptionEventData optionData = new CharacterOptionEventData {
+                            conditionId = op.condition_id,
+                            eventId = op.event_id ?? "",
+                            title = op.title ?? "",
+                            description = op.description ?? "",
+                            menuLabel = op.menu_label ?? "",
+                            isRepeatable = op.is_repeatable ?? false,
+                        };
+
+                        GameManager.Instance.AddOrUpdateCharacterContextualOption(characterId, optionData, op.condition_id);
+
+                        break;
+                    case "update":
+                        var existing = GameManager.Instance.GetCharacterContextualOption(characterId, op.condition_id);
+                        if (existing == null) continue;
+
+                        if (op.event_id != null) existing.eventId = op.event_id;
+                        if (op.title != null) existing.title = op.title;
+                        if (op.description != null) existing.description = op.description;
+                        if (op.menu_label != null) existing.menuLabel = op.menu_label;
+                        if (op.is_repeatable != null) existing.isRepeatable = op.is_repeatable ?? false;
+
+                        GameManager.Instance.AddOrUpdateCharacterContextualOption(characterId, existing, op.condition_id);
+                        break;
+                    case "remove":
+                        GameManager.Instance.RemoveCharacterContextualOption(characterId, op.condition_id);
+                        break;
+                    default:
+                        Debug.LogWarning($"Unknown operation type '{op.op}' for character option {op.condition_id}");
+                        break;
+                }
             }
         }
     }

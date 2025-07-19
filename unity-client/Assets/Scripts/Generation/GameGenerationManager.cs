@@ -24,7 +24,7 @@ public class GameGenerationManager : MonoBehaviour
             prompt,
             onSuccess: status =>
             {
-                Debug.Log("Generation started.");
+                Debug.Log("Generation started In Server.");
                 // status is usually "started", so nothing else here
             },
             onError: error =>

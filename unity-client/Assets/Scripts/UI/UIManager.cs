@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Unity.Burst.CompilerServices;
+using System.Collections.Generic;
+using System;
 
 
 public class UIManager : MonoBehaviour
@@ -10,6 +12,11 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TMP_Text _playerNameText;
     [SerializeField] private Image _playerImage;
     [SerializeField] private Image _backgroundImage;
+
+
+    public event Action<string> OnCharacterOptionsUpdated;
+
+    private Dictionary<string, CharacterContextualUI> _activeCharacterContextualUIs = new();
 
     void Awake()
     {
@@ -23,6 +30,23 @@ public class UIManager : MonoBehaviour
             Destroy(gameObject);
         }
 
+    }
+
+    public void CharacterOptionsUpdated(string characterId)
+    {
+        OnCharacterOptionsUpdated?.Invoke(characterId);
+    }
+
+    public void RegisterCharacterContextualUI(string characterId, CharacterContextualUI ui)
+    {
+        _activeCharacterContextualUIs[characterId] = ui;
+        ui.Initialize(characterId); // Inicializa el UI del personaje con su ID
+    }
+
+    // Y desregistrarlos cuando se desactivan
+    public void UnregisterCharacterContextualUI(string characterId)
+    {
+        _activeCharacterContextualUIs.Remove(characterId);
     }
 
     public void SetPlayerData(CharacterData player)

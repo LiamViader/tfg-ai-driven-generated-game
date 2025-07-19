@@ -25,6 +25,58 @@ def fast_test_pipeline() -> PipelineConfig:
         ],
     )
 
+def fast_test_events_pipeline() -> PipelineConfig:
+    """
+    Pipeline for testing event generation:
+    Creates 1 scenario, 2 NPCs, 1 player, and 4 game events activatable via character interaction.
+    """
+    return PipelineConfig(
+        name="fast_test_events",
+        description="Generates a single scenario, 2 NPCs, 1 player, and 4 character-interaction game events.",
+        steps=[
+            PipelineStep(
+                step_name="Map Generation (Single Scenario)",
+                agent_name=AgentName.MAP,
+                objective_prompt="Create 2 scenarios connected.",
+                rules_and_constraints=["The map must contain exactly 2 scenarios."],
+                other_guidelines="",
+                max_executor_iterations=4,
+                max_validation_iterations=1,
+                max_retries=0,
+                weight=0.2,
+            ),
+            PipelineStep(
+                step_name="Add Characters (2 NPCs, 1 Player)",
+                agent_name=AgentName.CHARACTERS,
+                objective_prompt="Add 2 unique NPCs AND the player character. Place all of them in the scenarios.",
+                rules_and_constraints=[
+                    "There must be exactly 3 characters in total: 1 player, 2 NPCs.",
+                    "All characters must be placed in the existing scenarios."
+                ],
+                other_guidelines="Give each NPC a distinct personality and a brief background. The player character can be generic.",
+                max_executor_iterations=5,
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.3, # Medium weight
+            ),
+            PipelineStep(
+                step_name="Create Game Events (Character Interactions)",
+                agent_name=AgentName.EVENTS,
+                objective_prompt="Generate 4 game events. Each event must be activatable by interacting with at least one of the NPCs. Ensure each NPC has at least one unique interaction option. Make the events diverse. Diferent types of events",
+                rules_and_constraints=[
+                    "Create exactly 4 game events.",
+                    "Each event must have at least one 'character_interaction' activation condition.",
+                    "Ensure the 'menu_label' for each interaction option is concise and inviting."
+                ],
+                other_guidelines="Think about how these interactions would naturally fit the NPCs' personalities and the scenario's setting.",
+                max_executor_iterations=7, # More iterations for event creation
+                max_validation_iterations=1,
+                max_retries=1,
+                weight=0.5, # Higher weight as this is the main focus
+            ),
+        ],
+    )
+
 
 def slow_test_pipeline() -> PipelineConfig:
     """Pipeline for testing a more complex game"""

@@ -11,7 +11,7 @@ public class ScenarioView : MonoBehaviour
     [SerializeField] private float _minCharacterScale = 0.65f;
     [SerializeField] private float _maxCharacterScale = 1f;
     [SerializeField] private float _minSpawnDistance = 7f;
-    [SerializeField] private float _yWeight = 2f;
+    [SerializeField] private float _yWeight = 0.5f;
 
     private List<Vector2> _spawnedPositions = new();
     private readonly Dictionary<string, GameObject> _spawnedCharacters = new();

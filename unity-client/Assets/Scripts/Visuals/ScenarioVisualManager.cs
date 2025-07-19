@@ -57,12 +57,23 @@ public class ScenarioVisualManager : MonoBehaviour
     private void TransitionBetweenScenariosImmediately(string fromId, string toId, System.Action onScenarioChangeVisually = null)
     {
 
+        if (fromId != null && _activeScenarios.TryGetValue(fromId, out var fromGoImmediate))
+        {
+            SetCanvasGroupInteraction(fromGoImmediate, false, false);
+        }
+
         foreach (var kvp in _activeScenarios)
         {
             bool isCurrent = kvp.Key == toId;
             kvp.Value.SetActive(isCurrent);
         }
 
+        if (_activeScenarios.TryGetValue(toId, out var toGoImmediate))
+        {
+            SetCanvasGroupInteraction(toGoImmediate, true, true);
+        }
+
+        onScenarioChangeVisually?.Invoke(); 
     }
 
     private IEnumerator TransitionBetweenScenarios1(string fromId, string toId, System.Action onScenarioChangeVisually = null)
@@ -71,6 +82,11 @@ public class ScenarioVisualManager : MonoBehaviour
 
         var fromFader = GetFader(fromId);
         var toFader = GetFader(toId);
+
+        if (_activeScenarios.TryGetValue(fromId, out var fromGoStart))
+        {
+            SetCanvasGroupInteraction(fromGoStart, false, false);
+        }
 
         if (toFader != null)
             toFader.SetAlpha(0f);
@@ -97,6 +113,12 @@ public class ScenarioVisualManager : MonoBehaviour
         foreach (var kvp in _activeScenarios)
             kvp.Value.SetActive(kvp.Key == toId);
 
+
+        if (_activeScenarios.TryGetValue(toId, out var toGoEnd))
+        {
+            SetCanvasGroupInteraction(toGoEnd, true, true);
+        }
+
         onScenarioChangeVisually?.Invoke();
     }
 
@@ -107,7 +129,12 @@ public class ScenarioVisualManager : MonoBehaviour
         var fromFader = GetFader(fromId);
         var toFader = GetFader(toId);
 
-        // Activar el nuevo escenario (pero mantenerlo invisible)
+        if (_activeScenarios.TryGetValue(fromId, out var fromGoStart))
+        {
+            SetCanvasGroupInteraction(fromGoStart, false, false);
+        }
+
+
         if (_activeScenarios.TryGetValue(toId, out var toGo))
             toGo.SetActive(true);
 
@@ -115,9 +142,9 @@ public class ScenarioVisualManager : MonoBehaviour
             fromGo.SetActive(true);
 
         if (toFader != null)
-            toFader.SetAlpha(0f); // invisible antes de empezar
+            toFader.SetAlpha(0f); 
 
-        // Fade out del escenario anterior
+
         if (fromFader != null)
         {
             bool doneFrom = false;
@@ -125,19 +152,25 @@ public class ScenarioVisualManager : MonoBehaviour
             while (!doneFrom) yield return null;
         }
 
-        // Desactivar el escenario anterior
+
         if (_activeScenarios.TryGetValue(fromId, out var fromGo2))
             fromGo2.SetActive(false);
 
         onScenarioChangeVisually?.Invoke();
 
-        // Fade in del nuevo escenario
+
         if (toFader != null)
         {
             bool doneTo = false;
             yield return toFader.FadeTo(1f, duration, () => doneTo = true);
             while (!doneTo) yield return null;
         }
+
+        if (_activeScenarios.TryGetValue(toId, out var toGoEnd))
+        {
+            SetCanvasGroupInteraction(toGoEnd, true, true);
+        }
+
     }
 
 
@@ -145,6 +178,7 @@ public class ScenarioVisualManager : MonoBehaviour
     {
         if (_activeScenarios.TryGetValue(scenarioId, out var go))
         {
+
             Camera.main.transform.position = new Vector3(
                 go.transform.position.x,
                 go.transform.position.y,
@@ -207,4 +241,17 @@ public class ScenarioVisualManager : MonoBehaviour
         return go.GetComponent<ScenarioFader>();
     }
 
+
+    private void SetCanvasGroupInteraction(GameObject scenarioGo, bool interactable, bool blocksRaycasts)
+    {
+        if (scenarioGo == null) return;
+
+        var cg = scenarioGo.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = scenarioGo.AddComponent<CanvasGroup>();
+        }
+        cg.interactable = interactable;
+        cg.blocksRaycasts = blocksRaycasts;
+    }
 }

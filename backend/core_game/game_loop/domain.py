@@ -68,7 +68,7 @@ class GameLoopManager:
         available_events = self.game_state.get_events_by_status("AVAILABLE")
 
         for event in available_events:
-            for condition in event.get_activation_conditions():                    
+            for condition in event.activation_conditions():                    
                 if condition.is_met(self.game_state):
                     print(f"Passive condition met for event '{event.id}'. Starting event.")
                     self.events_manager.start_event(event.id)
