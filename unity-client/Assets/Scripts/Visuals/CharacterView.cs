@@ -7,8 +7,6 @@ public class CharacterView : MonoBehaviour
     [SerializeField] private Animator _characterAnimator;
     [SerializeField] private HandleCharacterMaterial _materialHandler;
     [SerializeField] private CharacterContextualUI _characterContextualUI;
-    [SerializeField] private Transform _contextualMenuOriginRight;
-    [SerializeField] private Transform _contextualMenuOriginLeft;
 
     public string CharacterId { get; private set; }
     public void Initialize(CharacterData data)
@@ -45,7 +43,6 @@ public class CharacterView : MonoBehaviour
             _shadowSpriteRenderer.transform.localScale = shadowScale;
             _materialHandler.SetMaterialToSprite(_characterSpriteRenderer);
             UpdateColliderToMatchSprite(sprite);
-            UpdateContextualMenuOrigins();
         }
         else
         {
@@ -54,9 +51,7 @@ public class CharacterView : MonoBehaviour
 
         if (_characterContextualUI != null)
         {
-            _characterContextualUI.Initialize(CharacterId);
-            // Si UIManager centraliza el registro, llama a UIManager para registrar este UI
-            UIManager.Instance.RegisterCharacterContextualUI(CharacterId, _characterContextualUI);
+            UIManager.Instance.RegisterCharacterContextualUI(CharacterId, _characterContextualUI, _characterSpriteRenderer);
         }
         else
         {
@@ -79,20 +74,6 @@ public class CharacterView : MonoBehaviour
 
         collider.size = sprite.bounds.size;
         collider.offset = new Vector2(0, collider.size.y/2);
-    }
-
-    private void UpdateContextualMenuOrigins()
-    {
-        Bounds bounds = _characterSpriteRenderer.bounds;
-
-        Vector3 topLeft = new Vector3(bounds.min.x-0.2f, bounds.max.y-0.5f, transform.position.z);
-        Vector3 topRight = new Vector3(bounds.max.x +0.2f, bounds.max.y-0.5f, transform.position.z);
-
-        if (_contextualMenuOriginLeft != null)
-            _contextualMenuOriginLeft.position = topLeft;
-
-        if (_contextualMenuOriginRight != null)
-            _contextualMenuOriginRight.position = topRight;
     }
 
 
@@ -135,13 +116,13 @@ public class CharacterView : MonoBehaviour
 
         if (facingRight && rightFinalDist > minDistance)
         {
-            _characterContextualUI.ShowContextualMenu(_contextualMenuOriginRight, true);
+            _characterContextualUI.ShowContextualMenu(true);
             return;
         }
 
         if (!facingRight && leftFinalDist > minDistance)
         {
-            _characterContextualUI.ShowContextualMenu(_contextualMenuOriginLeft, false);
+            _characterContextualUI.ShowContextualMenu(false);
             return;
         }
 
@@ -154,7 +135,7 @@ public class CharacterView : MonoBehaviour
         if (!rightHitsCam && leftHitsCam)
         {
             _characterSpriteRenderer.flipX = false;
-            _characterContextualUI.ShowContextualMenu(_contextualMenuOriginRight, true, () =>
+            _characterContextualUI.ShowContextualMenu(true, () =>
             {
                 _characterSpriteRenderer.flipX = originalFlipX;
             });
@@ -162,7 +143,7 @@ public class CharacterView : MonoBehaviour
         else if (!leftHitsCam && rightHitsCam)
         {
             _characterSpriteRenderer.flipX = true;
-            _characterContextualUI.ShowContextualMenu(_contextualMenuOriginLeft, false, () =>
+            _characterContextualUI.ShowContextualMenu(false, () =>
             {
                 _characterSpriteRenderer.flipX = originalFlipX;
             });
@@ -172,7 +153,7 @@ public class CharacterView : MonoBehaviour
             if (rightFinalDist >= leftFinalDist)
             {
                 _characterSpriteRenderer.flipX = false;
-                _characterContextualUI.ShowContextualMenu(_contextualMenuOriginRight, true, () =>
+                _characterContextualUI.ShowContextualMenu(true, () =>
                 {
                     _characterSpriteRenderer.flipX = originalFlipX;
                 });
@@ -180,7 +161,7 @@ public class CharacterView : MonoBehaviour
             else
             {
                 _characterSpriteRenderer.flipX = true;
-                _characterContextualUI.ShowContextualMenu(_contextualMenuOriginLeft, false, () =>
+                _characterContextualUI.ShowContextualMenu(false, () =>
                 {
                     _characterSpriteRenderer.flipX = originalFlipX;
                 });

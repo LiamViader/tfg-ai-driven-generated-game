@@ -35,7 +35,7 @@ def receive_generation_prompt(state: SeedGenerationGraphState):
     game_state = SimulatedGameStateSingleton.get_instance()
     game_state.session.set_user_prompt(state.initial_prompt)
     print("---ENTERING: RECEIVE USER PROMPT NODE---")
-
+    print(f"PROMPT RECEIVED {state.initial_prompt}")
     if state.seed_progress_tracker is not None:
         state.seed_progress_tracker.update(0.0, "Refining user prompt")
 

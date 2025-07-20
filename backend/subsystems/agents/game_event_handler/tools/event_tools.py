@@ -254,7 +254,7 @@ def create_narrator_intervention_event(
 
     Use Case: This tool is for making the narrator speak directly to the player,
     describe something in the environment, or convey the player's internal thoughts.
-    Its applications are broad, including uses like providing clues, setting a scene, or revealing lore. The created
+    Its applications are broad, including uses like providing clues, setting a scene, or revealing lore, introducting the player to the world, etc. The created
     event is made 'AVAILABLE' immediately.
     """
     args = extract_tool_args(locals())

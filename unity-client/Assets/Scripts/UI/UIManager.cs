@@ -37,10 +37,19 @@ public class UIManager : MonoBehaviour
         OnCharacterOptionsUpdated?.Invoke(characterId);
     }
 
-    public void RegisterCharacterContextualUI(string characterId, CharacterContextualUI ui)
+    public void RegisterCharacterContextualUI(string characterId, CharacterContextualUI ui, SpriteRenderer characterSpriteRenderer)
     {
         _activeCharacterContextualUIs[characterId] = ui;
-        ui.Initialize(characterId); // Inicializa el UI del personaje con su ID
+        CharacterData character = GameManager.Instance.GetCharacter(characterId);
+        string name = "";
+        string alias = "";
+        if (character != null)
+        {
+            name = character.fullName ?? character.fullName;
+            alias = character.alias ?? character.alias;
+
+        }
+        ui.Initialize(characterId, characterSpriteRenderer, name, alias); // Inicializa el UI del personaje con su ID
     }
 
     // Y desregistrarlos cuando se desactivan

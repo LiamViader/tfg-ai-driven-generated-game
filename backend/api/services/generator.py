@@ -22,7 +22,6 @@ def start_generation(prompt: str) -> GenerationStatusModel:
 
             # root tracker
             root_tracker = ProgressTracker(update_fn=update_global_progress)
-
             state = GenerationGraphState(
                 initial_prompt=prompt,
                 refined_prompt_desired_word_length=400,

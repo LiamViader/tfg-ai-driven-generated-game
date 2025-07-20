@@ -3,12 +3,13 @@ from api.services import generator
 from api.services.generation_status import get_status
 from api.schemas.status import GenerationStatusModel
 from api.services import game_state
+from api.schemas.requests import GenerationRequest
 
 router = APIRouter()
 
 @router.post("/generate", response_model=GenerationStatusModel)
-def launch_generation(user_prompt: str = "Improvise"):
-    print("SADDS")
+def launch_generation(payload: GenerationRequest):
+    user_prompt = payload.user_prompt
     if get_status().status == "running":
         raise HTTPException(status_code=400, detail="A generation is already in progress")
     return generator.start_generation(user_prompt)

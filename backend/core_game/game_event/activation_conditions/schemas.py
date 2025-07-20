@@ -37,7 +37,7 @@ class ImmediateActivationModel(ActivationConditionModel):
 class CharacterInteractionOptionModel(ActivationConditionModel):
     """Makes an event available as a menu option when the player interacts with a specific character."""
     type: Literal["character_interaction"] = "character_interaction"
-    character_id: str = Field(..., description="The ID of the character the player must interact with to see this option.")
+    character_id: str = Field(..., description="The ID of the NPC character the player must interact with to see this option. IT CANNOT BE THE ID OF THE PLAYER")
     menu_label: str = Field(..., description=(
         "The text that will appear in the UI (character interaction options catalog) for the player to select."
         "It should be written as if it's a line the player character might say to start the conversation, or a natural paraphrase of it."

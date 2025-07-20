@@ -55,12 +55,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _ACTIVATEEFFECT: 1
+    - _AlphaOverride: 1
     - _CellsEffect: 0.21
     - _EnableExternalAlpha: 0
     - _FresnelStrength: 0
     - _HoverStrength: 0
     - _OutlineSpeed: 1
-    - _OutlineThickness: 0.0075
+    - _OutlineThickness: 0.0133
     - _ScanlineSpeed: 0.4
     - _ScanlineThickness: 0.04
     - _StepAlpha: 0.688

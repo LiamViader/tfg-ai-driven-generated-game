@@ -2,6 +2,7 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 using System.Linq;
 public class CharacterContextualUI : MonoBehaviour
@@ -9,11 +10,20 @@ public class CharacterContextualUI : MonoBehaviour
     [SerializeField] private Canvas _canvas;
     [SerializeField] private Transform _itemsParent;
     [SerializeField] private GameObject _menuItemPrefab;
+    [SerializeField] private Transform _contextualMenuOriginRight;
+    [SerializeField] private Transform _contextualMenuOriginLeft;
+    [SerializeField] private Transform _characterNameOrigin;
+    [SerializeField] private Canvas _nameCanvas;
+    [SerializeField] private TMP_Text _characterNameText;
+    [SerializeField] private TMP_Text _characterAliasText;
 
+    private Tween _nameFadeTween;
 
     private bool _showing = false;
     public bool IsAnimatingShow { get; private set; } = false;
     public bool IsAnimatingHide { get; private set; } = false;
+
+    private CanvasGroup _nameCanvasGroup;
 
     private System.Action _onHideCallback;
 
@@ -23,9 +33,10 @@ public class CharacterContextualUI : MonoBehaviour
 
     private void OnEnable()
     {
-        if (_canvas != null && Camera.main != null)
+        if (_canvas != null && Camera.main != null && _nameCanvas != null)
         {
             _canvas.worldCamera = Camera.main;
+            _nameCanvas.worldCamera = Camera.main;
         }
 
         if (UIManager.Instance != null)
@@ -41,11 +52,21 @@ public class CharacterContextualUI : MonoBehaviour
             UIManager.Instance.OnCharacterOptionsUpdated -= OnCharacterOptionsDataUpdated;
         }
     }
-
-    public void Initialize(string characterId)
+    private void Awake()
+    {
+        _nameCanvasGroup = _nameCanvas.GetComponent<CanvasGroup>();
+        if (_nameCanvasGroup == null)
+        {
+            _nameCanvasGroup = _nameCanvas.gameObject.AddComponent<CanvasGroup>();
+        }
+    }
+    public void Initialize(string characterId, SpriteRenderer characterSpriteRenderer, string name, string alias)
     {
         _characterId = characterId;
+        UpdateContextualMenuOrigins(characterSpriteRenderer);
         RefreshMenuItems();
+        _characterAliasText.text = alias;
+        _characterNameText.text = name;
     }
 
     void Update()
@@ -57,6 +78,24 @@ public class CharacterContextualUI : MonoBehaviour
                 HideContextualMenu();
             }
         }
+    }
+
+    private void UpdateContextualMenuOrigins(SpriteRenderer characterSpriteRenderer)
+    {
+        Bounds bounds = characterSpriteRenderer.bounds;
+
+        Vector3 topLeft = new Vector3(bounds.min.x - 0.2f, bounds.max.y - 0.5f, transform.position.z);
+        Vector3 topRight = new Vector3(bounds.max.x + 0.2f, bounds.max.y - 0.5f, transform.position.z);
+        Vector3 topCenter = new Vector3(bounds.center.x, bounds.max.y, transform.position.z);
+
+        if (_contextualMenuOriginLeft != null)
+            _contextualMenuOriginLeft.position = topLeft;
+
+        if (_contextualMenuOriginRight != null)
+            _contextualMenuOriginRight.position = topRight;
+
+        if (_characterNameOrigin != null)
+            _characterNameOrigin.position = topCenter;
     }
 
     private bool IsPointerOverAnyItemWithSpacing()
@@ -100,7 +139,7 @@ public class CharacterContextualUI : MonoBehaviour
                point.y >= minY && point.y <= maxY;
     }
 
-    public void ShowContextualMenu(Transform contextualMenuOrigin, bool right, System.Action onHide = null)
+    public void ShowContextualMenu(bool right, System.Action onHide = null)
     {
         if (_canvas == null || IsAnimatingShow || IsAnimatingHide) return;
 
@@ -116,12 +155,15 @@ public class CharacterContextualUI : MonoBehaviour
 
         RectTransform rect = _canvas.GetComponent<RectTransform>();
         rect.pivot = right ? new Vector2(0f, 1f) : new Vector2(1f, 1f);
-
+        Transform contextualMenuOrigin = right ? _contextualMenuOriginRight : _contextualMenuOriginLeft;
         _canvas.gameObject.SetActive(true);
         _canvas.transform.SetParent(contextualMenuOrigin, worldPositionStays: false);
         _canvas.transform.localPosition = Vector3.zero;
         _canvas.transform.localRotation = Quaternion.identity;
         _canvas.transform.localScale = Vector3.one;
+
+        _nameCanvas.gameObject.SetActive(true);
+        AnimateShowNameCanvas();
 
         _showing = true;
         AnimateAppearItems();
@@ -134,8 +176,29 @@ public class CharacterContextualUI : MonoBehaviour
         AnimateHideItems(() =>
         {
             _canvas.gameObject.SetActive(false);
-
+            
         });
+        AnimateHideNameCanvas();
+    }
+
+    private void AnimateShowNameCanvas()
+    {
+        _nameFadeTween?.Kill();
+
+        _nameCanvasGroup.alpha = 0f;
+        _nameCanvasGroup.DOFade(1f, 0.25f).SetEase(Ease.OutQuad);
+    }
+
+    private void AnimateHideNameCanvas()
+    {
+        _nameFadeTween?.Kill();
+
+        _nameFadeTween = _nameCanvasGroup.DOFade(0f, 0.2f)
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
+            {
+                _nameCanvas.gameObject.SetActive(false);
+            });
     }
 
     public void AnimateAppearItems()
@@ -287,15 +350,21 @@ public class CharacterContextualUI : MonoBehaviour
         foreach (Transform child in _itemsParent)
         {
             // Solo desactivar, no destruir, si el item aún existe en _currentMenuItems
-            if (_currentMenuItems.ContainsKey(child.GetComponent<ContextualMenuItem>().ConditionId)) // Asumiendo que ContextualMenuItem tiene ConditionId
+            ContextualMenuItem menu_item = child.GetComponent<ContextualMenuItem>();
+            string conditionId = menu_item?.ConditionId;
+            if (conditionId != null)
             {
-                child.gameObject.SetActive(false); // Desactiva para reordenar
-                child.SetParent(null); // Desvincula temporalmente
+                if (_currentMenuItems.ContainsKey(conditionId)) // Asumiendo que ContextualMenuItem tiene ConditionId
+                {
+                    child.gameObject.SetActive(false); // Desactiva para reordenar
+                    child.SetParent(null); // Desvincula temporalmente
+                }
+                else // Si no está en _currentMenuItems, es un item a destruir (ya debería estar fuera por optionsToRemove)
+                {
+                    Destroy(child.gameObject);
+                }
             }
-            else // Si no está en _currentMenuItems, es un item a destruir (ya debería estar fuera por optionsToRemove)
-            {
-                Destroy(child.gameObject);
-            }
+
         }
         // Limpiar el _itemsParent completamente antes de añadir en orden
         _itemsParent.DetachChildren(); // Desvincula todos los hijos restantes

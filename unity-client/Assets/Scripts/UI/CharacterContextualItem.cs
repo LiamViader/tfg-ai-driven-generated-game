@@ -22,6 +22,7 @@ public class ContextualMenuItem : MonoBehaviour
 
     public void Initialize(string label, System.Action onClick, string conditionId)
     {
+        ConditionId = conditionId;
         _labelText.text = label;
         _onClick = onClick;
     }
