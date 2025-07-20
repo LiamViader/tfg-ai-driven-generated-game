@@ -199,11 +199,16 @@ class CutsceneEventModel(GameEventModel):
     involved_character_ids: List[str] = Field(default_factory=list, description="A list of character IDs who are present or relevant in the cutscene. This provides context for generating visuals. Player id can be here too")
     involved_scenario_ids: List[str] = Field(default_factory=list, description="A list of scenario IDs for scenarios relevant in the cutscene. This provides context for the setting's visuals.")
 
+class RunningEventInfo(BaseModel):
+    """Stores information about a single event on the running stack."""
+    event_id: str
+    activating_condition_id: Optional[str] = None
+
 class GameEventsManagerModel(BaseModel):
     """Stores game events and related info"""
     all_events: Dict[str, GameEventModel] = Field(default_factory=dict, description="Stores all existing events, keyed by id")
 
-    running_event_stack: List[str] = Field(
+    running_event_stack: List[RunningEventInfo] = Field(
         default_factory=list,
         description="Stack of running events, top is the one running currently"
     )

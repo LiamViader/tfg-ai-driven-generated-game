@@ -19,7 +19,7 @@ from core_game.game_event.activation_conditions.domain import (
     CharacterInteractionOption,
     WRAPPER_MAP as CONDITION_WRAPPER_MAP
 )
-
+from core_game.game_event.schemas import RunningEventInfo
 from core_game.game_event.activation_conditions.schemas import ActivationConditionModel, CharacterInteractionOptionModel
 
 class BaseGameEvent:
@@ -151,7 +151,8 @@ class GameEventsManager:
     """Domain class for managing and storing events"""
     def __init__(self, model: Optional[GameEventsManagerModel] = None):
         self._all_events: Dict[str, BaseGameEvent] = {}
-        self._running_event_stack: List[str] = []
+        # The stack now stores RunningEventInfo objects instead of just strings
+        self._running_event_stack: List[RunningEventInfo] = []
 
         self._status_indexes: Dict[str, Set[str]] = {status: set() for status in EVENT_STATUSES}
         self._events_by_beat_id: Dict[str, Set[str]] = defaultdict(set)
@@ -166,6 +167,7 @@ class GameEventsManager:
         Populates the manager from the data model and REBUILDS all
         indexes from the primary data source (`all_events`).
         """
+        # The stack is now a list of Pydantic models
         self._running_event_stack = model.running_event_stack.copy()
         
         self._status_indexes = {status: set() for status in EVENT_STATUSES}
@@ -200,9 +202,10 @@ class GameEventsManager:
             running_event_stack=self._running_event_stack
         )
 
-    def start_event(self, event_id: str):
+    def start_event(self, event_id: str, activating_condition_id: Optional[str] = None):
         """
-        Activates an event, sets its status to RUNNING, and pushes it onto the top of the stack.
+        Activates an event, sets its status to RUNNING, and pushes it onto the top of the stack
+        along with the ID of the condition that triggered it.
         """
         if event_id not in self._all_events:
             raise KeyError(f"Error: Cannot start non-existent event '{event_id}'.")
@@ -212,7 +215,10 @@ class GameEventsManager:
             return
 
         self.set_event_status(event_id, "RUNNING")
-        self._running_event_stack.append(event_id)
+        # Push the new info object onto the stack
+        self._running_event_stack.append(
+            RunningEventInfo(event_id=event_id, activating_condition_id=activating_condition_id)
+        )
 
     def complete_current_event(self):
         """
@@ -223,24 +229,33 @@ class GameEventsManager:
             print("Warning: Tried to complete an event, but the running stack is empty.")
             return
 
-        event_id_to_complete = self._running_event_stack.pop()
-        self.set_event_status(event_id_to_complete, "COMPLETED")
+        event_info_to_complete = self._running_event_stack.pop()
+        self.set_event_status(event_info_to_complete.event_id, "COMPLETED")
         
         # Optional: What happens to the event that was underneath? Does it resume?
         # The logic for resuming would be in the GameLoopManager.
 
     # --- METHODS TO QUERY THE STACK ---
 
-    def get_current_running_event(self) -> Optional[BaseGameEvent]:
+    def get_current_running_event_info(self) -> Optional[RunningEventInfo]:
         """
-        Returns the event that is currently active (at the top of the stack).
+        Returns the info object for the event that is currently active (at the top of the stack).
         Returns None if no event is running.
         """
         if not self.is_any_event_running():
             return None
+        return self._running_event_stack[-1]
+
+    def get_current_running_event(self) -> Optional[BaseGameEvent]:
+        """
+        Returns the event domain object that is currently active (at the top of the stack).
+        Returns None if no event is running.
+        """
+        current_info = self.get_current_running_event_info()
+        if not current_info:
+            return None
         
-        current_event_id = self._running_event_stack[-1]
-        return self._all_events.get(current_event_id)
+        return self._all_events.get(current_info.event_id)
 
     def is_any_event_running(self) -> bool:
         """Returns True if the running event stack is not empty."""

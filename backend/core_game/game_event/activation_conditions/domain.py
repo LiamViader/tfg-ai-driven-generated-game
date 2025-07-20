@@ -23,6 +23,10 @@ class ActivationCondition(ABC):
     def model_data(self) -> ActivationConditionModel:
         """Returns the underlying Pydantic data model."""
         return self._model
+    
+    @property
+    def id(self) -> str:
+        return self._model.id
 
     @abstractmethod
     def is_met(self, game_state: 'SimulatedGameState', **kwargs: Any) -> bool:
