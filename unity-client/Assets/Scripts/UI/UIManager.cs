@@ -10,6 +10,8 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
     [SerializeField] private TMP_Text _playerNameText;
+    [SerializeField] private TMP_Text _playerAliasText;
+    [SerializeField] private TMP_Text _scenarioNameText;
     [SerializeField] private Image _playerImage;
     [SerializeField] private Image _backgroundImage;
 
@@ -45,8 +47,8 @@ public class UIManager : MonoBehaviour
         string alias = "";
         if (character != null)
         {
-            name = character.fullName ?? character.fullName;
-            alias = character.alias ?? character.alias;
+            if (character.fullName != null) name = character.fullName;
+            if (character.alias != null) alias = character.alias;
 
         }
         ui.Initialize(characterId, characterSpriteRenderer, name, alias); // Inicializa el UI del personaje con su ID
@@ -72,9 +74,10 @@ public class UIManager : MonoBehaviour
                 string alias = "";
                 if (player.alias != null)
                 {
-                    alias = " - " + player.alias;
+                    alias = player.alias;
                 }
-                _playerNameText.text = name + alias;
+                _playerNameText.text = name;
+                _playerAliasText.text = alias;
             }
 
         }
@@ -113,6 +116,12 @@ public class UIManager : MonoBehaviour
 
         _backgroundImage.sprite = sprite;
         _backgroundImage.preserveAspect = true;
+    }
+
+    public void SetScenarioData(ScenarioData scenario)
+    {
+        _scenarioNameText.text = "";
+        if (scenario.name != null) _scenarioNameText.text = scenario.name;
     }
 
 }

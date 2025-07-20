@@ -193,6 +193,7 @@ public class GameManager : MonoBehaviour
                 if (scenarioTo != null)
                 {
                     UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+                    UIManager.Instance.SetScenarioData(scenarioTo);
                 }
             });
 
@@ -232,6 +233,7 @@ public class GameManager : MonoBehaviour
             if (scenarioTo != null)
             {
                 UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+                UIManager.Instance.SetScenarioData(scenarioTo);
             }
         });
     }
