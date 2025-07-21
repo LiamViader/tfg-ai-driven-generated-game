@@ -7,7 +7,7 @@ from api.services import game_state
 from api.schemas.requests import GenerationRequest, ActionRequest, ActionType
 from api.schemas.responses import ActionResponse, FollowUpAction, FollowUpActionType
 from fastapi.responses import StreamingResponse
-
+from api.services.narrative_streamer import generate_narrative_stream
 router = APIRouter()
 
 @router.post("/generate", response_model=GenerationStatusModel)

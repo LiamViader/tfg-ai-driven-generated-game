@@ -1,5 +1,5 @@
 """Domain classes for working with game event models."""
-
+from __future__ import annotations
 from .schemas import (
     NPCConversationEventModel,
     PlayerNPCConversationEventModel,
@@ -8,10 +8,11 @@ from .schemas import (
     CutsceneEventModel,
     NPCMessage,
     NarratorMessage,
+    ConversationMessage,
     GameEventModel,
     GameEventsManagerModel,
 )
-from typing import Optional, Dict, List, Set
+from typing import Optional, Dict, List, Set, TYPE_CHECKING
 from collections import defaultdict
 from .constants import EVENT_STATUSES, EVENT_STATUS_LITERAL
 from core_game.game_event.activation_conditions.domain import (
@@ -22,6 +23,22 @@ from core_game.game_event.activation_conditions.domain import (
 from core_game.game_event.schemas import RunningEventInfo
 from core_game.game_event.activation_conditions.schemas import ActivationConditionModel, CharacterInteractionOptionModel
 
+from subsystems.game_events.dialog_engine.turn_manager.npc import decide_next_npc_speaker
+from subsystems.game_events.dialog_engine.turn_manager.player_npc import decide_next_player_npc_speaker
+from subsystems.game_events.dialog_engine.dialog_generator.choice_driven import generate_choice_driven_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.narrator import generate_narrator_message_stream
+from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
+from core_game.character.domain import PlayerCharacter, BaseCharacter
+from core_game.character.schemas import CharacterBaseModel, IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
+
+import json
+from typing import AsyncGenerator
+if TYPE_CHECKING:
+    from simulated.game_state import SimulatedGameState
+
+
 class BaseGameEvent:
     """Common functionality for domain event wrappers.
     """
@@ -30,6 +47,7 @@ class BaseGameEvent:
         self._data = model
         self._activation_conditions: List[ActivationCondition] = [] # Initialize here
         self._build_condition_wrappers()
+        self.triggered_by: Optional[ActivationCondition]
 
     def _build_condition_wrappers(self):
         """Instantiates domain objects for the activation conditions."""
@@ -79,6 +97,7 @@ class BaseGameEvent:
     def activation_conditions(self, value: List[ActivationCondition]) -> None:
         self._activation_conditions = value
 
+
     def get_model(self) -> GameEventModel:
         """Return the underlying Pydantic model."""
         return self._data
@@ -90,8 +109,81 @@ class NPCConversationEvent(BaseGameEvent):
         super().__init__(model)
         self._data = model
 
-    def add_message(self, message: NPCMessage) -> None:
+    def add_message(self, message: ConversationMessage) -> None:
         self._data.messages.append(message)
+    
+    @property
+    def npc_ids(self) -> List[str]:
+        return self._data.npc_ids
+    
+    @property
+    def messages(self) -> List[ConversationMessage]:
+        return self._data.messages
+    
+    
+    async def run(self, game_state: 'SimulatedGameState') -> AsyncGenerator[str, None]:
+        """
+        Runs the flow of an NPC-to-NPC conversation.
+        """
+        MAX_RETRIES_PER_TURN = 3
+        conversation_ended_naturally = False
+
+        # --- Bucle de Conversación Principal ---
+        # Este bucle continúa mientras haya alguien que hablar.
+        while True:
+            speaker = decide_next_npc_speaker(self, self.triggered_by, game_state)
+
+            if not speaker:
+                print(f"[Event: {self.id}] Conversation concluded naturally.")
+                conversation_ended_naturally = True
+                break # Sale del bucle de conversación
+
+            turn_successful = False
+            # --- Bucle de Reintentos por Turno ---
+            # Intenta generar el turno de este hablante hasta MAX_RETRIES veces.
+            for attempt in range(MAX_RETRIES_PER_TURN):
+                print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES_PER_TURN} for speaker {speaker.id}...")
+                
+                raw_llm_stream = generate_npc_message_stream(
+                    speaker=speaker,
+                    event=self,
+                    game_state=game_state
+                )
+
+                try:
+                    # Intenta parsear y streamear el turno completo.
+                    async for message_json in parse_and_stream_messages(raw_llm_stream, speaker, self):
+                        yield message_json
+                    
+                    # Si el bucle 'async for' termina sin lanzar una excepción, el turno fue exitoso.
+                    turn_successful = True
+                    print(f"[Event: {self.id}] Turn for {speaker.id} completed successfully.")
+                    break # Sale del bucle de reintentos y pasa al siguiente turno.
+
+                except InvalidTagError as e:
+                    print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
+                    # Si este no es el último intento, el bucle continuará para reintentar.
+                    if attempt == MAX_RETRIES_PER_TURN - 1:
+                        print(f"[Event: {self.id}] All retries failed for speaker {speaker.id}. Stopping event.")
+
+            if not turn_successful:
+                # Si después de todos los reintentos el turno no fue exitoso,
+                # rompemos el bucle de conversación principal para evitar quedarnos atascados.
+                print(f"[Event: {self.id}] Event failed due to repeated errors.")
+                conversation_ended_naturally = False
+                break
+        
+        # --- Lógica de Finalización del Evento ---
+        # Esta sección se ejecuta después de que el bucle 'while' termina.
+        if conversation_ended_naturally:
+            # Si la conversación terminó porque no había más turnos, se considera completada.
+            print(f"[Event: {self.id}] Marking event as COMPLETED.")
+            game_state.events.get_state().complete_current_event()
+        else:
+            # Si la conversación terminó por un fallo, se podría marcar como fallida.
+            # (Aquí podrías añadir una lógica para cambiar el estado a "FAILED" si lo tuvieras)
+            print(f"[Event: {self.id}] Event finished due to failure. Not marking as completed.")
+            # Por ejemplo: game_state.events.get_state().fail_current_event()
 
 
 class PlayerNPCConversationEvent(BaseGameEvent):
@@ -101,9 +193,134 @@ class PlayerNPCConversationEvent(BaseGameEvent):
         super().__init__(model)
         self._data = model
 
-    def add_message(self, message: NPCMessage) -> None:
+    def add_message(self, message: ConversationMessage) -> None:
         self._data.messages.append(message)
+    
+    @property
+    def npc_ids(self) -> List[str]:
+        return self._data.npc_ids
+    
+    @property
+    def messages(self) -> List[ConversationMessage]:
+        return self._data.messages
+    
+    async def run(self, game_state: 'SimulatedGameState') -> AsyncGenerator[str, None]:
+        """
+        Runs the flow of a conversation involving the player, with retry logic.
+        """
+        print(f"[Event: {self.id}] Running Player-NPC Conversation...")
+        
+        MAX_RETRIES_PER_TURN = 3
+        conversation_ended_naturally = False
 
+        # --- Main Conversation Loop ---
+        while True:
+            speaker = decide_next_player_npc_speaker(self, self.triggered_by, game_state)
+
+            if not speaker:
+                print(f"[Event: {self.id}] Conversation concluded naturally.")
+                conversation_ended_naturally = True
+                break
+
+            turn_successful = False
+            is_player_turn = isinstance(speaker, PlayerCharacter)
+
+            # --- Turn Retry Loop ---
+            for attempt in range(MAX_RETRIES_PER_TURN):
+                print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES_PER_TURN} for speaker {speaker.id}...")
+                
+                # Select the correct generator based on the speaker's type
+                if is_player_turn:
+                    raw_llm_stream = generate_player_message_stream(
+                        speaker=speaker, event=self, game_state=game_state
+                    )
+                else: # NPC
+
+                    raw_llm_stream = generate_npc_message_stream(
+                        speaker=speaker, event=self, game_state=game_state
+                    )
+
+                try:
+                    # Parse and stream the complete turn
+                    async for message_json in parse_and_stream_messages(raw_llm_stream, speaker, self):
+                        yield message_json
+                    
+                    turn_successful = True
+                    print(f"[Event: {self.id}] Turn for {speaker.id} completed successfully.")
+                    break # Exit retry loop
+
+                except InvalidTagError as e:
+                    print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
+                    if attempt == MAX_RETRIES_PER_TURN - 1:
+                        print(f"[Event: {self.id}] All retries failed for speaker {speaker.id}. Stopping event.")
+
+            if not turn_successful:
+                print(f"[Event: {self.id}] Event failed due to repeated errors.")
+                conversation_ended_naturally = False
+                break
+
+            # If the successful turn was the player's, it must have ended in a choice.
+            # The stream must pause and wait for the player's next action.
+            if is_player_turn:
+                print(f"[Event: {self.id}] Player choice presented. Pausing stream.")
+                return # IMPORTANT: Exit the generator. The stream is over for now.
+
+        # --- Event Finalization Logic ---
+        if conversation_ended_naturally:
+            print(f"[Event: {self.id}] Marking event as COMPLETED.")
+            game_state.events.get_state().complete_current_event()
+        else:
+            print(f"[Event: {self.id}] Event finished due to failure. Not marking as completed.")
+            # For example: game_state.events.get_state().fail_current_event()
+        
+    async def process_player_choice(self, game_state: 'SimulatedGameState', choice_label: str) -> AsyncGenerator[str, None]:
+        """
+        Generates the player's intervention based on their choice, and then continues the event flow.
+        """
+        print(f"[Event: {self.id}] Processing player choice: '{choice_label}'")
+        
+        player = game_state.read_only_characters.get_player()
+        if not player:
+            raise ValueError("Player character not found in game state.")
+
+        MAX_RETRIES = 3
+        player_turn_successful = False
+
+        # --- Part 1: Generate and stream the Player's intervention ---
+        for attempt in range(MAX_RETRIES):
+            print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES} to generate player intervention...")
+            
+            raw_llm_stream = generate_choice_driven_message_stream(
+                player_choice=choice_label,
+                speaker=player,
+                event=self,
+                game_state=game_state
+            )
+
+            try:
+                async for message_json in parse_and_stream_messages(raw_llm_stream, player, self):
+                    yield message_json
+                
+                player_turn_successful = True
+                print(f"[Event: {self.id}] Player intervention generated successfully.")
+                break
+
+            except InvalidTagError as e:
+                print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
+                if attempt == MAX_RETRIES - 1:
+                    print(f"[Event: {self.id}] All retries failed for player intervention.")
+        
+        if not player_turn_successful:
+            print(f"[Event: {self.id}] Event failed during player intervention. Stopping.")
+            # Optionally fail the event
+            # game_state.events.get_state().fail_current_event()
+            return
+
+        # --- Part 2: Continue the rest of the conversation ---
+        print(f"[Event: {self.id}] Player turn complete. Resuming conversation...")
+        # This loop takes over and continues the event from where it left off.
+        async for subsequent_message_json in self.run(game_state):
+            yield subsequent_message_json
 
 class NarratorInterventionEvent(BaseGameEvent):
     """Domain logic for narrator interventions."""
@@ -112,8 +329,83 @@ class NarratorInterventionEvent(BaseGameEvent):
         super().__init__(model)
         self._data = model
 
-    def add_message(self, message: NarratorMessage) -> None:
+    def add_message(self, message: ConversationMessage) -> None:
         self._data.messages.append(message)
+
+    @property
+    def messages(self) -> List[ConversationMessage]:
+        return self._data.messages
+    
+    async def run(self, game_state: 'SimulatedGameState') -> AsyncGenerator[str, None]:
+        """
+        Runs the flow of a Narrator Intervention. This is a single turn event.
+        """
+        print(f"[Event: {self.id}] Running Narrator Intervention...")
+        
+        MAX_RETRIES = 3
+        turn_successful = False
+        narrator_speaker = BaseCharacter(
+            data=CharacterBaseModel(
+                id="narrator",
+                identity=IdentityModel(
+                    full_name="",
+                    alias="",
+                    age=1,
+                    gender="female",
+                    profession="",
+                    species="",
+                    alignment="",
+                ),
+                physical=PhysicalAttributesModel(
+                    appearance="",
+                    visual_prompt="",
+                    distinctive_features=[],
+                    clothing_style="",
+                    characteristic_items=[]
+                ),
+                psychological=PsychologicalAttributesModel(
+                    personality_summary="",
+                    personality_tags=[],
+                    motivations=[],
+                    values=[],
+                    fears_and_weaknesses=[],
+                    communication_style="",
+                    backstory="",
+                    quirks=[]
+                ),
+                knowledge=KnowledgeModel(
+                    background_knowledge=[],
+                    acquired_knowledge=[]
+                )
+            )
+        )
+        for attempt in range(MAX_RETRIES):
+            print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES} for narrator...")
+            
+            raw_llm_stream = generate_narrator_message_stream(
+                event=self,
+                game_state=game_state
+            )
+
+            try:
+                async for message_json in parse_and_stream_messages(raw_llm_stream, narrator_speaker, self):
+                    yield message_json
+                
+                turn_successful = True
+                print(f"[Event: {self.id}] Narrator turn completed successfully.")
+                break # Exit retry loop
+
+            except InvalidTagError as e:
+                print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
+                if attempt == MAX_RETRIES - 1:
+                    print(f"[Event: {self.id}] All retries failed for narrator. Stopping event.")
+
+        # --- Event Finalization Logic ---
+        if turn_successful:
+            print(f"[Event: {self.id}] Marking event as COMPLETED.")
+            game_state.events.get_state().complete_current_event()
+        else:
+            print(f"[Event: {self.id}] Event finished due to failure. Not marking as completed.")
 
 
 class CutsceneFrame:
@@ -215,6 +507,13 @@ class GameEventsManager:
             return
 
         self.set_event_status(event_id, "RUNNING")
+        activating_condition = None
+        for cond in event.activation_conditions:
+            if activating_condition_id == cond:
+                activating_condition = cond
+                break
+
+        event.triggered_by = activating_condition
         # Push the new info object onto the stack
         self._running_event_stack.append(
             RunningEventInfo(event_id=event_id, activating_condition_id=activating_condition_id)

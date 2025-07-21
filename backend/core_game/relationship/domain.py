@@ -1,5 +1,6 @@
 from core_game.relationship.schemas import *
-from typing import Dict, Optional
+from typing import Dict, Optional, Set, Any, List
+from itertools import permutations
 
 class RelationshipType:
     def __init__(self, data: RelationshipTypeModel):
@@ -141,6 +142,45 @@ class Relationships:
         target_character_id: str,
     ) -> Dict[str, CharacterRelationship]:
         return self._matrix.get(source_character_id, {}).get(target_character_id, {})
+
+
+    def get_relationships_for_group(
+        self, character_ids: Set[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Gets all directed relationships between a specific group of characters
+        and returns them as a list of structured dictionaries.
+
+        Args:
+            character_ids: A set of character IDs to get relationships for.
+            characters: A dictionary mapping character IDs to their domain objects,
+                        used to retrieve character names. The character object
+                        is expected to have an 'identity.full_name' attribute.
+
+        Returns:
+            A list of dictionaries, where each dictionary represents a single
+            relationship and has the following keys:
+            'source_id', 'source_name', 'target_id', 'target_name', 'type', 'intensity'.
+        """
+        found_relationships = []
+        
+        # Use itertools.permutations to get all ordered pairs of characters
+        for source_id, target_id in permutations(character_ids, 2):
+            # Get all relationships from the source to the target
+            relationships = self.get_relationship_details(source_id, target_id)
+            
+            if relationships:
+
+                for rel_name, rel_details in relationships.items():
+                    structured_relationship = {
+                        "source_id": source_id,
+                        "target_id": target_id,
+                        "type": rel_name,
+                        "intensity": rel_details.intensity
+                    }
+                    found_relationships.append(structured_relationship)
+        
+        return found_relationships
 
     def relationship_count(self) -> int:
         count = 0

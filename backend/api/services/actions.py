@@ -7,7 +7,7 @@ from core_game.game_event.domain import BaseGameEvent
 from typing import Optional
 from core_game.game_event.activation_conditions.domain import CharacterInteractionOption
 
-def _check_and_start_event_triggers(game_state: SimulatedGameState) -> Optional[BaseGameEvent]:
+def check_and_start_event_triggers(game_state: SimulatedGameState) -> Optional[BaseGameEvent]:
     available_events = game_state.events.get_state().get_events_by_status("AVAILABLE")
 
     for event in available_events:
@@ -39,7 +39,7 @@ def move_player(scenario_id: str, from_checkpoint_id: str) -> ActionResponse:
 
         #check if any event triggered
 
-        triggered_event = _check_and_start_event_triggers(game_state)
+        triggered_event = check_and_start_event_triggers(game_state)
         
         if triggered_event:
             follow_up = FollowUpAction(

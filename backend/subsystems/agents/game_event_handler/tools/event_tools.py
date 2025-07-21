@@ -38,7 +38,7 @@ class ToolCreateNPCConversationEventArgs(InjectedToolContext):
 
 class ToolCreatePlayerNPCConversationEventArgs(InjectedToolContext):
     title: str = Field(..., description="A short, human-readable name for this event. Example: 'Elara asks player (Julius) about the key'.")
-    description: str = Field(..., description="The director's brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), and the overall narrative goal. (Max. 150-200 words)")
+    description: str = Field(..., description="The director's brief for this interactive scene. This text guides a future AI in writing the dialogue. For a compelling interaction, consider including the scene's setup, the player's core objective or decision (e.g., 'The player must choose between joining three factions'), the overall narrative goal, topic, tone and others. (Max. 150-200 words)")
     npc_ids: List[str] = Field(..., description="List of IDs for the NPCs (NONE PLAYER CHARACTERS) participating in the conversation. Must contain at least one NPC. Player CANNOT be in the list, it is included automatically")
     activation_conditions: List[ActivationConditionsPlayerConversation] = Field(..., description="The set of conditions that will trigger this event. The event will start once any of these conditions are met.")
     source_beat_id: Optional[str] = Field(default=None, description="Optional: The ID of a Narrative Beat to link this event to a specific part of the story.")

@@ -1,119 +1,80 @@
-# Este código iría en un nuevo archivo, por ejemplo:
-# api/services/narrative_streamer.py
-
-import asyncio
 import json
-import random
-from typing import AsyncGenerator, Dict, Any
+from typing import AsyncGenerator
 
-# Importarías tus modelos y estado de juego reales aquí
+# Your actual project imports would go here
 from simulated.singleton import SimulatedGameStateSingleton
-from core_game.game_event.domain import BaseGameEvent, DialogueEvent # Suponiendo que tienes estos modelos
-
-# --- Simulación de un proveedor de LLM ---
-# En un caso real, esto llamaría a la API de OpenAI, Anthropic, etc.
-async def get_llm_response_stream(prompt: str) -> AsyncGenerator[str, None]:
-    """
-    Simula una llamada a un LLM que devuelve un stream de texto.
-    """
-    print("--- INICIO DEL PROMPT PARA EL LLM ---")
-    print(prompt)
-    print("--- FIN DEL PROMPT PARA EL LLM ---")
-
-    responses = [
-        '[dialogue] Vaya, no esperaba encontrarte aquí... [action] Mira a su alrededor, nervioso. [dialogue] ¿Has visto a alguien más? [end]',
-        '[action] Coge una manzana de la mesa y le da un mordisco ruidoso. [dialogue] ¿Querías algo? Porque estoy algo ocupado. [end]',
-        '[dialogue] Silencio. [action] Te mira fijamente, intentando leer tu expresión. [end]'
-    ]
-    full_response = random.choice(responses)
-    
-    # Simula el streaming palabra por palabra
-    for word in full_response.split(' '):
-        yield word + " "
-        await asyncio.sleep(0.08) # Pausa para simular la generación
-
-# --- Lógica principal del Streamer ---
-
-def build_llm_prompt(event: DialogueEvent) -> str:
-    """
-    Construye el prompt para el LLM basado en el contexto del evento.
-    """
-    # Aquí es donde reúnes todo el contexto que el LLM necesita.
-    game_state = SimulatedGameStateSingleton.get_instance()
-    player = game_state.read_only_characters.get_player()
-    
-    # Ejemplo de construcción de prompt
-    prompt = "Eres un director de una escena narrativa en un juego de rol de supervivencia.\n"
-    prompt += "Contexto del mundo: Un apocalipsis zombi ha devastado la sociedad.\n"
-    prompt += f"Escenario actual: {game_state.map.get_scenario(player.present_in_scenario).name} - {game_state.map.get_scenario(player.present_in_scenario).narrative_context}\n\n"
-    prompt += "Personajes en la escena:\n"
-    # (Aquí añadirías un bucle para describir a todos los personajes presentes)
-    prompt += f"- {player.identity.full_name}: {player.psychological.personality_summary}\n"
-    
-    prompt += f"\nEl evento actual es: '{event.name}'.\n"
-    prompt += f"Descripción del evento: {event.description}\n"
-    prompt += "Genera el siguiente turno de la conversación. Usa las etiquetas [dialogue], [action] y termina con [end].\n"
-    
-    return prompt
+from core_game.game_event.domain import BaseGameEvent, NarratorInterventionEvent, NPCConversationEvent, PlayerNPCConversationEvent
+from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.narrator import generate_narrator_message_stream
+from subsystems.game_events.dialog_engine.dialog_generator.choice_driven import generate_choice_driven_message_stream
+from api.services.actions import check_and_start_event_triggers
 
 async def generate_narrative_stream(event_id: str) -> AsyncGenerator[str, None]:
     """
-    Generador principal que produce los eventos JSON para el cliente.
+    The main orchestration service for a narrative event stream.
+
+    This async generator manages the lifecycle of a conversation:
+    1. Decides whose turn it is.
+    2. Calls the appropriate generator to create the message content.
+    3. Parses the stream, updates the game state, and forwards messages to the client.
     """
-    # 1. Obtener el estado del juego y el evento
     game_state = SimulatedGameStateSingleton.get_instance()
-    event = game_state.events.get_state().get_event_by_id(event_id)
-    
-    if not event or not isinstance(event, DialogueEvent):
-        # En un caso real, podrías querer enviar un evento de error.
-        print(f"Error: Evento con id '{event_id}' no encontrado o no es un evento de diálogo.")
+    event_info = game_state.events.get_state().get_current_running_event_info()
+    event = game_state.events.get_state().get_current_running_event()
+
+    if not event_info or not event:
+        error_message = {"type": "error", "content": f"No event is running."}
+        yield f"data: {json.dumps(error_message)}\n\n"
         return
 
-    # 2. Construir el prompt para el LLM
-    prompt = build_llm_prompt(event)
+    if event.id != event_id:
+        error_message = {"type": "error", "content": f"Current running event has a diferent id."}
+        yield f"data: {json.dumps(error_message)}\n\n"
+        return
     
-    # 3. Obtener el stream del LLM
-    llm_stream = get_llm_response_stream(prompt)
-    
-    # 4. Procesar el stream y enviarlo al cliente en formato SSE
-    buffer = ""
-    current_type = "dialogue"
-    # (En un sistema real, el TurnManager decidiría quién habla)
-    character_id = "character_002" 
+    if not isinstance(event,NPCConversationEvent) or not isinstance(event,PlayerNPCConversationEvent) or not isinstance(event,NarratorInterventionEvent):
+        error_message = {"type": "error", "content": f"Current running event has not implemented this."}
+        yield f"data: {json.dumps(error_message)}\n\n"
+        return
 
-    async for chunk in llm_stream:
-        buffer += chunk
-        
-        # Lógica de parsing para buscar tokens especiales
-        found_token = None
-        if "[dialogue]" in buffer: found_token = "[dialogue]"
-        elif "[action]" in buffer: found_token = "[action]"
-        elif "[end]" in buffer: found_token = "[end]"
-
-        if found_token:
-            parts = buffer.split(found_token, 1)
-            content_before = parts[0]
+    try:
+        async for message_json in event.run(game_state):
+            yield message_json
             
-            if content_before.strip():
-                message = {"type": current_type, "character_id": character_id, "content": content_before}
-                yield f"data: {json.dumps(message)}\n\n"
+        # --- 3. Handle Stream Completion ---
+        # After the event's run() generator finishes, we check the final status of the event.
+        final_status = event.status
 
-            if found_token == "[end]":
-                end_message = {"type": "end_turn", "character_id": None, "content": None}
-                yield f"data: {json.dumps(end_message)}\n\n"
-                # Marcar el evento como completado en el estado del juego
-                game_state.events.get_state().complete_event(event.id)
-                return # Finaliza el stream
+        check_and_start_event_triggers(game_state)
+        new_current_event = game_state.events.get_state().get_current_running_event()
 
-            current_type = found_token.strip('[]')
-            buffer = parts[1]
-    
-    # Si el stream del LLM termina sin un [end], nos aseguramos de enviar lo que queda.
-    if buffer.strip():
-        final_message = {"type": current_type, "character_id": character_id, "content": buffer}
-        yield f"data: {json.dumps(final_message)}\n\n"
-        
-    # Y enviamos un evento de finalización como fallback.
-    fallback_end_message = {"type": "end_turn", "character_id": None, "content": None}
-    yield f"data: {json.dumps(fallback_end_message)}\n\n"
+        if final_status == "COMPLETED":
+            if new_current_event:
+                # A new event has started automatically!
+                print(f"[Narrative Streamer] Event '{event.id}' completed, and new event '{new_current_event.id}' has started.")
+                follow_up_action = {
+                    "type": "START_NARRATIVE_STREAM",
+                    "payload": {"event_id": new_current_event.id}
+                }
+                final_message = {"type": "event_end", "follow_up_action": follow_up_action}
+                yield f"data: {json.dumps(final_message)}\n\n"
+            else:
+                print(f"[Narrative Streamer] Event '{event.id}' completed. Sending end signal.")
+                final_message = {"type": "event_end", "event_id": event_id}
+                yield f"data: {json.dumps(final_message)}\n\n"
+        elif final_status == "RUNNING":
+            # This indicates the event has paused for player input.
+            print(f"[Narrative Streamer] Event '{event.id}' paused for player choice. Sending pause signal.")
+            final_message = {"type": "event_paused", "event_id": event_id}
+            yield f"data: {json.dumps(final_message)}\n\n"
+        else: # FAILED or other terminal statuses
+            print(f"[Narrative Streamer] Event '{event.id}' finished with status '{final_status}'.")
+            final_message = {"type": "event_failed", "event_id": event_id}
+            yield f"data: {json.dumps(final_message)}\n\n"
 
+    except Exception as e:
+        # Catch any unexpected errors during the event's execution.
+        print(f"FATAL ERROR during execution of event '{event_id}': {e}")
+        error_message = {"type": "error", "content": f"A critical error occurred during the event: {e}"}
+        yield f"data: {json.dumps(error_message)}\n\n"

@@ -53,73 +53,59 @@ class GameEventModel(BaseModel):
 # ---------- Message Schemas ----------
 
 
-class MessageBase(BaseModel):
-    """Base fields shared by all messages."""
+class CharacterDialogueMessage(BaseModel):
+    """A message representing spoken words from any character (NPC or Player)."""
+    type: Literal["dialogue"] = Field(default="dialogue", description="Identifies this as a dialogue message.")
+    actor_id: str = Field(..., description="The ID of the character speaking.")
+    content: str = Field(..., description="The text of the dialogue.")
 
-    content: str = Field(..., description="Text or description of the message.")
+class CharacterActionMessage(BaseModel):
+    """A message representing a physical action performed by any character."""
+    type: Literal["action"] = Field(default="action", description="Identifies this as an action message.")
+    actor_id: str = Field(..., description="The ID of the character performing the action.")
+    content: str = Field(..., description="A description of the action.")
 
+class PlayerThoughtMessage(BaseModel):
+    """A message representing the player's internal monologue."""
+    type: Literal["thought"] = Field(default="thought", description="Identifies this as a player thought.")
+    actor_id: str = Field("player", description="The speaker is always the player.")
+    content: str = Field(..., description="The text of the internal thought.")
 
-class SpokenMessage(MessageBase):
-    """Dialogue line spoken by an actor."""
+class PlayerChoiceOptionModel(BaseModel):
+    """Defines a single option within a player choice block."""
+    type: Literal["Dialogue", "Action"]
+    label: str = Field(..., description="The short, descriptive text for the choice.")
 
-    type: Literal["spoken"] = Field("spoken", description="Spoken line of dialogue.")
+class PlayerChoiceMessage(BaseModel):
+    """A message representing a set of choices presented to the player."""
+    type: Literal["player_choice"] = Field(default="player_choice", description="Identifies this as a player choice block.")
+    actor_id: str = Field("player", description="Choices are always presented for the player.")
+    title: str = Field(..., description="The question or title for the choice block (e.g., 'What do you do?').")
+    options: List[PlayerChoiceOptionModel] = Field(..., description="A list of the available choices.")
 
+class NarratorMessage(BaseModel):
+    """A message representing a description or observation from the narrator."""
+    type: Literal["narrator"] = Field(default="narrator", description="Identifies this as a narrator message.")
+    actor_id: str = Field("narrator", description="The speaker is always the narrator.")
+    content: str = Field(..., description="The text of the narration.")
 
-class ActionMessage(MessageBase):
-    """Descriptive action performed by an actor."""
+# --- Union Type for Conversations ---
 
-    type: Literal["action"] = Field(
-        "action", description="Descriptive action performed by the actor."
-    )
+# This Union type represents any possible message that can be part of a conversation log.
+ConversationMessage = Union[
+    CharacterDialogueMessage,
+    CharacterActionMessage,
+    PlayerThoughtMessage,
+    PlayerChoiceMessage,
+    NarratorMessage
+]
 
+NPCMessage = Union[
+    CharacterActionMessage,
+    CharacterActionMessage,
+    NarratorMessage
+]
 
-class ObservationMessage(MessageBase):
-    """Narrator observation not directly addressed to the player."""
-
-    type: Literal["observation"] = Field(
-        "observation", description="Narrator observation or description."
-    )
-
-
-class ActorMessageMixin(BaseModel):
-    """Mixin for messages that include the sender's identifier."""
-
-    actor_id: str = Field(..., description="ID of the actor sending the message.")
-
-
-class NPCSpokenMessage(SpokenMessage, ActorMessageMixin):
-    pass
-
-
-class NPCActionMessage(ActionMessage, ActorMessageMixin):
-    pass
-
-
-NPCMessage = Union[NPCSpokenMessage, NPCActionMessage]
-
-
-class PlayerSpokenMessage(SpokenMessage):
-    pass
-
-
-class PlayerActionMessage(ActionMessage):
-    pass
-
-
-PlayerMessage = Union[PlayerSpokenMessage, PlayerActionMessage]
-
-
-class NarratorSpokenMessage(SpokenMessage):
-    """Line the narrator directs straight to the player."""
-
-
-class NarratorObservationMessage(ObservationMessage):
-    """Narrator comment describing the scene without addressing the player."""
-
-
-# Narrator messages can either address the player directly (spoken) or simply
-# describe what happens in the scene (observation).
-NarratorMessage = Union[NarratorSpokenMessage, NarratorObservationMessage]
 
 
 # ---------- Event Schemas ----------
@@ -131,7 +117,7 @@ class NPCConversationEventModel(GameEventModel):
     npc_ids: List[str] = Field(
         ..., description="IDs of the NPCs participating in the conversation."
     )
-    messages: List[NPCMessage] = Field(
+    messages: List[ConversationMessage] = Field(
         default_factory=list,
         description="Ordered list of NPC messages and actions.",
     )
@@ -146,15 +132,9 @@ class PlayerNPCConversationEventModel(GameEventModel):
     npc_ids: List[str] = Field(
         ..., description="IDs of the NPCs participating in the conversation."
     )
-    messages: List[NPCMessage] = Field(
+    messages: List[ConversationMessage] = Field(
         default_factory=list,
-        description="Ordered list of NPC messages and actions before player intervention.",
-    )
-    player_intervention_indices: List[int] = Field(
-        default_factory=list,
-        description=(
-            "Indices in 'messages' after which the player is expected to respond or can intervene."
-        ),
+        description="Ordered list of messages and actions.",
     )
 
 
@@ -163,7 +143,7 @@ class NarratorInterventionEventModel(GameEventModel):
     type: Literal["narrator_intervention"] = Field(
         default="narrator_intervention", description="Type discriminator for this event."
     )
-    messages: List[NarratorMessage] = Field(
+    messages: List[ConversationMessage] = Field(
         default_factory=list,
         description=(
             "Ordered narration messages. Spoken entries address the player "
