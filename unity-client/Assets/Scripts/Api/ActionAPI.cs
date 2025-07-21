@@ -55,13 +55,7 @@ public static class ActionAPI
         );
     }
 
-    /// <summary>
-    /// Sends a request to the backend to trigger a narrative event directly.
-    /// </summary>
-    /// <param name="activationConditionId">The ID of the event's activation condition to trigger.</param>
-    /// <param name="fromCheckpointId">The last known checkpoint ID from the client.</param>
-    /// <param name="onSuccess">Callback executed on a successful response, returning an ActionResponse.</param>
-    /// <param name="onError">Callback executed if an error occurs.</param>
+
     public static IEnumerator TriggerEvent(string activationConditionId, string fromCheckpointId, Action<ActionResponse> onSuccess = null, Action<string> onError = null)
     {
         string url = $"{baseUrl}/action";

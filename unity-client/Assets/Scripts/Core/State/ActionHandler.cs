@@ -3,6 +3,7 @@ using UnityEngine;
 using Api.Models;
 using System.Collections;
 using Newtonsoft.Json;
+using UnityEditor.PackageManager;
 
 /// <summary>
 /// A central MonoBehaviour to handle player actions and API communication.
@@ -34,6 +35,12 @@ public class ActionHandler : MonoBehaviour
     {
         // Start the coroutine to handle the web request
         StartCoroutine(MovePlayerCoroutine(targetScenarioId));
+    }
+
+    public void RequestTriggerCondition(string activationConditionId, System.Action onError = null, System.Action onSuccess = null)
+    {
+        // Start the coroutine to handle the web request
+        StartCoroutine(TriggerConditionCoroutine(activationConditionId, onError, onSuccess));
     }
 
     private IEnumerator MovePlayerCoroutine(string targetScenarioId)
@@ -81,7 +88,7 @@ public class ActionHandler : MonoBehaviour
             yield return StartCoroutine(ScenarioVisualManager.Instance.FadeInScenario(targetScenarioId));
 
             // 3d. Handle any follow-up action after the scene is visible
-            HandleFollowUpAction(finalResponse.FollowUpAction);
+            FollowUpActionHandler.Instance.ProcessFollowUpAction(finalResponse.FollowUpAction);
         }
         else
         {
@@ -93,23 +100,54 @@ public class ActionHandler : MonoBehaviour
         }
     }
 
-
-    private void HandleFollowUpAction(FollowUpAction followUpAction)
+    private IEnumerator TriggerConditionCoroutine(string activationConditionId, System.Action onError = null, System.Action onSuccess = null)
     {
-        if (followUpAction == null || followUpAction.Type == FollowUpActionType.NONE)
-        {
-            return; // No action to perform
-        }
+        Debug.Log("Requesting trigger Event");
 
-        if (followUpAction.Type == FollowUpActionType.START_NARRATIVE_STREAM)
-        {
-            string eventId = followUpAction.Payload?.EventId;
-            if (!string.IsNullOrEmpty(eventId))
-            {
-                Debug.Log($"Follow-up action: Start narrative stream for event '{eventId}'");
-                // Here you would call your NarrativeStreamer client
-                // Example: NarrativeStreamer.Instance.StartEventStream(eventId);
+        // --- Screen is now black ---
+
+        // 2. Call the API and wait for a response
+        ActionResponse finalResponse = null;
+        string errorMessage = null;
+        bool requestFinished = false;
+
+        yield return ActionAPI.TriggerEvent(
+            activationConditionId,
+            GameManager.Instance.LastCheckpointId,
+            onSuccess: (response) => {
+                finalResponse = response;
+                requestFinished = true;
+            },
+            onError: (error) => {
+                errorMessage = error;
+                requestFinished = true;
             }
+        );
+
+        // Wait until the callback has been executed
+        yield return new WaitUntil(() => requestFinished);
+
+        // 3. Process the response
+        if (finalResponse != null && string.IsNullOrEmpty(finalResponse.Error))
+        {
+            // --- SUCCESS CASE ---
+            Debug.Log("Trigger event successful. Processing response...");
+            var applier = new ChangeSetApplier();
+            applier.Apply(finalResponse.Changeset);
+
+
+            
+            FollowUpActionHandler.Instance.ProcessFollowUpAction(finalResponse.FollowUpAction);
+
+            onSuccess?.Invoke();
+        }
+        else
+        {
+            
+            // --- ERROR CASE ---
+            HandleActionError(errorMessage ?? finalResponse?.Error);
+
+            onError?.Invoke();
         }
     }
 

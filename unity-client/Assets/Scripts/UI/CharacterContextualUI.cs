@@ -31,6 +31,9 @@ public class CharacterContextualUI : MonoBehaviour
 
     private string _characterId;
 
+    private bool _triggeringCondition = false;
+
+
     private void OnEnable()
     {
         if (_canvas != null && Camera.main != null && _nameCanvas != null)
@@ -165,7 +168,7 @@ public class CharacterContextualUI : MonoBehaviour
 
     public void HideContextualMenu()
     {
-        if (_canvas == null || !gameObject.activeInHierarchy || IsAnimatingHide || IsAnimatingShow) return;
+        if (_canvas == null || !gameObject.activeInHierarchy || IsAnimatingHide || IsAnimatingShow || _triggeringCondition) return;
 
         AnimateHideItems(() =>
         {
@@ -373,7 +376,7 @@ public class CharacterContextualUI : MonoBehaviour
             System.Action onClickAction;
 
             // Ejemplo: si solo GameEvents
-            onClickAction = () => GameManager.Instance.TriggerEvent(optionData.eventId);
+            onClickAction = () => TriggerCondition(optionData.conditionId);
 
             // Si tuvieras diferentes tipos de opciones (más allá de CharacterOptionEventData),
             // usarías un 'switch' o una lógica más compleja aquí.
@@ -411,5 +414,23 @@ public class CharacterContextualUI : MonoBehaviour
         {
             RefreshMenuItems();
         }
+    }
+
+    private void TriggerCondition(string conditionId)
+    {
+        if (_triggeringCondition) return;
+
+        _triggeringCondition = true;
+
+        ActionHandler.Instance.RequestTriggerCondition(
+            conditionId,
+            () => {
+                _triggeringCondition = false;
+            },
+            () => {
+                _triggeringCondition = false;
+            }
+        );
+
     }
 }
