@@ -48,7 +48,7 @@ public static class HttpUtils
         yield return request.SendWebRequest();
 
         var responseText = request.downloadHandler?.text;
-
+        Debug.Log(responseText);
         if (request.result != UnityWebRequest.Result.Success || request.responseCode >= 400)
         {
             Debug.LogError($"POST {url} failed: {request.error} ({request.responseCode})");

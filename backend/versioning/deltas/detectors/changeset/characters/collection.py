@@ -35,7 +35,9 @@ class CharactersDetector(ChangeDetector[CharactersModel]):
             
         for id in sorted(old_ids & new_ids):
             char_changes = self.character_detector.detect(old_chars[id], new_chars[id])
+            print("detecting in characters collection")
             if char_changes:
+                print("detectied in characters collection")
                 registry_ops.append({"op": "update", "id": id, **char_changes})
                 
         if registry_ops:

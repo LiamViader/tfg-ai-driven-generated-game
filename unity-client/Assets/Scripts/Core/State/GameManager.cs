@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Linq; 
+using System.Linq;
+using System.Globalization;
 
 public class GameManager : MonoBehaviour
 {
@@ -118,7 +119,9 @@ public class GameManager : MonoBehaviour
     public void AddCharacterToScenario(string scenarioId, string characterId)
     {
         if (_scenarios.TryGetValue(scenarioId, out var scenario) && !scenario.characterIds.Contains(characterId))
+        {
             scenario.characterIds.Add(characterId);
+        }
     }
 
     public void RemoveCharacterFromScenarios(string characterId)
@@ -184,19 +187,15 @@ public class GameManager : MonoBehaviour
 
     public void TravelTo(string scenarioId)
     {
-        if (GetScenario(scenarioId) != null)
-        {
-            SetCurrentScenario(scenarioId);
-            ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, false, () =>
-            {
-                ScenarioData scenarioTo = GetScenario(scenarioId);
-                if (scenarioTo != null)
-                {
-                    UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
-                    UIManager.Instance.SetScenarioData(scenarioTo);
-                }
-            });
 
+        ScenarioData scenarioTo = GetScenario(scenarioId);
+        
+        if (scenarioTo != null)
+        {
+            CurrentScenarioId = scenarioId;
+            ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId);
+            UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+            UIManager.Instance.SetScenarioData(scenarioTo);
         }
     }
 
@@ -227,15 +226,13 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.SetPlayerImage(player.portrait);
         SetCurrentScenario(player.presentInScenario);
         _assignCameraToCanvas.Assign();
-        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId, true, () =>
+        ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId);
+        ScenarioData scenarioTo = GetScenario(CurrentScenarioId);
+        if (scenarioTo != null)
         {
-            ScenarioData scenarioTo = GetScenario(CurrentScenarioId);
-            if (scenarioTo != null)
-            {
-                UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
-                UIManager.Instance.SetScenarioData(scenarioTo);
-            }
-        });
+            UIManager.Instance.SetPlayerBackgroundImage(scenarioTo.backgroundImage);
+            UIManager.Instance.SetScenarioData(scenarioTo);
+        }
     }
 
     public void TriggerEvent(string eventId)

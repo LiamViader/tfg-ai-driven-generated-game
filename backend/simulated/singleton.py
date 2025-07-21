@@ -1,5 +1,3 @@
-# in: core/singleton.py
-
 from core_game.game_state.singleton import GameStateSingleton
 from versioning.layers.manager import GameStateVersionManager 
 from simulated.game_state import SimulatedGameState

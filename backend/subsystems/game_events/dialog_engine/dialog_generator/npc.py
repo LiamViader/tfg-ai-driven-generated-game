@@ -1,13 +1,16 @@
+from __future__ import annotations
 import os
-from typing import AsyncGenerator, Set, List, Optional, Dict, Any, Union
+
+from typing import AsyncGenerator, Set, List, Optional, Dict, Any, Union, TYPE_CHECKING
 from simulated.game_state import SimulatedGameState
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import NarratorInterventionEvent, PlayerNPCConversationEvent, NPCConversationEvent
 # Importarías tus clases y funciones reales aquí
 from subsystems.game_events.dialog_engine.prompts.context import get_formatted_context, character_to_dict, format_nested_dict
-from core_game.narrative.schemas import NarrativeBeatModel
-from core_game.map.domain import Scenario
-from core_game.character.domain import BaseCharacter, PlayerCharacter, NPCCharacter
-from core_game.game_event.schemas import NPCMessage
-from core_game.game_event.domain import NarratorInterventionEvent, PlayerNPCConversationEvent, NPCConversationEvent
+from core_game.character.domain import NPCCharacter
+
+
 # --- Configuración del Cliente de OpenAI ---
 # Es una buena práctica inicializar el cliente una sola vez.
 # La clave de la API se lee de la variable de entorno OPENAI_API_KEY.
@@ -19,7 +22,7 @@ client = openai.AsyncOpenAI()
 
 async def generate_npc_message_stream(
     speaker: NPCCharacter,
-    event: Union[NPCConversationEvent, PlayerNPCConversationEvent],
+    event: Union['NPCConversationEvent', 'PlayerNPCConversationEvent'],
     game_state: SimulatedGameState
 ) -> AsyncGenerator[str, None]:
     """

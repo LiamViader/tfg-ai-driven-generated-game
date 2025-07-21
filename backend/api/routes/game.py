@@ -43,7 +43,7 @@ def get_incremental_changes(from_checkpoint: str = Query(..., description="ID of
     
     return game_state.get_incremental_changes(from_checkpoint)
 
-@router.post("/game/action", response_model=ActionResponse)
+@router.post("/action", response_model=ActionResponse)
 def perform_game_action(action_request: ActionRequest):
     """
     Unified endpoint to process any player action.
@@ -82,7 +82,7 @@ def perform_game_action(action_request: ActionRequest):
             detail="Action type not found."
         )
     
-@router.get("/game/event/stream/{event_id}", tags=["Game Events"])
+@router.get("/event/stream/{event_id}", tags=["Game Events"])
 async def stream_narrative_event(event_id: str):
     """
     Initiates a streaming connection (Server-Sent Events) for a narrative event.

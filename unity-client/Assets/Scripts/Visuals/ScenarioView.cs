@@ -42,6 +42,10 @@ public class ScenarioView : MonoBehaviour
         {
             if (id == GameManager.Instance.PlayerCharacterId) continue;
 
+            if (_spawnedCharacters.ContainsKey(id))
+            { // if it was spawned already, next
+                continue;
+            }
             var character = GameManager.Instance.GetCharacter(id);
             if (character != null)
                 SpawnCharacter(character);
@@ -60,7 +64,8 @@ public class ScenarioView : MonoBehaviour
         }
 
         Vector2 spawnPoint = FindValidSpawnPoint();
-
+        Debug.Log("SPAWNED POINT");
+        Debug.Log(spawnPoint);
         GameObject characterGO = Instantiate(_characterPrefab, spawnPoint, Quaternion.identity, this.transform);
 
         float minY = _characterSpawnArea.bounds.min.y;
@@ -124,7 +129,7 @@ public class ScenarioView : MonoBehaviour
         for (int i = 0; i < maxTries; i++)
         {
             Vector2 candidate = GetRandomPointInBox(_characterSpawnArea);
-
+            Debug.Log(candidate);
             if (IsFarFromOthers(candidate))
                 return candidate;
 

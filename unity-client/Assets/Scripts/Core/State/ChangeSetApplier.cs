@@ -7,6 +7,7 @@ public class ChangeSetApplier
 {
     public void Apply(ChangesetResponse changeSet)
     {
+
         if (changeSet == null) return;
 
         if (!string.IsNullOrEmpty(changeSet.checkpoint_id))
@@ -26,11 +27,14 @@ public class ChangeSetApplier
 
         if (changes.characters != null)
         {
-            if (changes.characters.registry != null)
-                ApplyCharacters(changes.characters.registry);
-
             if (!string.IsNullOrEmpty(changes.characters.player_character_id))
                 GameManager.Instance.SetPlayerCharacterId(changes.characters.player_character_id);
+
+            if (changes.characters.registry != null)
+            {
+                ApplyCharacters(changes.characters.registry);
+            }
+                
         }
 
         if (changes.events != null && changes.events.character_interaction_options_delta != null)
@@ -257,6 +261,10 @@ public class ChangeSetApplier
                                 GameManager.Instance.RemoveCharacterFromScenarios(existing.id);
                                 existing.presentInScenario = ch.present_in_scenario;
                                 GameManager.Instance.AddCharacterToScenario(existing.presentInScenario, existing.id);
+                                if (GameManager.Instance.PlayerCharacterId != null && GameManager.Instance.PlayerCharacterId == ch.id)
+                                {
+                                    GameManager.Instance.TravelTo(ch.present_in_scenario);
+                                }
                             }
                         }
 

@@ -34,7 +34,7 @@ def get_incremental_changes(from_checkpoint_id: str):
     cp_manager = SimulatedGameStateSingleton.get_checkpoint_manager()
     
     try:
-        cp_manager.get_checkpoint(from_checkpoint_id)
+        from_cp=cp_manager.get_checkpoint(from_checkpoint_id)
     except RuntimeError:
         raise HTTPException(
             status_code=404,
@@ -55,5 +55,5 @@ def get_incremental_changes(from_checkpoint_id: str):
 
     return {
         "checkpoint_id": new_checkpoint_id,
-        "changes": changeset or {}
+        "changes": changeset.get("changes") if changeset else {}
     }

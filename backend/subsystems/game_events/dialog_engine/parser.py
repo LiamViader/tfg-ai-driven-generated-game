@@ -1,10 +1,16 @@
-# /subsystems/game_events/dialog_engine/services/stream_parser.py
+from __future__ import annotations
+
+
+from typing import AsyncGenerator,  TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import BaseGameEvent, NPCConversationEvent, PlayerNPCConversationEvent, NarratorInterventionEvent
 
 import json
-from typing import AsyncGenerator, Dict, Any, Union
+
 
 # --- Your actual project imports ---
-from core_game.game_event.domain import BaseGameEvent, NPCConversationEvent, PlayerNPCConversationEvent, NarratorInterventionEvent
+
 from core_game.character.domain import BaseCharacter
 # --- Import the new, specific message schemas ---
 from core_game.game_event.schemas import (
@@ -30,7 +36,7 @@ message_counter = 0
 async def parse_and_stream_messages(
     raw_llm_stream: AsyncGenerator[str, None],
     speaker: BaseCharacter,
-    event: Union[NPCConversationEvent, PlayerNPCConversationEvent, NarratorInterventionEvent]
+    event: Union['NPCConversationEvent', 'PlayerNPCConversationEvent', 'NarratorInterventionEvent']
 ) -> AsyncGenerator[str, None]:
     """
     Consumes a raw text stream from an LLM, parses it for special tags,

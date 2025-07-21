@@ -1,6 +1,13 @@
-from core_game.game_event.domain import NPCConversationEvent, PlayerNPCConversationEvent
+from __future__ import annotations
+import os
+
+from typing import AsyncGenerator, Set, List, Optional, Dict, Any, Union, TYPE_CHECKING, cast
 from simulated.game_state import SimulatedGameState
-from typing import Optional, List, Union, cast
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import PlayerNPCConversationEvent
+
+
 from core_game.game_event.activation_conditions.domain import ActivationCondition, CharacterInteractionOption
 from subsystems.game_events.dialog_engine.prompts.context import get_formatted_context
 from subsystems.game_events.dialog_engine.schemas.payloads import TurnDecision
@@ -97,7 +104,7 @@ def call_llm_with_structured_output(prompt: str, participants: List[str], max_re
     return None
 
 
-def decide_next_player_npc_speaker(event: PlayerNPCConversationEvent, event_triggered_by: Optional[ActivationCondition],  game_state: SimulatedGameState) -> Optional[Union[PlayerCharacter,NPCCharacter]]:
+def decide_next_player_npc_speaker(event: 'PlayerNPCConversationEvent', event_triggered_by: Optional[ActivationCondition],  game_state: SimulatedGameState) -> Optional[Union[PlayerCharacter,NPCCharacter]]:
     """
     Decide qué personaje debe hablar a continuación en un evento narrativo.
     Esta función es el núcleo del "Narrative Orchestrator".

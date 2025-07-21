@@ -145,12 +145,6 @@ public class CharacterContextualUI : MonoBehaviour
 
         RefreshMenuItems();
 
-        if (_currentMenuItems.Count == 0)
-        {
-            Debug.Log($"No hay opciones de interacción disponibles para el personaje {_characterId}.");
-            return;
-        }
-
         _onHideCallback = onHide;
 
         RectTransform rect = _canvas.GetComponent<RectTransform>();

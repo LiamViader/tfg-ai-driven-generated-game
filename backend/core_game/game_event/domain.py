@@ -23,18 +23,13 @@ from core_game.game_event.activation_conditions.domain import (
 from core_game.game_event.schemas import RunningEventInfo
 from core_game.game_event.activation_conditions.schemas import ActivationConditionModel, CharacterInteractionOptionModel
 
-from subsystems.game_events.dialog_engine.turn_manager.npc import decide_next_npc_speaker
-from subsystems.game_events.dialog_engine.turn_manager.player_npc import decide_next_player_npc_speaker
-from subsystems.game_events.dialog_engine.dialog_generator.choice_driven import generate_choice_driven_message_stream
-from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
-from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
-from subsystems.game_events.dialog_engine.dialog_generator.narrator import generate_narrator_message_stream
-from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
+
 from core_game.character.domain import PlayerCharacter, BaseCharacter
 from core_game.character.schemas import CharacterBaseModel, IdentityModel, PhysicalAttributesModel, PsychologicalAttributesModel, KnowledgeModel
 
 import json
 from typing import AsyncGenerator
+
 if TYPE_CHECKING:
     from simulated.game_state import SimulatedGameState
 
@@ -125,6 +120,9 @@ class NPCConversationEvent(BaseGameEvent):
         """
         Runs the flow of an NPC-to-NPC conversation.
         """
+        from subsystems.game_events.dialog_engine.turn_manager.npc import decide_next_npc_speaker
+        from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
+        from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
         MAX_RETRIES_PER_TURN = 3
         conversation_ended_naturally = False
 
@@ -208,6 +206,11 @@ class PlayerNPCConversationEvent(BaseGameEvent):
         """
         Runs the flow of a conversation involving the player, with retry logic.
         """
+
+        from subsystems.game_events.dialog_engine.turn_manager.player_npc import decide_next_player_npc_speaker
+        from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
+        from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
+        from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
         print(f"[Event: {self.id}] Running Player-NPC Conversation...")
         
         MAX_RETRIES_PER_TURN = 3
@@ -277,6 +280,9 @@ class PlayerNPCConversationEvent(BaseGameEvent):
         """
         Generates the player's intervention based on their choice, and then continues the event flow.
         """
+
+        from subsystems.game_events.dialog_engine.dialog_generator.choice_driven import generate_choice_driven_message_stream
+        from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
         print(f"[Event: {self.id}] Processing player choice: '{choice_label}'")
         
         player = game_state.read_only_characters.get_player()
@@ -340,6 +346,8 @@ class NarratorInterventionEvent(BaseGameEvent):
         """
         Runs the flow of a Narrator Intervention. This is a single turn event.
         """
+        from subsystems.game_events.dialog_engine.dialog_generator.narrator import generate_narrator_message_stream
+        from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
         print(f"[Event: {self.id}] Running Narrator Intervention...")
         
         MAX_RETRIES = 3

@@ -1,15 +1,18 @@
-from copy import deepcopy
-from typing import List, Optional, Set, Dict
+from __future__ import annotations
+import os
 
-from core_game.game_event.domain import (
-    GameEventsManager,
-    BaseGameEvent,
-    NPCConversationEvent,
-    PlayerNPCConversationEvent,
-    NarratorInterventionEvent,
-    CutsceneEvent,
-    CutsceneFrame,
-)
+from typing import Set, List, Optional, Dict, Any, Union, TYPE_CHECKING
+
+from core_game.game_event.domain import GameEventsManager
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import (
+        BaseGameEvent,
+    )   
+
+from copy import deepcopy
+
+
 from core_game.game_event.schemas import (
     GameEventModel
 )

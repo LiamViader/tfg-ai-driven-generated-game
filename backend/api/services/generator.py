@@ -18,7 +18,7 @@ def start_generation(prompt: str) -> GenerationStatusModel:
 
     def _run():
         try:
-            selected_pipeline = fast_test_events_pipeline()
+            selected_pipeline = map_then_characters_pipeline()
 
             # root tracker
             root_tracker = ProgressTracker(update_fn=update_global_progress)

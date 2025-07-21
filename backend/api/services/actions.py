@@ -10,6 +10,8 @@ from core_game.game_event.activation_conditions.domain import CharacterInteracti
 def check_and_start_event_triggers(game_state: SimulatedGameState) -> Optional[BaseGameEvent]:
     available_events = game_state.events.get_state().get_events_by_status("AVAILABLE")
 
+    last_event: Optional[BaseGameEvent] = None
+
     for event in available_events:
         for condition in event.activation_conditions:                    
             if condition.is_met(game_state):
@@ -34,7 +36,7 @@ def move_player(scenario_id: str, from_checkpoint_id: str) -> ActionResponse:
         player = game_state.read_only_characters.get_player()
         if not player:
             raise Exception("Player not found in game state.")
-        game_state.map.place_character(player,scenario_id)
+        game_state.place_character(player.id,scenario_id)
         changeset = get_incremental_changes(from_checkpoint_id)
 
         #check if any event triggered
@@ -62,6 +64,11 @@ def move_player(scenario_id: str, from_checkpoint_id: str) -> ActionResponse:
 
 def trigger_character_activation_condition(activation_condition_id: str, from_checkpoint_id: str) -> ActionResponse:
     try:
+        game_state = SimulatedGameStateSingleton.get_instance()
+
+        if game_state.events.get_state().is_any_event_running():
+            raise Exception("Cannot trigger a new event while another is already in progress.")
+        
         game_state = SimulatedGameStateSingleton.get_instance()
         changeset = get_incremental_changes(from_checkpoint_id)
 

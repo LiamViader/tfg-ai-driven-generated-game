@@ -65,7 +65,7 @@ public class TravelToHandler : MonoBehaviour
         {
             _isAnimating = true;
             HideAllExcept(button);
-            GameManager.Instance.TravelTo(connectedScenarioId);
+            ActionHandler.Instance.RequestMovePlayer(connectedScenarioId);
             DOVirtual.DelayedCall(delayAfterClick, () =>
             {
                 HideBlocker();
@@ -131,6 +131,7 @@ public class TravelToHandler : MonoBehaviour
             button.gameObject.SetActive(false);
 
         var currentScenario = GameManager.Instance.GetScenario(GameManager.Instance.CurrentScenarioId);
+        Debug.Log(currentScenario.id);
         if (currentScenario == null)
         {
             Debug.LogError("No se encontró el escenario actual.");

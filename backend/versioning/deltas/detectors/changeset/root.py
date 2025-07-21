@@ -27,15 +27,17 @@ class ChangesetDetector(ChangeDetector[ChangesetCheckpoint]):
         final 'changes' dictionary.
         """
         changes: Dict[str, Any] = {}
-
         # 1. Detectar cambios en el mapa
         map_changes = self.map_detector.detect(old_cp.map_snapshot, new_cp.map_snapshot)
         if map_changes:
+            
             changes["map"] = map_changes
 
+        print("Detecting changes in rooot")
         # 2. Detectar cambios en los personajes
         char_changes = self.characters_detector.detect(old_cp.characters_snapshot, new_cp.characters_snapshot)
         if char_changes:
+            print("Changes detected in characters")
             changes["characters"] = char_changes
 
         # 3. Detectar cambios en los eventos (opciones de interacción de personajes)

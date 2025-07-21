@@ -1,3 +1,12 @@
+from __future__ import annotations
+from typing import Set, List, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import (
+        BaseGameEvent
+    )
+
 
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
@@ -13,13 +22,9 @@ from core_game.character.schemas import (
 )
 from core_game.map.domain import Scenario
 from versioning.layers.manager import GameStateVersionManager
-from core_game.game_event.constants import EVENT_STATUS_LITERAL
 from core_game.game_event.activation_conditions.schemas import *
-from core_game.game_event.domain import (
-    BaseGameEvent
-)
+
 from core_game.game_event.schemas import *
-from core_game.exceptions import PlayerDeletionError
 import random
 
 class SimulatedGameState:
@@ -279,7 +284,7 @@ class SimulatedGameState:
         npc_ids: List[str],
         activation_conditions: List[ActivationConditionModel],
         source_beat_id: Optional[str]
-    ) -> BaseGameEvent:
+    ) -> 'BaseGameEvent':
         """
         Orchestrates the creation of an NPC conversation event.
 
@@ -323,7 +328,7 @@ class SimulatedGameState:
         npc_ids: List[str],
         activation_conditions: List[ActivationConditionModel],
         source_beat_id: Optional[str]
-    ) -> BaseGameEvent:
+    ) -> 'BaseGameEvent':
         """
         Orchestrates the creation of a Player-NPC conversation event.
         Performs all cross-component validation before creating the event.
@@ -365,7 +370,7 @@ class SimulatedGameState:
         source_beat_id: Optional[str],
         involved_character_ids: Optional[List[str]],
         involved_scenario_ids: Optional[List[str]]
-    ) -> BaseGameEvent:
+    ) -> 'BaseGameEvent':
         """
         Orchestrates the creation of a Cutscene event.
         Performs all cross-component validation before creating the event.
@@ -409,7 +414,7 @@ class SimulatedGameState:
         description: str,
         activation_conditions: List[ActivationConditionModel],
         source_beat_id: Optional[str]
-    ) -> BaseGameEvent:
+    ) -> 'BaseGameEvent':
         """
         Orchestrates the creation of a Narrator Intervention event.
         Performs all cross-component validation before creating the event.

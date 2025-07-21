@@ -19,7 +19,6 @@ def _process_scenarios(
     """
     ops = []
     old_ids, new_ids = set(old_items), set(new_items)
-    
     for id in sorted(new_ids - old_ids):
         model = new_items[id]
         

@@ -1,7 +1,11 @@
-# nueva-clase/game_state_version_manager.py
+from __future__ import annotations
+from typing import Set, List, TYPE_CHECKING
 
-from core_game.game_state.singleton import GameStateSingleton
-from core_game.game_state.domain import GameState
+
+if TYPE_CHECKING:
+    from core_game.game_state.singleton import GameStateSingleton
+    from core_game.game_state.domain import GameState
+
 from simulated.components.map import SimulatedMap
 from simulated.components.characters import SimulatedCharacters
 from simulated.components.game_session import SimulatedGameSession
@@ -9,7 +13,6 @@ from simulated.components.relationships import SimulatedRelationships
 from simulated.components.narrative import SimulatedNarrative
 from simulated.components.game_events import SimulatedGameEvents
 from versioning.layers.state import SimulationLayer # Importamos la clase SimulationLayer
-from typing import List, Optional
 
 class GameStateVersionManager:
     """
@@ -158,25 +161,31 @@ class GameStateVersionManager:
         return layer.modify_game_events() if for_writing else layer.game_events
 
     def _sync_map_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_map(self._base_map.get_state())
 
     def _sync_characters_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_characters(self._base_characters.get_state())
 
     def _sync_session_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_session(self._base_session.get_state())
 
     def _sync_relationships_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_relationships(self._base_relationships.get_state())
 
     def _sync_narrative_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_narrative_state(self._base_narrative.get_state())
 
     def _sync_game_events_to_domain(self):
+        from core_game.game_state.singleton import GameStateSingleton
         game_state = GameStateSingleton.get_instance()
         game_state.update_game_events(self._base_game_events.get_state())

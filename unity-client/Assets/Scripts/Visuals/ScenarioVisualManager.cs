@@ -29,148 +29,92 @@ public class ScenarioVisualManager : MonoBehaviour
         }
     }
 
-    public void SetFocusScenario(string newScenarioId, bool immediately, System.Action onScenarioChangeVisually = null)
+    public void SetFocusScenario(string newScenarioId, System.Action onScenarioChangeVisually = null)
     {
-
-        if (_currentScenarioId == newScenarioId)
-            return;
+        if (_currentScenarioId == newScenarioId) return;
 
         string prevScenarioId = _currentScenarioId;
         _currentScenarioId = newScenarioId;
 
+        // This logic should be called while the screen is faded out.
         RefreshVisualScenarios(newScenarioId);
-
         FocusCameraOn(newScenarioId);
-        if (immediately)
-        {
-            TransitionBetweenScenariosImmediately(prevScenarioId, newScenarioId, onScenarioChangeVisually);
-        }
-        else
-        {
-            StartCoroutine(TransitionBetweenScenarios2(prevScenarioId, newScenarioId, onScenarioChangeVisually));
-        }
-
-
-
+        TransitionBetweenScenariosImmediately(prevScenarioId, newScenarioId, onScenarioChangeVisually);
     }
 
     private void TransitionBetweenScenariosImmediately(string fromId, string toId, System.Action onScenarioChangeVisually = null)
     {
-
         if (fromId != null && _activeScenarios.TryGetValue(fromId, out var fromGoImmediate))
         {
+            fromGoImmediate.SetActive(false);
             SetCanvasGroupInteraction(fromGoImmediate, false, false);
-        }
-
-        foreach (var kvp in _activeScenarios)
-        {
-            bool isCurrent = kvp.Key == toId;
-            kvp.Value.SetActive(isCurrent);
         }
 
         if (_activeScenarios.TryGetValue(toId, out var toGoImmediate))
         {
+            toGoImmediate.SetActive(true);
+            var toFader = GetFader(toId);
+            if (toFader != null) toFader.SetAlpha(1f);
             SetCanvasGroupInteraction(toGoImmediate, true, true);
         }
 
-        onScenarioChangeVisually?.Invoke(); 
+        onScenarioChangeVisually?.Invoke();
     }
 
-    private IEnumerator TransitionBetweenScenarios1(string fromId, string toId, System.Action onScenarioChangeVisually = null)
+    /// </summary>
+    public IEnumerator FadeOutCurrentScenario(float duration = 0.5f, System.Action onScenarioFadeOut = null)
     {
-        float duration = 0.5f;
-
-        var fromFader = GetFader(fromId);
-        var toFader = GetFader(toId);
-
-        if (_activeScenarios.TryGetValue(fromId, out var fromGoStart))
+        if (string.IsNullOrEmpty(_currentScenarioId))
         {
-            SetCanvasGroupInteraction(fromGoStart, false, false);
+            yield break; // Exit if there's no current scenario
+        }
+        string current_scenario_id = _currentScenarioId;
+        var fromFader = GetFader(current_scenario_id);
+        if (fromFader != null)
+        {
+            Debug.Log($"Fading out scenario: {_currentScenarioId}");
+            if (_activeScenarios.TryGetValue(current_scenario_id, out var fromGoStart))
+            {
+                SetCanvasGroupInteraction(fromGoStart, false, false);
+                fromGoStart.gameObject.SetActive(true);
+            }
+            // We call and wait for the Fader's own coroutine to complete.
+            yield return fromFader.FadeTo(0f, duration);
+            if (_activeScenarios.TryGetValue(current_scenario_id, out var fromGoStarted))
+            {
+                fromGoStarted.gameObject.SetActive(false);
+            }
+
+            onScenarioFadeOut?.Invoke();
+        }
+    }
+
+    public IEnumerator FadeInScenario(string scenarioId, float duration = 0.5f, System.Action onScenarioFadeIn = null)
+    {
+        if (string.IsNullOrEmpty(scenarioId))
+        {
+            yield break;
         }
 
+        var toFader = GetFader(scenarioId);
         if (toFader != null)
+        {
+            if (_activeScenarios.TryGetValue(scenarioId, out var toGoEnd))
+            {
+                toGoEnd.gameObject.SetActive(true);
+            }
+            Debug.Log($"Fading in scenario: {scenarioId}");
+            // Make sure the object is active and transparent before fading in
+
             toFader.SetAlpha(0f);
-
-        if (_activeScenarios.TryGetValue(toId, out var toGo))
-            toGo.SetActive(true);
-
-        if (_activeScenarios.TryGetValue(fromId, out var fromGo))
-            fromGo.SetActive(true);
-
-        bool done = false;
-
-        if (fromFader != null)
-            fromFader.FadeTo(0f, duration);
-
-        if (toFader != null)
-            yield return toFader.FadeTo(1f, duration, () => done = true);
-
-        while (!done)
-            yield return null;
-
-        
-
-        foreach (var kvp in _activeScenarios)
-            kvp.Value.SetActive(kvp.Key == toId);
-
-
-        if (_activeScenarios.TryGetValue(toId, out var toGoEnd))
-        {
-            SetCanvasGroupInteraction(toGoEnd, true, true);
+            // We call and wait for the Fader's own coroutine to complete.
+            yield return toFader.FadeTo(1f, duration);
+            if (_activeScenarios.TryGetValue(scenarioId, out var toGoFinish))
+            {
+                SetCanvasGroupInteraction(toGoFinish, true, true);
+            }
+            onScenarioFadeIn?.Invoke();
         }
-
-        onScenarioChangeVisually?.Invoke();
-    }
-
-    private IEnumerator TransitionBetweenScenarios2(string fromId, string toId, System.Action onScenarioChangeVisually = null)
-    {
-        float duration = 1f;
-
-        var fromFader = GetFader(fromId);
-        var toFader = GetFader(toId);
-
-        if (_activeScenarios.TryGetValue(fromId, out var fromGoStart))
-        {
-            SetCanvasGroupInteraction(fromGoStart, false, false);
-        }
-
-
-        if (_activeScenarios.TryGetValue(toId, out var toGo))
-            toGo.SetActive(true);
-
-        if (_activeScenarios.TryGetValue(fromId, out var fromGo))
-            fromGo.SetActive(true);
-
-        if (toFader != null)
-            toFader.SetAlpha(0f); 
-
-
-        if (fromFader != null)
-        {
-            bool doneFrom = false;
-            yield return fromFader.FadeTo(0f, duration*2, () => doneFrom = true);
-            while (!doneFrom) yield return null;
-        }
-
-
-        if (_activeScenarios.TryGetValue(fromId, out var fromGo2))
-            fromGo2.SetActive(false);
-
-        onScenarioChangeVisually?.Invoke();
-
-
-        if (toFader != null)
-        {
-            bool doneTo = false;
-            yield return toFader.FadeTo(1f, duration, () => doneTo = true);
-            while (!doneTo) yield return null;
-        }
-
-        if (_activeScenarios.TryGetValue(toId, out var toGoEnd))
-        {
-            SetCanvasGroupInteraction(toGoEnd, true, true);
-        }
-
     }
 
 
@@ -194,6 +138,7 @@ public class ScenarioVisualManager : MonoBehaviour
 
         foreach (var id in toKeep)
         {
+
             if (!_activeScenarios.ContainsKey(id))
             {
                 var data = GameManager.Instance.GetScenario(id);
@@ -203,8 +148,24 @@ public class ScenarioVisualManager : MonoBehaviour
                 SetupScenarioVisual(go, data);
                 _activeScenarios[id] = go;
             }
+            else
+            {
+                var data = GameManager.Instance.GetScenario(id);
+                if (data == null) continue;
+                if (_activeScenarios.TryGetValue(id, out var go2)){
+                    go2.SetActive(true);
+                    UpdateScenarioVisual(go2, data);
+                }
+                
+
+            }
 
             _activeScenarios[id].SetActive(false);
+        }
+
+        if (_currentScenarioId!=null && _activeScenarios.TryGetValue(_currentScenarioId, out var scenarioCurrent))
+        {
+            scenarioCurrent.SetActive(true);
         }
 
         var toRemove = new List<string>();
@@ -234,6 +195,21 @@ public class ScenarioVisualManager : MonoBehaviour
         cg.interactable = false;
         cg.blocksRaycasts = false;
     }
+
+    private void UpdateScenarioVisual(GameObject go, ScenarioData data)
+    {
+        var view = go.GetComponent<ScenarioView>() ?? go.AddComponent<ScenarioView>();
+        view.Initialize(data);
+        view.SpawnCharacters(data.characterIds);
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = go.AddComponent<CanvasGroup>();
+        }
+        cg.interactable = false;
+        cg.blocksRaycasts = false;
+    }
+
     private ScenarioFader GetFader(string scenarioId)
     {
         if (scenarioId == null) return null;

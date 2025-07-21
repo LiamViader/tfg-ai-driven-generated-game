@@ -1,13 +1,14 @@
-# /subsystems/game_events/dialog_engine/services/player_driven_generator.py
+from __future__ import annotations
 
-import os
-from typing import AsyncGenerator, Set, List, Optional, Dict, Any, Union
+
+from typing import AsyncGenerator, Set, List, Optional, Dict, Any, Union, TYPE_CHECKING
 from simulated.game_state import SimulatedGameState
-from core_game.narrative.schemas import NarrativeBeatModel
-from core_game.map.domain import Scenario
+
+if TYPE_CHECKING:
+    from core_game.game_event.domain import PlayerNPCConversationEvent
+from simulated.game_state import SimulatedGameState
+
 from core_game.character.domain import BaseCharacter, PlayerCharacter
-from core_game.game_event.schemas import NPCMessage
-from core_game.game_event.domain import PlayerNPCConversationEvent
 from subsystems.game_events.dialog_engine.prompts.context import get_formatted_context, character_to_dict, format_nested_dict
 
 # --- OpenAI Client Setup ---
@@ -18,7 +19,7 @@ client = openai.AsyncOpenAI()
 async def generate_choice_driven_message_stream(
     player_choice: str,
     speaker: PlayerCharacter,
-    event: PlayerNPCConversationEvent,
+    event: 'PlayerNPCConversationEvent',
     game_state: SimulatedGameState
 ) -> AsyncGenerator[str, None]:
     """
