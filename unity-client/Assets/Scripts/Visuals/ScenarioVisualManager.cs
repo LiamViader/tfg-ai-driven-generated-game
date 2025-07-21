@@ -154,7 +154,6 @@ public class ScenarioVisualManager : MonoBehaviour
                 if (data == null) continue;
                 if (_activeScenarios.TryGetValue(id, out var go2)){
                     go2.SetActive(true);
-                    UpdateScenarioVisual(go2, data);
                 }
                 
 
@@ -183,20 +182,6 @@ public class ScenarioVisualManager : MonoBehaviour
     }
 
     private void SetupScenarioVisual(GameObject go, ScenarioData data)
-    {
-        var view = go.GetComponent<ScenarioView>() ?? go.AddComponent<ScenarioView>();
-        view.Initialize(data);
-        view.SpawnCharacters(data.characterIds);
-        var cg = go.GetComponent<CanvasGroup>();
-        if (cg == null)
-        {
-            cg = go.AddComponent<CanvasGroup>();
-        }
-        cg.interactable = false;
-        cg.blocksRaycasts = false;
-    }
-
-    private void UpdateScenarioVisual(GameObject go, ScenarioData data)
     {
         var view = go.GetComponent<ScenarioView>() ?? go.AddComponent<ScenarioView>();
         view.Initialize(data);
