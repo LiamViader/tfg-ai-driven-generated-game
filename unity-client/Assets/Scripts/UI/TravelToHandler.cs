@@ -12,9 +12,9 @@ public class TravelToHandler : MonoBehaviour
     [SerializeField] private Button _westButton;
     [SerializeField] private float animationDuration = 0.3f;
     [SerializeField] private float fadeOnlyHideOffset = 40f;
-    [SerializeField] private float delayAfterClick = 0.4f;
+    [SerializeField] private float delayAfterClick = 0.1f;
     [SerializeField] private float hideDurationNormal = 0.2f;
-    [SerializeField] private float hideDurationSelected = 1.5f;
+    [SerializeField] private float hideDurationSelected = 0.4f;
 
     [SerializeField] private Button _showOptionsButton;
     [SerializeField] private Button _backgroundBlocker;

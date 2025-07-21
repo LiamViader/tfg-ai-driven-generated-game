@@ -62,7 +62,7 @@ public class ScenarioVisualManager : MonoBehaviour
     }
 
     /// </summary>
-    public IEnumerator FadeOutCurrentScenario(float duration = 0.5f, System.Action onScenarioFadeOut = null)
+    public IEnumerator FadeOutCurrentScenario(float duration = 0.8f, System.Action onScenarioFadeOut = null)
     {
         if (string.IsNullOrEmpty(_currentScenarioId))
         {
@@ -89,7 +89,7 @@ public class ScenarioVisualManager : MonoBehaviour
         }
     }
 
-    public IEnumerator FadeInScenario(string scenarioId, float duration = 0.5f, System.Action onScenarioFadeIn = null)
+    public IEnumerator FadeInScenario(string scenarioId, float duration = 0.8f, System.Action onScenarioFadeIn = null)
     {
         if (string.IsNullOrEmpty(scenarioId))
         {
