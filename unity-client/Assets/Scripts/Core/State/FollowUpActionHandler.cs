@@ -60,6 +60,6 @@ public class FollowUpActionHandler : MonoBehaviour
             Debug.Log("InvolvedCharacterIds: " + string.Join(", ", payload.InvolvedCharacterIds));
         UIManager.Instance.CloseAllContextualUI();
         NarrativeEventManager.Instance.SetUpNarrativeEvent(eventId, payload.InvolvedCharacterIds);
-
+        NarrativeStreamerAPI.Instance.StartStream(eventId);
     }
 }

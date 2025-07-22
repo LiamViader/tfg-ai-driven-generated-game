@@ -62,11 +62,10 @@ def fast_test_events_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Create Game Events (Character Interactions)",
                 agent_name=AgentName.EVENTS,
-                objective_prompt="Generate 4 game events. Each event must be activatable by interacting with at least one of the NPCs. Ensure each NPC has at least one unique interaction option. Make the events diverse. Diferent types of events",
+                objective_prompt="Generate 2 game events. Each event must be activatable by interacting with at least one of the NPCs. Ensure each NPC has at least one unique interaction option. Make the events diverse. Diferent types of events",
                 rules_and_constraints=[
-                    "Create exactly 4 game events.",
+                    "Create exactly 2 game events.",
                     "Each event must have at least one 'character_interaction' activation condition.",
-                    "Ensure the 'menu_label' for each interaction option is concise and inviting."
                 ],
                 other_guidelines="Think about how these interactions would naturally fit the NPCs' personalities and the scenario's setting.",
                 max_executor_iterations=7, # More iterations for event creation

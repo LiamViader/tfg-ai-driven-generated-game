@@ -11,6 +11,8 @@ public class TalkingCharacter : MonoBehaviour
 
     private CharacterData _characterData;
 
+    public CharacterData CharacterData { get; private set; }
+
     void Start()
     {
         
@@ -50,6 +52,7 @@ public class TalkingCharacter : MonoBehaviour
             fitter.aspectRatio = aspect;
         }
         Debug.Log("IMAGE SET");
+        CharacterData = _characterData;
     }
 
     public void SetFlip(bool flip)

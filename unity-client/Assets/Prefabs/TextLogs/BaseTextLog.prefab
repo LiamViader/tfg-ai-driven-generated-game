@@ -69,6 +69,7 @@ MonoBehaviour:
   _characterNameTextRight: {fileID: 8929450988930095284}
   _characterNameLeft: {fileID: 5699362098333342980}
   _characterNameRight: {fileID: 473898037435909597}
+  _textlogText: {fileID: 3238776170744128659}
 --- !u!1 &2269494853858417207
 GameObject:
   m_ObjectHideFlags: 0

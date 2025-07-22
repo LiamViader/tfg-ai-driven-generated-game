@@ -171,18 +171,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1962559834737348348, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_Camera
-      value: 
-      objectReference: {fileID: 519420031}
-    - target: {fileID: 3852113046378224196, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: -1953.6439
-      objectReference: {fileID: 0}
-    - target: {fileID: 6421478920600659353, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_Camera
-      value: 
-      objectReference: {fileID: 519420031}
     - target: {fileID: 6879788113530328739, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
@@ -755,7 +743,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 33.05
+  m_fontSize: 30.6
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -891,7 +879,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30.25
+  m_fontSize: 28
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

@@ -39,7 +39,9 @@ async def generate_narrator_message_stream(
     You must generate a turn that is consistent with the current context and the conversation history all provided in the user prompt context.
 
     Ensure the intervention do not deviate much from 'Dialog Description' provided in the user prompt's context. This description can contain the topic, goal, and tone for the conversation. Do not deviate from this brief. All dialogue and actions must serve the purpose outlined in the description while also being creative, interesting, evoking and consistent with the character's personality and the conversation history.
-    Ensure the intervention is consistent with the conversation history.
+    Ensure the intervention is consistent with the conversation history. 
+
+    IMPORTANT. You must naturally guide the conversation towards a conclusion as the message history grows. While conversations should not exceed 20-25 messages, they can, and often should, conclude sooner if the narrative purpose has been fulfilled. The number of messages in the conversation history should serve as a dynamic signal: the closer the conversation gets to the 20-25 message limit, the more actively you should steer it towards a natural resolution. If the conversation history exceeds the limit of 25 messages, then you must force it to an end even if it is less natural.
 
     Your response MUST use the `[narrator]` tag for all messages.
     It is crucial that your entire generated turn MUST end with the `[end]` tag.

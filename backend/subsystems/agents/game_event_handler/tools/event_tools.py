@@ -615,7 +615,7 @@ def validate_simulated_game_events(
 EXECUTORTOOLS = [
     create_npc_conversation_event,
     create_player_npc_conversation_event,
-    create_cutscene_event,
+    #create_cutscene_event,
     create_narrator_intervention_event,
     link_activation_conditions_to_event,
     delete_event,

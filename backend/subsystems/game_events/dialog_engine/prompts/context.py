@@ -111,7 +111,7 @@ def get_formatted_context(event_title: str, event_description: str, source_beat:
         conversation_history_str_list.append("This is the first turn of the conversation.")
     else:
         conversation_history_str_list.append("The last few lines of the conversation were:")
-        for msg in messages[-30:]:
+        for msg in messages[-35:]:
             speaker_name = f"{character_name_map.get(msg.actor_id, "")}  ({msg.actor_id})"
             
             # Use isinstance for robust type checking

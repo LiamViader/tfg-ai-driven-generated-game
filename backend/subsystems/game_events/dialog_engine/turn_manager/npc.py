@@ -46,6 +46,8 @@ def call_llm_with_structured_output(prompt: str, participants: List[str], max_re
     
     To end the conversation, set "next_speaker_id" to null. Only do this if the conversation has reached a logical conclusion, meaning the purpose of the event (as described in its description) has been fulfilled and the last message provides a sense of closure. Do not end the conversation prematurely.
 
+    You should be more likely to end the conversation as the conversation history gets bigger. Limit of messages should be 30. But dont wait for 30, do it when it ends naturally. Try to not exceed the limit.
+
     You MUST respond with a JSON object containing two keys:
     1. "next_speaker_id": A string containing the exact ID of the character you choose, or null to end the conversation.
     2. "reasoning": A brief explanation for your choice.

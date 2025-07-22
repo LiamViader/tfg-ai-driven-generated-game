@@ -48,6 +48,8 @@ def call_llm_with_structured_output(prompt: str, participants: List[str], max_re
     
     To end the conversation, set "next_speaker_id" to null. Only do this if the conversation has reached a logical conclusion, meaning the purpose of the event (as described in its description) has been fulfilled and the last message provides a sense of closure. Do not end the conversation prematurely.
 
+    You should be more likely to end the conversation as the conversation history gets bigger. Limit of messages should be 30. But dont wait for 30, do it when it ends naturally. Try to not exceed the limit.
+
     You MUST respond with a JSON object containing two keys:
     1. "next_speaker_id": A string containing the exact ID of the character you choose, or null to end the conversation.
     2. "reasoning": A brief explanation for your choice.
@@ -116,11 +118,13 @@ def decide_next_player_npc_speaker(event: 'PlayerNPCConversationEvent', event_tr
     Returns:
         El ID del personaje que debe hablar a continuación, o None si la conversación debe terminar.
     """
-
+    from core_game.game_event.domain import PlayerNPCConversationEvent
     if event_triggered_by and isinstance(event_triggered_by, CharacterInteractionOption) and not event.messages: # primer missatge, i ha sigut triggereat per interactuar amb un npc, te sentit que parli el npc
         character = game_state.read_only_characters.get_character(event_triggered_by.character_id)
         if isinstance(character, NPCCharacter):
             return cast(NPCCharacter, character)
+        elif isinstance(character, PlayerCharacter):
+            return cast(PlayerCharacter, character)
         return None
 
     # sino que decideixi el llm. mes endavant es podria fer un sistema per regles o random o el que sigui per disminuir latència
@@ -132,7 +136,7 @@ def decide_next_player_npc_speaker(event: 'PlayerNPCConversationEvent', event_tr
     
     if isinstance(event, PlayerNPCConversationEvent):
         character_ids.add(player.id)
-
+    
     event_title = event.title
     event_description = event.description
     if event.source_beat_id:
@@ -180,6 +184,8 @@ def decide_next_player_npc_speaker(event: 'PlayerNPCConversationEvent', event_tr
     
     if isinstance(next_speaker_character, NPCCharacter):
         return cast(NPCCharacter, next_speaker_character)
+    elif isinstance(next_speaker_character, PlayerCharacter):
+        return cast(PlayerCharacter, next_speaker_character)
     
     return None
 

@@ -49,6 +49,8 @@ async def generate_npc_message_stream(
     Ensure the conversation does not deviate much from the 'Dialog Description' provided in the user prompt's context. This description can contain the topic, goal, and tone for the conversation. All dialogue and actions must serve the purpose outlined in the description while also being creative, interesting, evoking and consistent with the character's personality and the conversation history.
     Ensure the intervention is consistent with the conversation history.
 
+        IMPORTANT. You must naturally guide the conversation towards a conclusion as the message history grows. While conversations should not exceed 20-25 messages, they can, and often should, conclude sooner if the narrative purpose has been fulfilled. The number of messages in the conversation history should serve as a dynamic signal: the closer the conversation gets to the 20-25 message limit, the more actively you should steer it towards a natural resolution. If the conversation history exceeds the limit of 25 messages, then you must force it to an end even if it is less natural.
+
     Your goal is to deliver this character's turn, not to end the entire conversation. Your intervention should feel like one part of a larger dialogue. Conclude your character's immediate thoughts or actions, but leave the overall conversation open for others to respond to, unless your turn naturally provides a definitive conclusion to the event's goal.
 
     Your response MUST use the following special tags:

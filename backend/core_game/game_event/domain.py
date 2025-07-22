@@ -206,7 +206,7 @@ class PlayerNPCConversationEvent(BaseGameEvent):
         """
         Runs the flow of a conversation involving the player, with retry logic.
         """
-
+    
         from subsystems.game_events.dialog_engine.turn_manager.player_npc import decide_next_player_npc_speaker
         from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
         from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
