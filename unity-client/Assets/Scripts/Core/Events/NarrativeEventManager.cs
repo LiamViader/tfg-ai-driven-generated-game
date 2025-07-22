@@ -9,9 +9,18 @@ public class NarrativeEventManager : MonoBehaviour
     [SerializeField] private Image _opacityImage;
     [SerializeField] private Canvas _canvas;
 
-    [SerializeField] private RectTransform _leftCharactersAnchor;
-    [SerializeField] private RectTransform _rightCharactersAnchor;
+    [SerializeField] private RectTransform _leftActiveCharacterAnchor;
+    [SerializeField] private RectTransform _rightActiveCharacterAnchor;
+    [SerializeField] private RectTransform _leftInactiveCharacterAnchor;
+    [SerializeField] private RectTransform _rightInactiveCharacterAnchor;
+    [SerializeField] private RectTransform _leftBackgroundCharacterAnchor;
+    [SerializeField] private RectTransform _rightBackgroundCharacterAnchor;
     [SerializeField] private GameObject _talkingCharacterPrefab;
+
+    private Dictionary<string, TalkingCharacter> _talkingCharacters;
+    private Dictionary<string, TalkingCharacter> _leftTalkingCharacters;
+    private Dictionary<string, TalkingCharacter> _rightTalkingCharacters;
+
     public static NarrativeEventManager Instance { get; private set; }
 
 
@@ -47,6 +56,19 @@ public class NarrativeEventManager : MonoBehaviour
     {
         _opacityImage.gameObject.SetActive(true);
         StartCoroutine(FadeInOpacityBackground());
+        SetUpTalkingCharacters(characterIds);
+    }
+
+    private void SetUpTalkingCharacters(List<string> characterIds)
+    {
+        bool nextPlacingRight = true;
+        foreach (string characterId in characterIds)
+        {
+            if (GameManager.Instance.PlayerCharacterId == characterId)
+            {
+
+            }
+        }
     }
 
     private IEnumerator FadeInOpacityBackground(float duration = 1f)
