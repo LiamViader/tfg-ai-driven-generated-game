@@ -10,6 +10,13 @@ public class NarrativeEventManager : MonoBehaviour
     [SerializeField] private Image _opacityImage;
     [SerializeField] private Canvas _canvas;
 
+    [SerializeField] private RectTransform _leftActiveParent;
+    [SerializeField] private RectTransform _rightActiveParent;
+    [SerializeField] private RectTransform _leftInactiveParent;
+    [SerializeField] private RectTransform _rightInactiveParent;
+    [SerializeField] private RectTransform _leftBackgroundParent;
+    [SerializeField] private RectTransform _rightBackgroundParent;
+
     [SerializeField] private RectTransform _leftActiveCharacterAnchor;
     [SerializeField] private RectTransform _rightActiveCharacterAnchor;
     [SerializeField] private RectTransform _leftInactiveCharacterAnchor;
@@ -78,7 +85,7 @@ public class NarrativeEventManager : MonoBehaviour
         // 1. Si el jugador está en la lista, colócalo primero a la izquierda
         if (characterIds.Contains(playerId))
         {
-            GameObject playerGO = Instantiate(_talkingCharacterPrefab, _canvas.transform);
+            GameObject playerGO = Instantiate(_talkingCharacterPrefab, _leftInactiveParent);
             TalkingCharacter playerCharacter = playerGO.GetComponent<TalkingCharacter>();
             CharacterData characterData = GameManager.Instance.GetCharacter(playerId);
             playerCharacter.Initialize(characterData);
@@ -105,15 +112,15 @@ public class NarrativeEventManager : MonoBehaviour
             if (characterId == playerId)
                 continue;
 
-            GameObject characterGO = Instantiate(_talkingCharacterPrefab, _canvas.transform);
-            TalkingCharacter talkingCharacter = characterGO.GetComponent<TalkingCharacter>();
-            CharacterData characterData = GameManager.Instance.GetCharacter(characterId);
-            talkingCharacter.Initialize(characterData);
-
-            _talkingCharacters[characterId] = talkingCharacter;
-
             if (nextPlacingRight)
             {
+                GameObject characterGO = rightUsed ? Instantiate(_talkingCharacterPrefab, _rightBackgroundParent) : Instantiate(_talkingCharacterPrefab, _rightInactiveParent);
+                TalkingCharacter talkingCharacter = characterGO.GetComponent<TalkingCharacter>();
+                CharacterData characterData = GameManager.Instance.GetCharacter(characterId);
+                talkingCharacter.Initialize(characterData);
+
+                _talkingCharacters[characterId] = talkingCharacter;
+
                 RectTransform anchor = rightUsed ? _rightBackgroundCharacterAnchor : _rightInactiveCharacterAnchor;
 
                 InitialAnimateCharacterToAnchor(
@@ -130,6 +137,13 @@ public class NarrativeEventManager : MonoBehaviour
             }
             else
             {
+                GameObject characterGO = leftUsed ? Instantiate(_talkingCharacterPrefab, _leftBackgroundParent) : Instantiate(_talkingCharacterPrefab, _leftInactiveParent);
+                TalkingCharacter talkingCharacter = characterGO.GetComponent<TalkingCharacter>();
+                CharacterData characterData = GameManager.Instance.GetCharacter(characterId);
+                talkingCharacter.Initialize(characterData);
+
+                _talkingCharacters[characterId] = talkingCharacter;
+                
                 RectTransform anchor = leftUsed ? _leftBackgroundCharacterAnchor : _leftInactiveCharacterAnchor;
 
                 InitialAnimateCharacterToAnchor(
@@ -154,7 +168,6 @@ public class NarrativeEventManager : MonoBehaviour
     private void InitialAnimateCharacterToAnchor(GameObject characterGO, RectTransform targetAnchor, bool fromRight, float duration = 1f)
     {
         RectTransform rect = characterGO.GetComponent<RectTransform>();
-        rect.SetParent(_canvas.transform, false); // libre movimiento temporal
 
         Vector2 screenStartPos = fromRight
             ? new Vector2(Screen.width + 300f, Screen.height / 2f)
@@ -183,9 +196,7 @@ public class NarrativeEventManager : MonoBehaviour
         // Al terminar, reparentamos y limpiamos
         seq.OnComplete(() =>
         {
-            rect.SetParent(targetAnchor, false);
-            rect.localPosition = Vector3.zero;
-            rect.localScale = Vector3.one;
+
         });
     }
 
