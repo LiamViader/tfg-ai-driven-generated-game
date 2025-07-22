@@ -28,9 +28,14 @@ public class NarrativeEventManager : MonoBehaviour
     [SerializeField] private Color _inactiveColor;
     [SerializeField] private Color _onBackgroundColor;
 
+    [SerializeField] private RectTransform _textlogParent;
+    [SerializeField] private GameObject _textlogThoughtPrefab;
+
     private Dictionary<string, TalkingCharacter> _talkingCharacters;
     private Dictionary<string, TalkingCharacter> _leftTalkingCharacters;
     private Dictionary<string, TalkingCharacter> _rightTalkingCharacters;
+
+    private TextlogManager _currentTextLog;
 
     public static NarrativeEventManager Instance { get; private set; }
 
@@ -68,6 +73,21 @@ public class NarrativeEventManager : MonoBehaviour
         _opacityImage.gameObject.SetActive(true);
         StartCoroutine(FadeInOpacityBackground());
         SetUpTalkingCharacters(characterIds);
+        SetUpInitialTextLog();
+    }
+
+    private void SetUpInitialTextLog()
+    {
+        GameObject textLogGO = Instantiate(_textlogThoughtPrefab, _textlogParent);
+        RectTransform rect = textLogGO.GetComponent<RectTransform>();
+
+        rect.localScale = new Vector3(0f, 1f, 1f);
+
+
+        rect.DOScaleX(1f, 2f).SetEase(Ease.OutBack, 0.5f);
+
+
+        _currentTextLog = textLogGO.GetComponent<TextlogManager>();
     }
 
     private void SetUpTalkingCharacters(List<string> characterIds)
@@ -216,7 +236,7 @@ public class NarrativeEventManager : MonoBehaviour
     {
         float time = 0f;
         float startAlpha = 0f;
-        float targetAlpha = 0.8f;
+        float targetAlpha = 0.9f;
 
         while (time < duration)
         {
