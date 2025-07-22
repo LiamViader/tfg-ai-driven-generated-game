@@ -2,7 +2,8 @@
 // It's recommended to have Newtonsoft.Json for Unity installed for robust JSON handling.
 // You can get it from the Unity Asset Store or via the Package Manager.
 using Newtonsoft.Json;
-
+using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace Api.Models
 {
@@ -53,6 +54,9 @@ namespace Api.Models
     {
         [JsonProperty("event_id")]
         public string EventId;
+
+        [JsonProperty("involved_character_ids")]
+        public List<string> InvolvedCharacterIds;
     }
 
     [System.Serializable]

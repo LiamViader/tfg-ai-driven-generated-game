@@ -60,6 +60,14 @@ public class UIManager : MonoBehaviour
         _activeCharacterContextualUIs.Remove(characterId);
     }
 
+    public void CloseAllContextualUI()
+    {
+        foreach (CharacterContextualUI context in _activeCharacterContextualUIs.Values)
+        {
+            context.HideContextualMenu();
+        }
+    }
+
     public void SetPlayerData(CharacterData player)
     {
         if (player != null)

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from enum import Enum
 
 class FollowUpActionType(str, Enum):
@@ -9,6 +9,7 @@ class FollowUpActionType(str, Enum):
 
 class StartNarrativeStreamPayload(BaseModel):
     event_id: str
+    involved_character_ids: List[str]
 
 class FollowUpAction(BaseModel):
     """Instruction from the backend to the client on what to do next."""

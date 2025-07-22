@@ -3,7 +3,6 @@ using UnityEngine;
 using Api.Models;
 using System.Collections;
 using Newtonsoft.Json;
-using UnityEditor.PackageManager;
 
 /// <summary>
 /// A central MonoBehaviour to handle player actions and API communication.
@@ -136,10 +135,10 @@ public class ActionHandler : MonoBehaviour
             applier.Apply(finalResponse.Changeset);
 
 
-            
+          
+            onSuccess?.Invoke();
             FollowUpActionHandler.Instance.ProcessFollowUpAction(finalResponse.FollowUpAction);
 
-            onSuccess?.Invoke();
         }
         else
         {

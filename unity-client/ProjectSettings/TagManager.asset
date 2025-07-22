@@ -53,6 +53,9 @@ TagManager:
   - name: Characters
     uniqueID: 948528569
     locked: 0
+  - name: NarrativeEvent
+    uniqueID: 2347108003
+    locked: 0
   - name: Overlay
     uniqueID: 3873675507
     locked: 0

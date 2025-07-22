@@ -78,11 +78,8 @@ class CharacterDetector(ChangeDetector[CharacterBaseModel]):
 
         # 2. Process simple, top-level fields
         for detector in self.top_level_field_detectors:
-            print("trying to detect in fields of character")
-            print("old:", old.present_in_scenario, "new:", new.present_in_scenario)
             field_changes = detector.detect(old, new)
             if field_changes:
-                print("change detected in field", detector.field_name)
                 full_changes.update(field_changes)
         
         # 3. Process NPC-specific attributes ONLY if the character is an NPC

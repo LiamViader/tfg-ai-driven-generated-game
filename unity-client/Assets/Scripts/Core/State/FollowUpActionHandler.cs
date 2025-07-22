@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using Api.Models;
+using System.Collections.Generic;
 public class FollowUpActionHandler : MonoBehaviour
 {
     public static FollowUpActionHandler Instance { get; private set; }
@@ -42,6 +43,7 @@ public class FollowUpActionHandler : MonoBehaviour
 
     private void HandleStartNarrativeStream(StartNarrativeStreamPayload payload)
     {
+        if (payload == null) Debug.Log("NULL PAYLOAD");
         string eventId = payload?.EventId;
         if (string.IsNullOrEmpty(eventId))
         {
@@ -50,10 +52,14 @@ public class FollowUpActionHandler : MonoBehaviour
         }
 
         Debug.Log($"[FollowUpActionHandler] Instructed to start narrative stream for event: '{eventId}'");
+        if (payload.InvolvedCharacterIds == null)
+            Debug.Log("InvolvedCharacterIds is NULL");
+        else if (payload.InvolvedCharacterIds.Count == 0)
+            Debug.Log("InvolvedCharacterIds is EMPTY");
+        else
+            Debug.Log("InvolvedCharacterIds: " + string.Join(", ", payload.InvolvedCharacterIds));
+        UIManager.Instance.CloseAllContextualUI();
+        NarrativeEventManager.Instance.SetUpNarrativeEvent(eventId, payload.InvolvedCharacterIds);
 
-        // Here you would call your NarrativeStreamer client to begin the event.
-        // This is the next component you will need to build.
-        // For example:
-        // narrativeStreamer.StartEventStream(eventId);
     }
 }
