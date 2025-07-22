@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2691517328909084355, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3441848154365898916, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
@@ -179,8 +183,32 @@ PrefabInstance:
       propertyPath: m_fontSize
       value: 24
       objectReference: {fileID: 0}
+    - target: {fileID: 4771843603287309658, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4771843603287309658, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6186899730581597881, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -92.149994
+      objectReference: {fileID: 0}
+    - target: {fileID: 6421478920600659353, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 519420031}
     - target: {fileID: 6879788113530328739, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6918497299221317246, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7408246197291336228, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -749,7 +777,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 31.5
+  m_fontSize: 33.05
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -885,7 +913,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28.8
+  m_fontSize: 30.25
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
