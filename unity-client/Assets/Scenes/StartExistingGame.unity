@@ -171,29 +171,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2691517328909084355, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3441848154365898916, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3832318779504078532, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_fontSize
-      value: 24
-      objectReference: {fileID: 0}
-    - target: {fileID: 4771843603287309658, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4771843603287309658, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6186899730581597881, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+    - target: {fileID: 1962559834737348348, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+      propertyPath: m_Camera
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 3852113046378224196, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -92.149994
+      value: -1953.6439
       objectReference: {fileID: 0}
     - target: {fileID: 6421478920600659353, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_Camera
@@ -201,14 +185,6 @@ PrefabInstance:
       objectReference: {fileID: 519420031}
     - target: {fileID: 6879788113530328739, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6918497299221317246, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7408246197291336228, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
-      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -677,7 +653,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3be0a814d8ab9484a9473e4ad5e34418, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assignCameraToCanvas: {fileID: 560996577}
+  _assignCameraToCanvas:
+  - {fileID: 560996577}
+  - {fileID: 1965526438}
 --- !u!4 &1196485892
 Transform:
   m_ObjectHideFlags: 0
@@ -1202,6 +1180,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resumeButton: {fileID: 1419958266}
+--- !u!114 &1965526438 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7551636557699271339, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+  m_PrefabInstance: {fileID: 345955958}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8097731cae9b6f04d95d6769815fcd48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2101453865
 GameObject:
   m_ObjectHideFlags: 0

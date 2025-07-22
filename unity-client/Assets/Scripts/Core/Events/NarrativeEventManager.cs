@@ -156,12 +156,20 @@ public class NarrativeEventManager : MonoBehaviour
         RectTransform rect = characterGO.GetComponent<RectTransform>();
         rect.SetParent(_canvas.transform, false); // libre movimiento temporal
 
-        // Posición inicial fuera de pantalla
-        Vector2 startPos = fromRight
-            ? new Vector2(Screen.width + 300f, targetAnchor.position.y)
-            : new Vector2(-300f, targetAnchor.position.y);
+        Vector2 screenStartPos = fromRight
+            ? new Vector2(Screen.width + 300f, Screen.height / 2f)
+            : new Vector2(-300f, Screen.height / 2f);
 
-        rect.position = startPos;
+        // Convertimos esa posición de pantalla a posición mundial para el canvas
+        Vector3 worldStartPos;
+        RectTransformUtility.ScreenPointToWorldPointInRectangle(
+            _canvas.GetComponent<RectTransform>(),
+            screenStartPos,
+            _canvas.worldCamera,
+            out worldStartPos
+        );
+
+        rect.position = worldStartPos;
         rect.localScale = Vector3.one * 0.6f; // arranca más pequeño
 
         // Creamos secuencia DOTween

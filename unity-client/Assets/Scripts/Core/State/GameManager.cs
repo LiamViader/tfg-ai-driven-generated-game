@@ -20,7 +20,7 @@ public class GameManager : MonoBehaviour
     private string _lastCheckpointId;
     public string LastCheckpointId => _lastCheckpointId;
 
-    [SerializeField] private AssignCameraToCanvas _assignCameraToCanvas;
+    [SerializeField] private List<AssignCameraToCanvas> _assignCameraToCanvas;
 
     public void SetCheckpointId(string checkpointId)
     {
@@ -225,7 +225,11 @@ public class GameManager : MonoBehaviour
 
         UIManager.Instance.SetPlayerImage(player.portrait);
         SetCurrentScenario(player.presentInScenario);
-        _assignCameraToCanvas.Assign();
+        foreach (var assign in _assignCameraToCanvas)
+        {
+            assign.Assign();
+        }
+
         ScenarioVisualManager.Instance.SetFocusScenario(CurrentScenarioId);
         ScenarioData scenarioTo = GetScenario(CurrentScenarioId);
         if (scenarioTo != null)

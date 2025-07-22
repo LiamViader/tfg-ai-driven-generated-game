@@ -1261,7 +1261,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3be0a814d8ab9484a9473e4ad5e34418, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assignCameraToCanvas: {fileID: 2103892940}
+  _assignCameraToCanvas:
+  - {fileID: 2103892940}
+  - {fileID: 2103892941}
 --- !u!4 &1196485892
 Transform:
   m_ObjectHideFlags: 0
@@ -1361,7 +1363,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18.2
+  m_fontSize: 22.45
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1497,7 +1499,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 29.4
+  m_fontSize: 36.2
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2763,6 +2765,17 @@ PrefabInstance:
 --- !u!114 &2103892940 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7110753805325364234, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
+  m_PrefabInstance: {fileID: 2103892939}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8097731cae9b6f04d95d6769815fcd48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2103892941 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7551636557699271339, guid: 8ea291a7460506548aec9d64441b32b8, type: 3}
   m_PrefabInstance: {fileID: 2103892939}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
