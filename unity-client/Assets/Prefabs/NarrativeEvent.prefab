@@ -565,7 +565,7 @@ MonoBehaviour:
   _inactiveColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 0}
   _onBackgroundColor: {r: 0.17254902, g: 0.17254902, b: 0.17254902, a: 0}
   _textlogParent: {fileID: 4355769204025825223}
-  _textlogThoughtPrefab: {fileID: 6859865617064156709, guid: c5fe26fdea17fa14495af96dfa081e39, type: 3}
+  _textlogThoughtPrefab: {fileID: 7549366666967170702, guid: 598c4eae7247abc4ba88171baeb08104, type: 3}
 --- !u!114 &2715902554189371307
 MonoBehaviour:
   m_ObjectHideFlags: 0
