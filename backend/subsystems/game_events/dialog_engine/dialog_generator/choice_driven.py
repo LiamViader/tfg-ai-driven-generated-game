@@ -61,6 +61,10 @@ async def generate_choice_driven_message_stream(
     You must generate a turn that is consistent with the character's personality, the current situation and the conversation history all provided in the user prompt context.
     Ensure the intervention is consistent with the conversation history.
     
+    **IN THE CONTEXT YOU MIGHT RECEIVE INDICATIONS ABOUT FINISHING THE CONVERSATION, YOU MUST OBEY THEM.**
+
+    Always be concise in your messages.
+
     Your goal is to deliver this character's turn, not to end the entire conversation. Your intervention should feel like one part of a larger dialogue. Conclude your character's immediate thoughts or actions, but leave the overall conversation open for others to respond to, unless your turn naturally provides a definitive conclusion to the event's goal.
 
     Your response MUST use the following special tags:

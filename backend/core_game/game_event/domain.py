@@ -190,6 +190,7 @@ class PlayerNPCConversationEvent(BaseGameEvent):
     def __init__(self, model: PlayerNPCConversationEventModel):
         super().__init__(model)
         self._data = model
+        self._pending_choice: Optional[str] = None
 
     def add_message(self, message: ConversationMessage) -> None:
         self._data.messages.append(message)
@@ -202,131 +203,98 @@ class PlayerNPCConversationEvent(BaseGameEvent):
     def messages(self) -> List[ConversationMessage]:
         return self._data.messages
     
+    def set_player_choice(self, choice_label: str) -> None:
+        """Llamar desde el endpoint /choice para continuar la conversación."""
+        self._pending_choice = choice_label
+    
     async def run(self, game_state: 'SimulatedGameState') -> AsyncGenerator[str, None]:
         """
-        Runs the flow of a conversation involving the player, with retry logic.
+        Método unificado para SSE:
+        - Si hay elección pendiente, procesa esa elección.
+        - En otro caso, ejecuta el bucle normal de conversación.
         """
-    
+        if self._pending_choice is not None:
+            choice = self._pending_choice
+            self._pending_choice = None
+            # Procesamos la elección y la stream devolviendo sus mensajes
+            async for msg in self._process_choice_stream(game_state, choice):
+                yield msg
+            # tras la elección seguimos con la conversación
+        # una vez procesada (o si no había), entramos en el bucle normal
+        async for msg in self._run_normal(game_state):
+            yield msg
+
+    async def _run_normal(self, game_state: 'SimulatedGameState') -> AsyncGenerator[str, None]:
         from subsystems.game_events.dialog_engine.turn_manager.player_npc import decide_next_player_npc_speaker
         from subsystems.game_events.dialog_engine.dialog_generator.npc import generate_npc_message_stream
         from subsystems.game_events.dialog_engine.dialog_generator.player import generate_player_message_stream
         from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
-        print(f"[Event: {self.id}] Running Player-NPC Conversation...")
-        
-        MAX_RETRIES_PER_TURN = 3
-        conversation_ended_naturally = False
 
-        # --- Main Conversation Loop ---
+        MAX_RETRIES_PER_TURN = 3
+        conversation_ended = False
+
         while True:
             speaker = decide_next_player_npc_speaker(self, self.triggered_by, game_state)
-
             if not speaker:
-                print(f"[Event: {self.id}] Conversation concluded naturally.")
-                conversation_ended_naturally = True
+                conversation_ended = True
                 break
 
-            turn_successful = False
-            is_player_turn = isinstance(speaker, PlayerCharacter)
-
-            # --- Turn Retry Loop ---
+            is_player = isinstance(speaker, PlayerCharacter)
             for attempt in range(MAX_RETRIES_PER_TURN):
-                print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES_PER_TURN} for speaker {speaker.id}...")
-                
-                # Select the correct generator based on the speaker's type
-                if is_player_turn:
-                    raw_llm_stream = generate_player_message_stream(
-                        speaker=speaker, event=self, game_state=game_state
-                    )
-                else: # NPC
-
-                    raw_llm_stream = generate_npc_message_stream(
-                        speaker=speaker, event=self, game_state=game_state
-                    )
+                if is_player:
+                    raw = generate_player_message_stream(speaker=speaker, event=self, game_state=game_state)
+                else:
+                    raw = generate_npc_message_stream(speaker=speaker, event=self, game_state=game_state)
 
                 try:
-                    # Parse and stream the complete turn
-                    async for message_json in parse_and_stream_messages(raw_llm_stream, speaker, self):
-                        yield message_json
-                    
-                    turn_successful = True
-                    print(f"[Event: {self.id}] Turn for {speaker.id} completed successfully.")
-                    break # Exit retry loop
-
+                    async for chunk in parse_and_stream_messages(raw, speaker, self):
+                        yield chunk
+                    break  # turno completado
                 except InvalidTagError as e:
-                    print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
                     if attempt == MAX_RETRIES_PER_TURN - 1:
-                        print(f"[Event: {self.id}] All retries failed for speaker {speaker.id}. Stopping event.")
-
-            if not turn_successful:
-                print(f"[Event: {self.id}] Event failed due to repeated errors.")
-                conversation_ended_naturally = False
+                        conversation_ended = False
+                        break
+            else:
+                conversation_ended = False
                 break
 
-            # If the successful turn was the player's, it must have ended in a choice.
-            # The stream must pause and wait for the player's next action.
-            if is_player_turn:
-                print(f"[Event: {self.id}] Player choice presented. Pausing stream.")
-                return # IMPORTANT: Exit the generator. The stream is over for now.
+            if is_player:
+                # tras turno del jugador, se genera un [player_choice] → pausa
+                return
 
-        # --- Event Finalization Logic ---
-        if conversation_ended_naturally:
-            print(f"[Event: {self.id}] Marking event as COMPLETED.")
+        # finalización
+        if conversation_ended:
             game_state.events.get_state().complete_current_event()
+            final = {"type":"event_end","event_id":self.id}
         else:
-            print(f"[Event: {self.id}] Event finished due to failure. Not marking as completed.")
-            # For example: game_state.events.get_state().fail_current_event()
-        
-    async def process_player_choice(self, game_state: 'SimulatedGameState', choice_label: str) -> AsyncGenerator[str, None]:
-        """
-        Generates the player's intervention based on their choice, and then continues the event flow.
-        """
+            final = {"type":"event_failed","event_id":self.id}
+        yield f"data: {json.dumps(final)}\n\n"
 
+    async def _process_choice_stream(self, game_state: 'SimulatedGameState', choice_label: str) -> AsyncGenerator[str, None]:
         from subsystems.game_events.dialog_engine.dialog_generator.choice_driven import generate_choice_driven_message_stream
         from subsystems.game_events.dialog_engine.parser import parse_and_stream_messages, InvalidTagError
-        print(f"[Event: {self.id}] Processing player choice: '{choice_label}'")
-        
         player = game_state.read_only_characters.get_player()
         if not player:
             raise ValueError("Player character not found in game state.")
-
+        
         MAX_RETRIES = 3
-        player_turn_successful = False
-
-        # --- Part 1: Generate and stream the Player's intervention ---
         for attempt in range(MAX_RETRIES):
-            print(f"[Event: {self.id}] Attempt {attempt + 1}/{MAX_RETRIES} to generate player intervention...")
-            
-            raw_llm_stream = generate_choice_driven_message_stream(
+            raw = generate_choice_driven_message_stream(
                 player_choice=choice_label,
                 speaker=player,
                 event=self,
                 game_state=game_state
             )
-
             try:
-                async for message_json in parse_and_stream_messages(raw_llm_stream, player, self):
-                    yield message_json
-                
-                player_turn_successful = True
-                print(f"[Event: {self.id}] Player intervention generated successfully.")
+                async for chunk in parse_and_stream_messages(raw, game_state.read_only_characters.get_player(), self):
+                    yield chunk
                 break
-
-            except InvalidTagError as e:
-                print(f"[ERROR in Event {self.id}] Parser failed on attempt {attempt + 1}: {e}")
+            except InvalidTagError:
                 if attempt == MAX_RETRIES - 1:
-                    print(f"[Event: {self.id}] All retries failed for player intervention.")
-        
-        if not player_turn_successful:
-            print(f"[Event: {self.id}] Event failed during player intervention. Stopping.")
-            # Optionally fail the event
-            # game_state.events.get_state().fail_current_event()
-            return
-
-        # --- Part 2: Continue the rest of the conversation ---
-        print(f"[Event: {self.id}] Player turn complete. Resuming conversation...")
-        # This loop takes over and continues the event from where it left off.
-        async for subsequent_message_json in self.run(game_state):
-            yield subsequent_message_json
+                    # error crítico
+                    err = {"type":"error","content":"Error procesando elección"}
+                    yield f"data: {json.dumps(err)}\n\n"
+                    return
 
 class NarratorInterventionEvent(BaseGameEvent):
     """Domain logic for narrator interventions."""

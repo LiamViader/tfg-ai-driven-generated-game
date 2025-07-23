@@ -3,6 +3,7 @@ from core_game.narrative.schemas import NarrativeBeatModel
 from core_game.map.domain import Scenario
 from core_game.character.domain import BaseCharacter, NPCCharacter
 from core_game.game_event.schemas import ConversationMessage, PlayerChoiceMessage, NarratorMessage, PlayerThoughtMessage, CharacterActionMessage, CharacterDialogueMessage
+import random
 
 def format_nested_dict(data: Dict[str, Any], indent: int = 0) -> List[str]:
     """Pretty-prints a nested dictionary with clean indentation."""
@@ -50,7 +51,46 @@ def character_to_dict(character: BaseCharacter) -> Dict[str, Any]:
         char_dict["Narrative Weight"] = character.narrative.model_dump()
     return char_dict
 
+def get_end_conversation_message(messages: Sequence[ConversationMessage]) -> str:
+    n = len(messages)
 
+    # Umbrales y mensajes
+    thresholds = [
+        (7,  "You should start driving the conversation into an end"),
+        (13, "You must drive the conversation into an end"),
+        (20, "You have to drive the conversation into a conclusion. END THE CONVERSATION IMMEDIATELY"),
+    ]
+    abrupt_msg = "YOU MUST END THE CONVERSATION IMMEDIATELY IN THIS TURN EVEN IF IT ENDS ABRUPTLY"
+
+    # 0) Si superamos 24, devolvemos siempre el mensaje abrupto
+    if n > 24:
+        return abrupt_msg
+
+    candidates = []
+    weights    = []
+
+    # 1) Desde 0 hasta 10 turnos: posibilidad de no empujar al final ("")
+    if n <= 10:
+        candidates.append("")
+        weights.append(10 - n + 1)  # n=0→11, n=10→1
+
+    # 2) Mensajes de umbral según se superen
+    for th, msg in thresholds:
+        if n > th:
+            candidates.append(msg)
+            weights.append(n - th)
+
+    # 3) Incluir “abrupt” (pero sólo si n > 20 y < 25)
+    if 20 < n <= 24:
+        candidates.append(abrupt_msg)
+        weights.append(n - 20)
+
+    # Si no hay candidatos (mínimo), devolvemos cadena vacía
+    if not candidates:
+        return ""
+
+    # Selección ponderada
+    return random.choices(candidates, weights=weights, k=1)[0]
 
 def get_formatted_context(event_title: str, event_description: str, source_beat: Optional[NarrativeBeatModel], scenario: Optional[Scenario], characters: Set[BaseCharacter], relations: List[Dict[str, Any]], game_objective: str, refined_prompt: str, messages: Sequence[ConversationMessage]) -> str:
 
@@ -132,6 +172,9 @@ def get_formatted_context(event_title: str, event_description: str, source_beat:
             conversation_history_str_list.append(f"- {line}")
     conversation_history_str = "\n".join(conversation_history_str_list)
 
+
+    end_conversation_message=get_end_conversation_message(messages)
+
     context_prompt = f"""
     #Context available:
 
@@ -147,6 +190,11 @@ def get_formatted_context(event_title: str, event_description: str, source_beat:
     
     This is the most important information:
     {conversation_history_str}
+
+    ##Other rellevant info:
+    Number of messages: {len(messages)}, 
+    {end_conversation_message}
     """
+    print("Number of messages: ", len(messages))
 
     return context_prompt

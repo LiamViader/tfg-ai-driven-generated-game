@@ -48,9 +48,8 @@ def fast_test_events_pipeline() -> PipelineConfig:
             PipelineStep(
                 step_name="Add Characters (2 NPCs, 1 Player)",
                 agent_name=AgentName.CHARACTERS,
-                objective_prompt="Add 2 unique NPCs AND the player character. Place all of them in the scenarios.",
+                objective_prompt="Add 5 unique NPCs AND the player character. Place all of them in the scenarios.",
                 rules_and_constraints=[
-                    "There must be exactly 3 characters in total: 1 player, 2 NPCs.",
                     "All characters must be placed in the existing scenarios."
                 ],
                 other_guidelines="Give each NPC a distinct personality and a brief background. The player character can be generic.",
@@ -66,6 +65,7 @@ def fast_test_events_pipeline() -> PipelineConfig:
                 rules_and_constraints=[
                     "Create exactly 2 game events.",
                     "Each event must have at least one 'character_interaction' activation condition.",
+                    "One of the event should contain 3 npcs"
                 ],
                 other_guidelines="Think about how these interactions would naturally fit the NPCs' personalities and the scenario's setting.",
                 max_executor_iterations=7, # More iterations for event creation
@@ -75,6 +75,8 @@ def fast_test_events_pipeline() -> PipelineConfig:
             ),
         ],
     )
+
+
 
 
 def slow_test_pipeline() -> PipelineConfig:

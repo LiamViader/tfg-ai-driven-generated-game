@@ -23,3 +23,6 @@ class ActionRequest(BaseModel):
     from_checkpoint_id: str
     action_type: ActionType
     payload: ActionPayload
+
+class ChoiceRequest(BaseModel):
+    choice_label: str

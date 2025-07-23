@@ -61,6 +61,8 @@ async def generate_player_message_stream(
 
     Below are examples of desired responses. These are guides for structure, not rigid answers. Be creative and vary the number of messages, their length, and their order, tone to fit the specific moment in the narrative.
 
+    DONT BE TO MUCH VERBOSE
+
     ---
     **Example 1**
     [thought] This guy seems serious. He's cornering me, but I can't show weakness. I need to know if he's bluffing.
@@ -80,11 +82,8 @@ async def generate_player_message_stream(
     [end]
     ---
     **Example 3**
-    [thought] He's offering me everything I've ever wanted. Power, safety, a place in this new world he's building from the ashes of the old one.
-    [thought] But at what cost? I've seen what his enforcers do to people who don't comply. They rule through fear, not respect.
-    [thought] Is survival worth becoming a monster? Is peace worth the price of freedom?
-    [thought] All my life I've fought against people like him, people who impose their will on others. Can I really just abandon everything I believe in?
-    [thought] But if I refuse... he'll kill me. And what good can I do for anyone if I'm dead?
+    [thought] He's offering me everything I've ever wanted. Power, safety.
+    [thought] But at what cost? I've seen what his enforcers do to people who don't comply.
     [player_choice] Do you accept his offer?
     (Dialogue) Yes.
     (Dialogue) No.

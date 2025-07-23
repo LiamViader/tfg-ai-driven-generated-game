@@ -4,7 +4,7 @@ from api.services.generation_status import get_status
 from api.services.actions import move_player, trigger_character_activation_condition
 from api.schemas.status import GenerationStatusModel
 from api.services import game_state
-from api.schemas.requests import GenerationRequest, ActionRequest, ActionType
+from api.schemas.requests import GenerationRequest, ActionRequest, ActionType, ChoiceRequest
 from api.schemas.responses import ActionResponse, FollowUpAction, FollowUpActionType
 from fastapi.responses import StreamingResponse
 from api.services.narrative_streamer import generate_narrative_stream
@@ -81,7 +81,9 @@ def perform_game_action(action_request: ActionRequest):
             status_code=422, 
             detail="Action type not found."
         )
-    
+
+
+
 @router.get("/event/stream/{event_id}", tags=["Game Events"])
 async def stream_narrative_event(event_id: str):
     """
@@ -90,3 +92,26 @@ async def stream_narrative_event(event_id: str):
     """
     # Delegates all logic to the generator we created in the service.
     return StreamingResponse(generate_narrative_stream(event_id), media_type="text/event-stream")
+
+@router.post("/event/{event_id}/choice", tags=["Game Events"])
+def post_player_choice(event_id: str, payload: ChoiceRequest):
+    """
+    Almacena la elección del jugador para el evento (PlayerNPCConversationEvent).
+    Luego el cliente debe volver a llamar a GET /event/stream/{event_id} 
+    para reanudar la narración.
+    """
+    from simulated.singleton import SimulatedGameStateSingleton
+    from core_game.game_event.domain import PlayerNPCConversationEvent
+
+    state = SimulatedGameStateSingleton.get_instance()
+    event = state.events.get_state().get_current_running_event()
+
+    if not event:
+        raise HTTPException(404, "No hay ningún evento en curso.")
+    if event.id != event_id:
+        raise HTTPException(400, f"El evento activo ('{event.id}') no coincide con '{event_id}'.")
+    if not isinstance(event, PlayerNPCConversationEvent):
+        raise HTTPException(422, "Este evento no admite elecciones de jugador.")
+
+    event.set_player_choice(payload.choice_label)
+    return {"status": "choice accepted"}

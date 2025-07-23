@@ -15,7 +15,6 @@ class InvalidTagError(Exception):
     pass
 
 VALID_TAGS = {"dialogue", "action", "thought", "player_choice", "narrator"}
-
 message_counter = 0
 
 async def parse_and_stream_messages(
@@ -25,28 +24,29 @@ async def parse_and_stream_messages(
 ) -> AsyncGenerator[str, None]:
     global message_counter
 
-    buffer = ""             # Acumula los chunks que llegan
-    current_type = None     # Tag activo ("dialogue", "action", etc.)
-    current_id = None       # ID SSE del bloque activo
-    content_accum = ""      # Texto acumulado para el bloque activo
+    buffer = ""
+    current_type = None
+    current_id = None
+    content_accum = ""
 
     async for chunk in raw_llm_stream:
         buffer += chunk
 
         while True:
-            # --- Caso player_choice: leemos hasta [end] completo ---
+            # Si estamos en player_choice, esperamos hasta encontrar el cierre [end]
             if current_type == "player_choice":
                 end_idx = buffer.find("[end]")
                 if end_idx == -1:
-                    # aún no llegó el cierre
-                    break
-                choice_block = buffer[:end_idx]
+                    break  # aún no llegó todo
+                choice_block = buffer[:end_idx].strip()
                 buffer = buffer[end_idx + len("[end]"):]
-                # procesar choice_block igual que antes...
-                lines = choice_block.strip().splitlines()
+                
+                # Procesamos y emitimos solo un mensaje con título + opciones
+                lines = choice_block.splitlines()
                 title = lines[0].strip()
                 options = []
                 for line in lines[1:]:
+                    line = line.strip()
                     if line.startswith("(Dialogue)"):
                         options.append(PlayerChoiceOptionModel(
                             type="Dialogue", label=line[len("(Dialogue)"):].strip()))
@@ -59,78 +59,68 @@ async def parse_and_stream_messages(
                 event.add_message(PlayerChoiceMessage(
                     actor_id=speaker.id, title=title, options=options))
 
-                yield (
-                    "data: " +
-                    json.dumps({
-                        "message_id": current_id,
-                        "type": "player_choice",
-                        "speaker_id": speaker.id,
-                        "title": title,
-                        "options": [o.model_dump() for o in options]
-                    }) +
-                    "\n\n"
-                )
+                yield "data: " + json.dumps({
+                    "message_id": current_id,
+                    "type": "player_choice",
+                    "speaker_id": speaker.id,
+                    "title": title,
+                    "options": [o.model_dump() for o in options]
+                }) + "\n\n"
 
-                # cerramos y esperamos siguiente tag
+                # Listo, volvemos a esperar el siguiente tag
                 current_type = None
                 content_accum = ""
                 continue
 
-            # --- Buscamos un tag completo "[...]" sólo si existe apertura y cierre ---
+            # Buscamos un tag completo "[...]" — solo si tenemos '[' y ']' en el buffer
             open_idx = buffer.find("[")
-            close_idx = buffer.find("]", open_idx+1) if open_idx != -1 else -1
+            close_idx = buffer.find("]", open_idx + 1) if open_idx != -1 else -1
 
             if open_idx != -1 and close_idx != -1:
-                # 1) volcamos cualquier texto ANTES del '[' como contenido
+                # 1) Emitimos cualquier texto ANTES del tag como fragmento de contenido
                 if current_type and open_idx > 0:
                     fragment = buffer[:open_idx]
                     content_accum += fragment
-                    yield (
-                        "data: " +
-                        json.dumps({
-                            "message_id": current_id,
-                            "type": current_type,
-                            "speaker_id": speaker.id,
-                            "content": fragment
-                        }) +
-                        "\n\n"
-                    )
-                # 2) extraemos el tag completo
+                    yield "data: " + json.dumps({
+                        "message_id": current_id,
+                        "type": current_type,
+                        "speaker_id": speaker.id,
+                        "content": fragment
+                    }) + "\n\n"
+
+                # 2) Extraemos el nombre del tag
                 tag = buffer[open_idx+1:close_idx].strip()
                 buffer = buffer[close_idx+1:]
 
-                # 3) cerramos el bloque anterior si tocaba
+                # 3) Cerramos el bloque anterior si había contenido acumulado
                 if current_type and content_accum.strip():
                     event.add_message(_build_message(current_type, speaker, content_accum.strip()))
                 content_accum = ""
 
-                # 4) si es [end], terminamos todo
+                # 4) Si es [end], terminamos la función
                 if tag == "end":
                     return
 
-                # 5) validamos tag
+                # 5) Validamos que sea un tag conocido
                 if tag not in VALID_TAGS:
                     raise InvalidTagError(f"Etiqueta desconocida: [{tag}]")
 
-                # 6) arrancamos un nuevo bloque
+                # 6) Arrancamos un nuevo bloque
                 message_counter += 1
                 current_id = f"msg_{event.id}_{message_counter}"
                 current_type = tag
 
-                yield (
-                    "data: " +
-                    json.dumps({
+                # ** Solo para player_choice NO emitimos aquí un mensaje vacío**
+                if tag != "player_choice":
+                    yield "data: " + json.dumps({
                         "message_id": current_id,
                         "type": current_type,
                         "speaker_id": speaker.id,
                         "content": ""
-                    }) +
-                    "\n\n"
-                )
-                # Si es player_choice, la próxima iteración entrará en ese caso
+                    }) + "\n\n"
                 continue
 
-            # --- No hay tag completo: volcamos sólo hasta el '[' si existe ---
+            # 7) Si no hay un tag completo, volcamos texto hasta el próximo '[' (o todo)
             if current_type and buffer:
                 next_open = buffer.find("[")
                 if next_open != -1:
@@ -139,25 +129,18 @@ async def parse_and_stream_messages(
                 else:
                     fragment = buffer
                     buffer = ""
+                content_accum += fragment
+                yield "data: " + json.dumps({
+                    "message_id": current_id,
+                    "type": current_type,
+                    "speaker_id": speaker.id,
+                    "content": fragment
+                }) + "\n\n"
+            break  # salimos del while y esperamos más chunks
 
-                if fragment:
-                    content_accum += fragment
-                    yield (
-                        "data: " +
-                        json.dumps({
-                            "message_id": current_id,
-                            "type": current_type,
-                            "speaker_id": speaker.id,
-                            "content": fragment
-                        }) +
-                        "\n\n"
-                    )
-            break  # salimos del while interno y esperamos más chunks
-
-    # al acabar el stream, finalizamos cualquier texto pendiente
+    # Al terminar el stream, añadimos el bloque final si queda contenido
     if current_type and content_accum.strip():
         event.add_message(_build_message(current_type, speaker, content_accum.strip()))
-
 
 def _build_message(msg_type, speaker, content):
     if msg_type == "dialogue":

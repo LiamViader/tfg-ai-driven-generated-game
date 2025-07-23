@@ -46,14 +46,12 @@ public class NarrativeEventManager : MonoBehaviour
 
         public void AppendContent(string additional)
         {
-            Debug.Log("APPENDING");
-            Debug.Log(additional);
-            Debug.Log(FullText);
+
             if (string.IsNullOrEmpty(additional)) return;
 
 
             FullText += additional;
-            Debug.Log(FullText);
+
         }
 
     }
@@ -93,11 +91,13 @@ public class NarrativeEventManager : MonoBehaviour
 
     private TextlogManager _currentTextLog;
 
-
+    [SerializeField] private PlayerChoiceHandler _choicesMenu;
 
     private List<StreamingMessageState> _messages = new List<StreamingMessageState>();
     private int _currentMessageIndex = 0;
 
+    private bool _canExit = false;
+    private string _currentSpeakerId = null;
     public static NarrativeEventManager Instance { get; private set; }
 
 
@@ -133,14 +133,26 @@ public class NarrativeEventManager : MonoBehaviour
 
     private void OnUserClick()
     {
-        // ¿Está terminado el mensaje actual y ya se ha mostrado todo?
-        if (_messages.Count <= 0) return;
+        if (_messages.Count == 0) return;
+
         var current = _messages[_currentMessageIndex];
-        if (current.IsFinal && _currentTextLog.HasShownAll())
+        // Solo reaccionamos cuando el mensaje actual ha terminado y está completamente mostrado
+        if (!current.IsFinal || !_currentTextLog.HasShownAll())
+            return;
+
+        // Si estamos en el último mensaje…
+        if (_currentMessageIndex == _messages.Count - 1)
         {
+            // …y podemos salir, terminamos el evento
+            if (_canExit)
+                StartCoroutine(EndNarrativeEventCoroutine());
+            // si no podemos salir (por ser choice), ignoramos el clic
+        }
+        else
+        {
+            // Hay un siguiente mensaje: lo mostramos
             AdvanceToNextMessage();
         }
-
     }
 
 
@@ -148,6 +160,7 @@ public class NarrativeEventManager : MonoBehaviour
     public void SetUpNarrativeEvent(string eventId, List<string> characterIds)
     {
         _opacityImage.gameObject.SetActive(true);
+        _canExit = false;
         StartCoroutine(FadeInOpacityBackground());
         SetUpTalkingCharacters(characterIds);
         SetUpInitialTextLog();
@@ -355,8 +368,23 @@ public class NarrativeEventManager : MonoBehaviour
             {
                 if (_currentTextLog != null)
                     Destroy(_currentTextLog.gameObject);
-
                 GameObject prefab;
+
+                if (message.type == "player_choice")
+                {
+
+                    // Mostramos las opciones con título y lista de opciones
+                    _choicesMenu.ShowChoices(
+                        message.title,
+                        message.options,
+                        choiceLabel =>
+                        {
+                            PrepareForResumeAfterChoice();
+                        }
+                    );
+                    return;
+                }
+
                 switch (message.type)
                 {
                     case "dialogue": prefab = _textlogDialoguePrefab; break;
@@ -379,6 +407,8 @@ public class NarrativeEventManager : MonoBehaviour
 
                 _currentTextLog.UpdateLeftName(onLeft ? speakerName : "", onLeft);
                 _currentTextLog.UpdateRightName(!onLeft ? speakerName : "", !onLeft);
+                UpdateCharacterStates(_currentSpeakerId);
+                _currentSpeakerId = message.speaker_id;
             }
         }
 
@@ -407,59 +437,180 @@ public class NarrativeEventManager : MonoBehaviour
 
     private void AdvanceToNextMessage()
     {
-        // Si ya es el último, no hacemos nada
-        if (_currentMessageIndex >= _messages.Count - 1)
+        if (_messages[_currentMessageIndex].type == "player_choice")
             return;
 
-        if (!_currentTextLog.HasShownAll()) return;
-
-        _currentMessageIndex++;
-
-        // Destruimos el TextLog anterior
+        // destruye el TextLog viejo
         if (_currentTextLog != null)
             Destroy(_currentTextLog.gameObject);
 
-        // Instanciamos el nuevo según su tipo
+
+        _currentMessageIndex++;
+
         var next = _messages[_currentMessageIndex];
-        GameObject prefab;
-        switch (next.type)
+        UpdateCharacterStates(next.speakerId);
+        // flujo special para choice
+        if (next.type == "player_choice")
         {
-            case "dialogue":
-                prefab = _textlogDialoguePrefab;
-                break;
-            case "action":
-                prefab = _textlogActionPrefab;
-                break;
-            case "thought":
-                prefab = _textlogThoughtPrefab;
-                break;
-            case "narrator":
-                prefab = _textlogNarratorPrefab;
-                break;
-            default:
-                prefab = _textlogDialoguePrefab;
-                break;
+            _choicesMenu.ShowChoices(next.title, next.options, choiceLabel =>
+                NarrativeStreamerAPI.Instance.SendPlayerChoice(choiceLabel)
+            );
+            return;
         }
+
+        // instanciar prefab según tipo
+        GameObject prefab = next.type switch
+        {
+            "dialogue" => _textlogDialoguePrefab,
+            "action" => _textlogActionPrefab,
+            "thought" => _textlogThoughtPrefab,
+            "narrator" => _textlogNarratorPrefab,
+            _ => _textlogDialoguePrefab
+        };
 
         var go = Instantiate(prefab, _textlogParent);
         var rect = go.GetComponent<RectTransform>();
         rect.localScale = new Vector3(0f, 1f, 1f);
-        rect.DOScaleX(1f, 0.5f).SetEase(Ease.OutBack, 0.5f);
+        rect.DOScaleX(1f, 0.5f).SetEase(Ease.OutBack);
 
         _currentTextLog = go.GetComponent<TextlogManager>();
         _currentTextLog.Clear();
 
-        string speakerName = _talkingCharacters.ContainsKey(next.speakerId)
-        ? _talkingCharacters[next.speakerId].CharacterData.fullName
-        : "";
+        // nombre del hablante
+        string speakerName = _talkingCharacters.GetValueOrDefault(next.speakerId)?.CharacterData.fullName ?? "";
         bool onLeft = _leftTalkingCharacters.ContainsKey(next.speakerId);
-
         _currentTextLog.UpdateLeftName(onLeft ? speakerName : "", onLeft);
         _currentTextLog.UpdateRightName(!onLeft ? speakerName : "", !onLeft);
 
-        // Y lo llenamos con lo que ya tenemos en FullText
+        // y rellenamos con lo recibido hasta ahora
         _currentTextLog.AppendText(next.FullText);
     }
 
+    private IEnumerator EndNarrativeEventCoroutine()
+    {
+        // tu fade-out y limpieza…
+        float duration = 1f, t = 0f;
+        var orig = _opacityImage.color;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            _opacityImage.color = new Color(orig.r, orig.g, orig.b, Mathf.Lerp(orig.a, 0f, t / duration));
+            yield return null;
+        }
+        _opacityImage.color = new Color(orig.r, orig.g, orig.b, 0f);
+        _opacityImage.gameObject.SetActive(false);
 
+        if (_currentTextLog != null) Destroy(_currentTextLog.gameObject);
+        _messages.Clear();
+        _currentMessageIndex = 0;
+        _canExit = false;
+
+        foreach (var kv in _talkingCharacters.Values)
+            if (kv != null) Destroy(kv.gameObject);
+        _talkingCharacters.Clear();
+        _leftTalkingCharacters.Clear();
+        _rightTalkingCharacters.Clear();
+
+        Debug.Log("[NarrativeEventManager] Event finished and cleaned up.");
+    }
+
+    public void OnStreamCompleted()
+    {
+        // decides if the last message lets you exit
+        if (_messages.Count == 0)
+            _canExit = true;
+        else
+            _canExit = _messages.Last().type != "player_choice";
+
+        _messages[_messages.Count - 1].IsFinal = true;
+
+        Debug.Log($"[NarrativeEventManager] canExit = {_canExit}");
+    }
+
+    public void PrepareForResumeAfterChoice()
+    {
+        // 1) Oculta el menú de opciones si aún sigue visible
+        _choicesMenu.gameObject.SetActive(false);
+
+        // 2) Destruye el TextLog antiguo
+        if (_currentTextLog != null)
+        {
+            Destroy(_currentTextLog.gameObject);
+            _currentTextLog = null;
+        }
+
+        // 3) Limpia mensajes y resetea índice
+        _messages.Clear();
+        _currentMessageIndex = 0;
+
+        // 4) (Opcional) resetear canExit si usas esa lógica
+        _canExit = false;
+    }
+
+
+    private void UpdateCharacterStates(string newSpeakerId)
+    {
+        if (newSpeakerId == _currentSpeakerId)
+            return;
+
+        // 1) Sacar al viejo speaker
+        if (_currentSpeakerId != null && _talkingCharacters.TryGetValue(_currentSpeakerId, out var oldChar))
+        {
+            bool wasLeft = _leftTalkingCharacters.ContainsKey(_currentSpeakerId);
+            bool sameSide = wasLeft == _leftTalkingCharacters.ContainsKey(newSpeakerId);
+
+            // Definimos padre, ancla y color objetivo
+            (RectTransform parent, RectTransform anchor, Color col) = wasLeft
+                ? (sameSide
+                    ? (_leftBackgroundParent, _leftBackgroundCharacterAnchor, _onBackgroundColor)
+                    : (_leftInactiveParent, _leftInactiveCharacterAnchor, _inactiveColor))
+                : (sameSide
+                    ? (_rightBackgroundParent, _rightBackgroundCharacterAnchor, _onBackgroundColor)
+                    : (_rightInactiveParent, _rightInactiveCharacterAnchor, _inactiveColor));
+
+            AnimateCharacterToAnchor(oldChar, parent, anchor, col, duration: 0.5f);
+        }
+
+        // 2) Llevar al nuevo speaker a active
+        if (_talkingCharacters.TryGetValue(newSpeakerId, out var newChar))
+        {
+            bool isLeft = _leftTalkingCharacters.ContainsKey(newSpeakerId);
+            var parent = isLeft ? _leftActiveParent : _rightActiveParent;
+            var anchor = isLeft ? _leftActiveCharacterAnchor : _rightActiveCharacterAnchor;
+            var colActive = Color.white;
+
+            AnimateCharacterToAnchor(newChar, parent, anchor, colActive, duration: 0.5f);
+        }
+
+        _currentSpeakerId = newSpeakerId;
+    }
+
+    private void AnimateCharacterToAnchor(
+        TalkingCharacter character,
+        RectTransform containerParent,
+        RectTransform anchor,
+        Color targetColor,
+        float duration = 0.5f
+    )
+    {
+        var rect = character.GetComponent<RectTransform>();
+        // Temporalmente fuera de cualquier layout para animar sin saltos
+        rect.SetParent(_canvas.transform, worldPositionStays: true);
+
+        // Creamos la secuencia: posición, escala y color
+        DOTween.Sequence()
+            .Append(rect.DOMove(anchor.position, duration).SetEase(Ease.OutBack))
+            .Join(rect.DOScale(Vector3.one, duration).SetEase(Ease.OutBack))
+            .Join(DOVirtual.Color(
+                character.GetColor(),   // Getter, asume que TalkingCharacter tiene GetColor()
+                targetColor,
+                duration,
+                c => character.SetColor(c)
+            ))
+            .OnComplete(() =>
+            {
+                // Finalmente lo parentamos en su contenedor
+                rect.SetParent(containerParent, worldPositionStays: true);
+            });
+    }
 }

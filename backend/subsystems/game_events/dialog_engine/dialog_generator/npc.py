@@ -32,6 +32,7 @@ async def generate_npc_message_stream(
     text stream of the response, including special tags like [dialogue], [action], etc.
     """
 
+    MAX_TURNS = 15
     
     formatted_character = format_nested_dict(character_to_dict(speaker))
 
@@ -49,9 +50,11 @@ async def generate_npc_message_stream(
     Ensure the conversation does not deviate much from the 'Dialog Description' provided in the user prompt's context. This description can contain the topic, goal, and tone for the conversation. All dialogue and actions must serve the purpose outlined in the description while also being creative, interesting, evoking and consistent with the character's personality and the conversation history.
     Ensure the intervention is consistent with the conversation history.
 
-        IMPORTANT. You must naturally guide the conversation towards a conclusion as the message history grows. While conversations should not exceed 20-25 messages, they can, and often should, conclude sooner if the narrative purpose has been fulfilled. The number of messages in the conversation history should serve as a dynamic signal: the closer the conversation gets to the 20-25 message limit, the more actively you should steer it towards a natural resolution. If the conversation history exceeds the limit of 25 messages, then you must force it to an end even if it is less natural.
 
-    Your goal is to deliver this character's turn, not to end the entire conversation. Your intervention should feel like one part of a larger dialogue. Conclude your character's immediate thoughts or actions, but leave the overall conversation open for others to respond to, unless your turn naturally provides a definitive conclusion to the event's goal.
+    Your intervention should feel like one part of a larger dialogue. Conclude your character's immediate thoughts or actions, but leave the overall conversation open for others to respond to, unless your turn naturally provides a definitive conclusion to the event's goal.
+
+    **IN THE CONTEXT YOU MIGHT RECEIVE INDICATIONS ABOUT FINISHING THE CONVERSATION, YOU MUST OBEY THEM.**
+
 
     Your response MUST use the following special tags:
     - `[dialogue]` to indicate spoken words.
@@ -60,8 +63,11 @@ async def generate_npc_message_stream(
     A turn can contain multiple tags. For example: `[dialogue] I don't believe you. [action] Narrows their eyes. [dialogue] Show me the proof.`
     
     It is crucial that every response you generate MUST end with the `[end]` tag to signify the character has finished their turn.
+    
+    Always be concise in your messages.
 
     Below are examples of desired responses. These are guides for structure, not rigid answers. Be creative and vary the number of messages, their length, and their order, tone to fit the specific moment in the narrative.
+
 
     **Example 1**
     [dialogue] I've heard the rumors, you know. They say you weren't at your post when the gate was breached.

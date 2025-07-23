@@ -37,7 +37,7 @@ def move_player(scenario_id: str, from_checkpoint_id: str) -> ActionResponse:
         if not player:
             raise Exception("Player not found in game state.")
         game_state.place_character(player.id,scenario_id)
-        changeset = get_incremental_changes(from_checkpoint_id)
+
 
         #check if any event triggered
 
@@ -60,7 +60,7 @@ def move_player(scenario_id: str, from_checkpoint_id: str) -> ActionResponse:
         else:
             follow_up = FollowUpAction(type=FollowUpActionType.NONE, payload=None)
             
-        # Return the complete, successful response.
+        changeset = get_incremental_changes(from_checkpoint_id)
         return ActionResponse(changeset=changeset, follow_up_action=follow_up)
 
 
@@ -75,7 +75,7 @@ def trigger_character_activation_condition(activation_condition_id: str, from_ch
     try:
 
         game_state = SimulatedGameStateSingleton.get_instance()
-        changeset = get_incremental_changes(from_checkpoint_id)
+
 
 
         if game_state.events.get_state().is_any_event_running():
@@ -94,6 +94,7 @@ def trigger_character_activation_condition(activation_condition_id: str, from_ch
                     type=FollowUpActionType.START_NARRATIVE_STREAM,
                     payload=StartNarrativeStreamPayload(event_id=event_running.id, involved_character_ids=list(involved_character_ids))
                 )
+                changeset = get_incremental_changes(from_checkpoint_id)
                 return ActionResponse(changeset=changeset, follow_up_action=follow_up)
             else:
                 raise Exception("Cannot trigger a new event while another is already in progress.")
@@ -117,7 +118,7 @@ def trigger_character_activation_condition(activation_condition_id: str, from_ch
         else:
             follow_up = FollowUpAction(type=FollowUpActionType.NONE, payload=None)
             
-        # Return the complete, successful response.
+        changeset = get_incremental_changes(from_checkpoint_id)
         return ActionResponse(changeset=changeset, follow_up_action=follow_up)
 
 

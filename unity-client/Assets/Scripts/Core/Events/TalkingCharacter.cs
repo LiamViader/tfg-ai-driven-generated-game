@@ -66,6 +66,9 @@ public class TalkingCharacter : MonoBehaviour
     {
         _characterImage.color = color;
     }
-
+    public Color GetColor()
+    {
+        return _characterImage.color;
+    }
 
 }
