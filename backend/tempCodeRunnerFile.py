@@ -1,0 +1,1 @@
+Design a central hub surrounded by 4 outer locations, each of those should be surrounded by 1 other.
