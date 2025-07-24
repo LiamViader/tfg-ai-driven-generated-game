@@ -28,7 +28,7 @@ def get_generation_graph_app():
     workflow.add_node("seed_generation", seed_sub_graph)
     workflow.add_node("prepare_refinement", prepare_refinement)
     workflow.add_node("refinement_loop", refinement_sub_graph)
-    workflow.add_node("ensure_map_connectivity", ensure_map_connectivity)
+    workflow.add_node("post_process", post_process)
     workflow.add_node("generate_images", generate_images)
     workflow.add_node("finalize_generation_success", finalize_generation_success)
     workflow.add_node("finalize_generation_error", finalize_generation_error)
@@ -50,13 +50,13 @@ def get_generation_graph_app():
         "refinement_loop",
         check_success,
         {
-            "continue": "ensure_map_connectivity",
+            "continue": "post_process",
             "end_with_error": "finalize_generation_error"
         }
     )
 
     workflow.add_conditional_edges(
-        "ensure_map_connectivity",
+        "post_process",
         check_success,
         {
             "continue": "generate_images",

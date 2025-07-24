@@ -518,9 +518,14 @@ public class NarrativeEventManager : MonoBehaviour
     {
         // decides if the last message lets you exit
         if (_messages.Count == 0)
-            _canExit = true;
-        else
-            _canExit = _messages.Last().type != "player_choice";
+        {
+            _canExit = false;
+            Debug.LogWarning("[NarrativeEventManager] Stream completed but no messages were received.");
+            return;
+        }
+
+        // Decide if we can exit depending on the last message type
+        _canExit = _messages.Last().type != "player_choice";
 
         _messages[_messages.Count - 1].IsFinal = true;
 

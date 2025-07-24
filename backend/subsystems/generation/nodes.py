@@ -71,8 +71,9 @@ def prepare_refinement(state: GenerationGraphState):
         "refinement_progress_tracker": refinement_tracker
     }
 
-def ensure_map_connectivity(state: GenerationGraphState):
+def post_process(state: GenerationGraphState):
     """
+    First ensures there is a player, then
     Ensures the entire game map is a single, connected graph by applying a
     strategy based on the size of the main connected component.
 
@@ -87,6 +88,9 @@ def ensure_map_connectivity(state: GenerationGraphState):
     """
     print("---ENTERING: ENSURE MAP CONNECTIVITY NODE---")
     game_state = SimulatedGameStateSingleton.get_instance()
+
+    if not game_state.read_only_characters.get_player():
+        return {"finalized_with_success": False}
 
     # --- Helper Functions ---
     def _handle_pruning() -> dict:
